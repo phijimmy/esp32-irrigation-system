@@ -1,0 +1,47 @@
+#ifndef SOIL_MOISTURE_SENSOR_H
+#define SOIL_MOISTURE_SENSOR_H
+
+#include <Arduino.h>
+#include <ctime>
+#include "system/ADS1115Manager.h"
+#include "config/ConfigManager.h"
+#include "system/TimeManager.h"
+
+class SoilMoistureSensor {
+public:
+    SoilMoistureSensor();
+    void begin(ADS1115Manager* adsMgr, ConfigManager* configMgr = nullptr, TimeManager* timeMgr = nullptr);
+    int16_t readRaw();
+    float readVoltage();
+    void readBoth(int16_t& raw, float& voltage);
+    float readPercent();
+    void takeReading();
+    void beginStabilisation(); // Start stabilisation timer
+    bool readyForReading() const; // True if stabilisation time has elapsed
+    struct Reading {
+        int16_t raw;
+        float voltage;
+        float percent;
+        time_t timestamp;
+        // Averaged (filtered) values
+        float avgRaw = 0;
+        float avgVoltage = 0;
+        float avgPercent = 0;
+    };
+    const Reading& getLastReading() const;
+    void printReading() const; // Print the last reading to Serial
+    unsigned long getStabilisationStart() const { return stabilisationStart; }
+    int getStabilisationTimeSec() const { return stabilisationTimeSec; }
+private:
+    ADS1115Manager* ads = nullptr;
+    ConfigManager* config = nullptr;
+    TimeManager* timeManager = nullptr;
+    static constexpr uint8_t channel = 0; // A0
+    static constexpr ADS1115Manager::Gain gain = ADS1115Manager::GAIN_TWOTHIRDS; // For 3.3V
+    Reading lastReading{};
+    unsigned long stabilisationStart = 0;
+    int stabilisationTimeSec = 10;
+    void filterAndAverage(float* rawVals, float* voltVals, float* percentVals, int count, float& avgRaw, float& avgVolt, float& avgPercent);
+};
+
+#endif // SOIL_MOISTURE_SENSOR_H

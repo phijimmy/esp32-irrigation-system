@@ -1,0 +1,109 @@
+#include "devices/BME280Device.h"
+#include "system/TimeManager.h"
+
+BME280Device::BME280Device(uint8_t addr, I2CManager* i2c, DiagnosticManager* diag)
+    : address(addr), i2cManager(i2c), diagnosticManager(diag) {}
+
+void BME280Device::setTimeManager(TimeManager* timeMgr) {
+    timeManager = timeMgr;
+}
+
+bool BME280Device::begin() {
+    if (!bme.begin(address)) {
+        if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_WARN, "BME280", "Device not found at 0x%02X", address);
+        initialized = false;
+        return false;
+    }
+    bme.setSampling(Adafruit_BME280::MODE_SLEEP, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::FILTER_X16, Adafruit_BME280::STANDBY_MS_0_5);
+    initialized = true;
+    if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_INFO, "BME280", "Initialized at 0x%02X", address);
+    return true;
+}
+
+BME280Reading BME280Device::readData() {
+    const int N = 10;
+    BME280Reading readings[N];
+    for (int i = 0; i < N; ++i) {
+        if (!initialized) {
+            if (!begin()) {
+                BME280Reading result;
+                result.valid = false;
+                return result;
+            }
+        }
+        bme.setSampling(Adafruit_BME280::MODE_FORCED, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::FILTER_X16, Adafruit_BME280::STANDBY_MS_0_5);
+        delay(100);
+        readings[i].temperature = bme.readTemperature();
+        readings[i].humidity = bme.readHumidity();
+        readings[i].pressure = bme.readPressure() / 100.0F;
+        readings[i].heatIndex = computeHeatIndex(readings[i].temperature, readings[i].humidity);
+        readings[i].dewPoint = computeDewPoint(readings[i].temperature, readings[i].humidity);
+        readings[i].timestamp = timeManager ? timeManager->getTime() : DateTime();
+        readings[i].valid = true;
+    }
+    // Store the first reading as the 'single' value
+    BME280Reading result = readings[0];
+    // Filter outliers and average
+    filterAndAverage(readings, N, result);
+    lastReading = result;
+    bme.setSampling(Adafruit_BME280::MODE_SLEEP, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::FILTER_X16, Adafruit_BME280::STANDBY_MS_0_5);
+    return result;
+}
+
+void BME280Device::filterAndAverage(const BME280Reading* readings, int count, BME280Reading& avgResult) {
+    // Simple outlier rejection: discard min/max temperature, average the rest
+    if (count <= 2) {
+        avgResult.avgTemperature = readings[0].temperature;
+        avgResult.avgHumidity = readings[0].humidity;
+        avgResult.avgPressure = readings[0].pressure;
+        avgResult.avgHeatIndex = readings[0].heatIndex;
+        avgResult.avgDewPoint = readings[0].dewPoint;
+        return;
+    }
+    int minIdx = 0, maxIdx = 0;
+    for (int i = 1; i < count; ++i) {
+        if (readings[i].temperature < readings[minIdx].temperature) minIdx = i;
+        if (readings[i].temperature > readings[maxIdx].temperature) maxIdx = i;
+    }
+    float sumT = 0, sumH = 0, sumP = 0, sumHI = 0, sumDP = 0;
+    int n = 0;
+    for (int i = 0; i < count; ++i) {
+        if (i == minIdx || i == maxIdx) continue;
+        sumT += readings[i].temperature;
+        sumH += readings[i].humidity;
+        sumP += readings[i].pressure;
+        sumHI += readings[i].heatIndex;
+        sumDP += readings[i].dewPoint;
+        ++n;
+    }
+    if (n > 0) {
+        avgResult.avgTemperature = sumT / n;
+        avgResult.avgHumidity = sumH / n;
+        avgResult.avgPressure = sumP / n;
+        avgResult.avgHeatIndex = sumHI / n;
+        avgResult.avgDewPoint = sumDP / n;
+    } else {
+        avgResult.avgTemperature = readings[0].temperature;
+        avgResult.avgHumidity = readings[0].humidity;
+        avgResult.avgPressure = readings[0].pressure;
+        avgResult.avgHeatIndex = readings[0].heatIndex;
+        avgResult.avgDewPoint = readings[0].dewPoint;
+    }
+}
+
+float BME280Device::computeHeatIndex(float t, float h) {
+    // Only valid for t >= 26C
+    if (t < 26.0f) return t;
+    // Rothfusz regression (Celsius version)
+    float hi = -8.784695 + 1.61139411 * t + 2.338549 * h - 0.14611605 * t * h
+        - 0.012308094 * t * t - 0.016424828 * h * h + 0.002211732 * t * t * h
+        + 0.00072546 * t * h * h - 0.000003582 * t * t * h * h;
+    return hi;
+}
+
+float BME280Device::computeDewPoint(float t, float h) {
+    // Magnus formula
+    const float a = 17.62, b = 243.12;
+    float gamma = (a * t) / (b + t) + log(h / 100.0f);
+    return (b * gamma) / (a - gamma);
+}

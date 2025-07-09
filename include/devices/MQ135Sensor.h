@@ -1,0 +1,56 @@
+#ifndef MQ135_SENSOR_H
+#define MQ135_SENSOR_H
+
+#include <Arduino.h>
+#include <ctime>
+#include "system/ADS1115Manager.h"
+#include "config/ConfigManager.h"
+#include "devices/RelayController.h"
+#include "system/TimeManager.h"
+
+class TimeManager;
+
+class MQ135Sensor {
+public:
+    MQ135Sensor();
+    void begin(ADS1115Manager* adsMgr, ConfigManager* configMgr, RelayController* relayCtrl);
+    void startReading(); // Activates relay, starts warmup
+    bool readyForReading() const; // True if warmup time has elapsed
+    void takeReading(); // Takes the reading, deactivates relay
+    struct Reading {
+        int16_t raw = 0;
+        float voltage = 0;
+        time_t timestamp = 0;
+        bool valid = false;
+        // Averaged (filtered) values
+        float avgRaw = 0;
+        float avgVoltage = 0;
+    };
+    const Reading& getLastReading() const;
+    bool isWarmingUp() const { return warmingUp; }
+    unsigned long getWarmupStart() const { return warmupStart; }
+    int getWarmupTimeSec() const { return warmupTimeSec; }
+    void setTimeManager(TimeManager* tm) { timeManager = tm; }
+    // Returns a qualitative air quality label based on avgVoltage
+    static const char* getAirQualityLabel(float voltage) {
+        if (voltage < 0.25f) return "Excellent";
+        if (voltage < 0.35f) return "Good";
+        if (voltage < 0.45f) return "Moderate";
+        if (voltage < 0.60f) return "Poor";
+        return "Very Poor";
+    }
+private:
+    ADS1115Manager* ads = nullptr;
+    ConfigManager* config = nullptr;
+    RelayController* relay = nullptr;
+    TimeManager* timeManager = nullptr;
+    static constexpr uint8_t channel = 1; // A1
+    static constexpr ADS1115Manager::Gain gain = ADS1115Manager::GAIN_TWOTHIRDS; // For 6V (±6.144V)
+    Reading lastReading{};
+    unsigned long warmupStart = 0;
+    int warmupTimeSec = 60;
+    bool warmingUp = false;
+    void filterAndAverage(float* rawVals, float* voltVals, int count, float& avgRaw, float& avgVolt);
+};
+
+#endif // MQ135_SENSOR_H
