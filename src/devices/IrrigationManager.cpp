@@ -1,5 +1,6 @@
 #include "devices/IrrigationManager.h"
 #include <Arduino.h>
+#include <time.h>
 
 IrrigationManager::IrrigationManager() {}
 
@@ -216,6 +217,20 @@ void IrrigationManager::update() {
                 completePrinted = true;
             }
             break;
+    }
+}
+
+void IrrigationManager::checkAndRunScheduled() {
+    if (!configManager || !timeManager) return;
+    int schedHour = configManager->getInt("irrigation_scheduled_hour", 13);
+    int schedMin = configManager->getInt("irrigation_scheduled_minute", 30);
+    time_t now = timeManager->getLocalTime().unixtime();
+    struct tm* tm_info = localtime(&now);
+    static int lastRunDay = -1;
+    if (tm_info->tm_hour == schedHour && tm_info->tm_min == schedMin && lastRunDay != tm_info->tm_yday) {
+        Serial.println("[IrrigationManager] Scheduled time reached, triggering irrigation.");
+        trigger();
+        lastRunDay = tm_info->tm_yday;
     }
 }
 

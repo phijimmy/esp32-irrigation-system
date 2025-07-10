@@ -78,36 +78,37 @@ void setup() {
     systemManager.getTimeManager().setRelayController(&relayController);
 
     // Print initial BME280 reading if available
-    BME280Device* bme = systemManager.getDeviceManager().getBME280Device();
-    if (bme) {
-        BME280Reading r = bme->readData();
-        if (r.valid) {
-            char timeStr[32] = "";
-            if (r.timestamp.isValid()) {
-                snprintf(timeStr, sizeof(timeStr), "%04d-%02d-%02d %02d:%02d:%02d", r.timestamp.year(), r.timestamp.month(), r.timestamp.day(), r.timestamp.hour(), r.timestamp.minute(), r.timestamp.second());
-            } else {
-                strcpy(timeStr, "N/A");
-            }
-            Serial.printf("[BME280] Initial reading: T=%.2fC, H=%.2f%%, P=%.2fhPa, HI=%.2fC, DP=%.2fC | avgT=%.2fC, avgH=%.2f%%, avgP=%.2fhPa, avgHI=%.2fC, avgDP=%.2fC, time=%s\n",
-                r.temperature, r.humidity, r.pressure, r.heatIndex, r.dewPoint,
-                r.avgTemperature, r.avgHumidity, r.avgPressure, r.avgHeatIndex, r.avgDewPoint, timeStr);
-        } else {
-            Serial.println("[BME280] Initial reading: not valid");
-        }
-    }
+    // BME280Device* bme = systemManager.getDeviceManager().getBME280Device();
+    // if (bme) {
+    //     BME280Reading r = bme->readData();
+    //     if (r.valid) {
+    //         char timeStr[32] = "";
+    //         if (r.timestamp.isValid()) {
+    //             snprintf(timeStr, sizeof(timeStr), "%04d-%02d-%02d %02d:%02d:%02d", r.timestamp.year(), r.timestamp.month(), r.timestamp.day(), r.timestamp.hour(), r.timestamp.minute(), r.timestamp.second());
+    //         } else {
+    //             strcpy(timeStr, "N/A");
+    //         }
+    //         Serial.printf("[BME280] Initial reading: T=%.2fC, H=%.2f%%, P=%.2fhPa, HI=%.2fC, DP=%.2fC | avgT=%.2fC, avgH=%.2f%%, avgP=%.2fhPa, avgHI=%.2fC, avgDP=%.2fC, time=%s\n",
+    //             r.temperature, r.humidity, r.pressure, r.heatIndex, r.dewPoint,
+    //             r.avgTemperature, r.avgHumidity, r.avgPressure, r.avgHeatIndex, r.avgDewPoint, timeStr);
+    //     } else {
+    //         Serial.println("[BME280] Initial reading: not valid");
+    //     }
+    // }
 }
 
 void loop() {
     systemManager.update();
     irrigationManager.update();
+    irrigationManager.checkAndRunScheduled();
     switch (sensorState) {
         case IDLE:
-            Serial.println("[SoilMoistureSensor] Reading requested, starting stabilisation...");
-            soilReadingRequested = true;
-            soilReadingTaken = false;
-            soilMoistureSensor.beginStabilisation();
-            lastStabilisationPrint = millis();
-            sensorState = SOIL_STABILISING;
+            // Serial.println("[SoilMoistureSensor] Reading requested, starting stabilisation...");
+            // soilReadingRequested = true;
+            // soilReadingTaken = false;
+            // soilMoistureSensor.beginStabilisation();
+            // lastStabilisationPrint = millis();
+            // sensorState = SOIL_STABILISING;
             break;
         case SOIL_STABILISING: {
             unsigned long now = millis();
@@ -150,8 +151,8 @@ void loop() {
                 struct tm* tm_info = localtime(&r.timestamp);
                 strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", tm_info);
                 Serial.printf("[MQ135Sensor] DEBUG: raw ADC=%d, expected for 0.4V=~2133 (GAIN_TWOTHIRDS)\n", r.raw);
-                Serial.printf("[MQ135Sensor] Reading: raw=%d, voltage=%.4f V | avgRaw=%.1f, avgVoltage=%.4f V, timestamp=%s\n",
-                    r.raw, r.voltage, r.avgRaw, r.avgVoltage, timeStr);
+                Serial.printf("[MQ135Sensor] Reading: raw=%d, voltage=%.4f V | avgRaw=%.1f, avgVoltage=%.4f V, AQI=%s, timestamp=%s\n",
+                    r.raw, r.voltage, r.avgRaw, r.avgVoltage, MQ135Sensor::getAirQualityLabel(r.avgVoltage), timeStr);
                 mq135ReadingTaken = true;
                 sensorState = MQ135_DONE;
             }
@@ -159,16 +160,16 @@ void loop() {
         }
         case MQ135_DONE:
             // Only schedule irrigation trigger once after initial MQ135_DONE
-            if (!irrigationTriggerScheduled && !irrigationTriggered) {
-                irrigationTriggerTime = millis();
-                irrigationTriggerScheduled = true;
-            }
+            // if (!irrigationTriggerScheduled && !irrigationTriggered) {
+            //     irrigationTriggerTime = millis();
+            //     irrigationTriggerScheduled = true;
+            // }
             // After 30s, trigger irrigationManager ONCE
-            if (irrigationTriggerScheduled && !irrigationTriggered && millis() - irrigationTriggerTime >= 30000) {
-                Serial.println("[IrrigationManager] Triggering irrigation readings after 30s delay.");
-                irrigationManager.trigger();
-                irrigationTriggered = true;
-            }
+            // if (irrigationTriggerScheduled && !irrigationTriggered && millis() - irrigationTriggerTime >= 30000) {
+            //     Serial.println("[IrrigationManager] Triggering irrigation readings after 30s delay.");
+            //     irrigationManager.trigger();
+            //     irrigationTriggered = true;
+            // }
             break;
     }
     // Poll INT/SQW GPIO for hardware interrupt detection

@@ -13,6 +13,7 @@ public:
     void begin(BME280Device* bme, SoilMoistureSensor* soil, MQ135Sensor* mq135, TimeManager* timeMgr);
     void trigger(); // Start the irrigation reading sequence
     void update();  // Call this in loop to process state
+    void checkAndRunScheduled(); // Check if it's time to run scheduled irrigation
     bool isRunning() const;
     bool isComplete() const;
     void reset();
