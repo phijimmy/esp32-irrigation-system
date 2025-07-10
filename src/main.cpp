@@ -29,6 +29,12 @@ bool irrigationTriggered = false;
 
 void setup() {
     systemManager.begin();
+    // Set soil power GPIO LOW at boot (redundant safety)
+    int soilPowerGpio = systemManager.getConfigManager().getInt("soil_power_gpio", 16);
+    if (soilPowerGpio >= 0) {
+        pinMode(soilPowerGpio, OUTPUT);
+        digitalWrite(soilPowerGpio, LOW);
+    }
     soilMoistureSensor.begin(&systemManager.getADS1115Manager(), &systemManager.getConfigManager(), &systemManager.getTimeManager());
     mq135Sensor.begin(&systemManager.getADS1115Manager(), &systemManager.getConfigManager(), &relayController);
     mq135Sensor.setTimeManager(&systemManager.getTimeManager());

@@ -113,7 +113,7 @@ void ConfigManager::loadDefaults() {
     cJSON_AddBoolToObject(configRoot, "auto_update_daily", true); // Auto-update alarms at midnight
     
     // Legacy string-based configs for backward compatibility
-    cJSON_AddStringToObject(configRoot, "wifi_mode", "ap"); // "ap" for Access Point, "client" for WiFi Client
+    cJSON_AddStringToObject(configRoot, "wifi_mode", "client"); // "ap" for Access Point, "client" for WiFi Client
     cJSON_AddStringToObject(configRoot, "wifi_ssid", "M1M-LS-MR-82");
     cJSON_AddStringToObject(configRoot, "wifi_pass", "BqY3#sTgKu$Ve5D2cMhAw[FnXrPz(8J7");
     cJSON_AddStringToObject(configRoot, "wifi_reconnect_interval", "60"); // seconds between reconnection attempts
@@ -177,18 +177,15 @@ void ConfigManager::loadDefaults() {
     cJSON_AddNumberToObject(soilMoisture, "dry", 11300); // 11300 = fully dry (calibrated)
     cJSON_AddItemToObject(configRoot, "soil_moisture", soilMoisture);
 
-    // Soil moisture stabilisation time (seconds)
-    cJSON_AddNumberToObject(configRoot, "soil_stabilisation_time", 10);
-
-    // MQ135 air quality sensor warmup time (seconds)
-    cJSON_AddNumberToObject(configRoot, "mq135_warmup_time", 60);
+    // Soil moisture power control GPIO (default 16)
+    cJSON_AddNumberToObject(configRoot, "soil_power_gpio", 16);
 
     // Watering config
     cJSON_AddNumberToObject(configRoot, "watering_threshold", 50.0); // percent
     cJSON_AddNumberToObject(configRoot, "watering_duration_sec", 60); // 1 minute for fast testing
     // Irrigation schedule config
-    cJSON_AddNumberToObject(configRoot, "irrigation_scheduled_hour", 13); // Default 13:00
-    cJSON_AddNumberToObject(configRoot, "irrigation_scheduled_minute", 45); // Default 13:45
+    cJSON_AddNumberToObject(configRoot, "irrigation_scheduled_hour", 14); // Set to 14:00
+    cJSON_AddNumberToObject(configRoot, "irrigation_scheduled_minute", 45); // Set to 14:45
 }
 
 void ConfigManager::mergeDefaults() {

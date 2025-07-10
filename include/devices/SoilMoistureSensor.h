@@ -9,15 +9,6 @@
 
 class SoilMoistureSensor {
 public:
-    SoilMoistureSensor();
-    void begin(ADS1115Manager* adsMgr, ConfigManager* configMgr = nullptr, TimeManager* timeMgr = nullptr);
-    int16_t readRaw();
-    float readVoltage();
-    void readBoth(int16_t& raw, float& voltage);
-    float readPercent();
-    void takeReading();
-    void beginStabilisation(); // Start stabilisation timer
-    bool readyForReading() const; // True if stabilisation time has elapsed
     struct Reading {
         int16_t raw;
         float voltage;
@@ -28,10 +19,20 @@ public:
         float avgVoltage = 0;
         float avgPercent = 0;
     };
+    SoilMoistureSensor();
+    void begin(ADS1115Manager* adsMgr, ConfigManager* configMgr = nullptr, TimeManager* timeMgr = nullptr);
+    int16_t readRaw();
+    float readVoltage();
+    void readBoth(int16_t& raw, float& voltage);
+    float readPercent();
+    void takeReading();
+    void beginStabilisation(); // Start stabilisation timer
+    bool readyForReading() const; // True if stabilisation time has elapsed
     const Reading& getLastReading() const;
     void printReading() const; // Print the last reading to Serial
     unsigned long getStabilisationStart() const { return stabilisationStart; }
     int getStabilisationTimeSec() const { return stabilisationTimeSec; }
+    void setPowerGpio(int gpio) { soilPowerGpio = gpio; }
 private:
     ADS1115Manager* ads = nullptr;
     ConfigManager* config = nullptr;
@@ -41,6 +42,7 @@ private:
     Reading lastReading{};
     unsigned long stabilisationStart = 0;
     int stabilisationTimeSec = 10;
+    int soilPowerGpio = -1;
     void filterAndAverage(float* rawVals, float* voltVals, float* percentVals, int count, float& avgRaw, float& avgVolt, float& avgPercent);
 };
 

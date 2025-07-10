@@ -13,8 +13,14 @@ void SoilMoistureSensor::begin(ADS1115Manager* adsMgr, ConfigManager* configMgr,
     if (config) {
         int t = config->getInt("soil_stabilisation_time", 10);
         if (t > 0) stabilisationTimeSec = t;
+        // Get soil power gpio from config
+        soilPowerGpio = config->getInt("soil_power_gpio", 16);
+        if (soilPowerGpio >= 0) {
+            pinMode(soilPowerGpio, OUTPUT);
+            digitalWrite(soilPowerGpio, LOW); // Ensure off at boot
+        }
     }
-    beginStabilisation();
+    // Do NOT call beginStabilisation() here!
 }
 
 void SoilMoistureSensor::printReading() const {
@@ -39,6 +45,9 @@ void SoilMoistureSensor::printReading() const {
 
 void SoilMoistureSensor::beginStabilisation() {
     stabilisationStart = millis();
+    if (soilPowerGpio >= 0) {
+        digitalWrite(soilPowerGpio, HIGH); // Power on sensor
+    }
 }
 
 bool SoilMoistureSensor::readyForReading() const {
@@ -66,6 +75,9 @@ void SoilMoistureSensor::takeReading() {
         lastReading.timestamp = dt.unixtime();
     } else {
         lastReading.timestamp = time(nullptr);
+    }
+    if (soilPowerGpio >= 0) {
+        digitalWrite(soilPowerGpio, LOW); // Power off sensor after reading
     }
 }
 
