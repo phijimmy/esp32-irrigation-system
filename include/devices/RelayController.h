@@ -21,6 +21,8 @@ public:
     uint8_t getRelayGpio(int index) const;
     void setConfigManager(ConfigManager* config) { configManager = config; }
     void setDiagnosticManager(DiagnosticManager* diag) { diagnosticManager = diag; }
+    void handleRelay2ControlInterrupt(); // New: handle GPIO 18 interrupt
+    void setupRelay2ControlGpio(); // New: setup GPIO 18 as input with pullup
 private:
     static const int RELAY_COUNT = 4;
     Relay relays[RELAY_COUNT];
@@ -28,6 +30,7 @@ private:
     ConfigManager* configManager = nullptr;
     DiagnosticManager* diagnosticManager = nullptr;
     void loadConfig();
+    int relay2ControlGpio = 18; // Default, will be loaded from config
 };
 
 #endif // RELAY_CONTROLLER_H

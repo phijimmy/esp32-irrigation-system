@@ -131,6 +131,8 @@ void ConfigManager::loadDefaults() {
     cJSON_AddBoolToObject(configRoot, "relay_active_high_1", true);
     cJSON_AddBoolToObject(configRoot, "relay_active_high_2", true);
     cJSON_AddBoolToObject(configRoot, "relay_active_high_3", true);
+    // GPIO for manual/interrupt control of relay 2
+    cJSON_AddNumberToObject(configRoot, "relay2_control_gpio", 18); // GPIO 18 for relay 2 manual control
     // Power/brownout defaults
     cJSON_AddStringToObject(configRoot, "brownout_threshold", "2.5");
     cJSON_AddStringToObject(configRoot, "cpu_speed", "160");
@@ -184,8 +186,8 @@ void ConfigManager::loadDefaults() {
     cJSON_AddNumberToObject(configRoot, "watering_threshold", 50.0); // percent
     cJSON_AddNumberToObject(configRoot, "watering_duration_sec", 60); // 1 minute for fast testing
     // Irrigation schedule config
-    cJSON_AddNumberToObject(configRoot, "irrigation_scheduled_hour", 14); // Set to 14:00
-    cJSON_AddNumberToObject(configRoot, "irrigation_scheduled_minute", 45); // Set to 14:45
+    cJSON_AddNumberToObject(configRoot, "irrigation_scheduled_hour", 16); // Set to 16:00
+    cJSON_AddNumberToObject(configRoot, "irrigation_scheduled_minute", 10); // Set to 16:10
 }
 
 void ConfigManager::mergeDefaults() {

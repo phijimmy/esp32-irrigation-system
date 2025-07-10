@@ -436,12 +436,6 @@ bool TimeManager::isWiFiConnected() {
 bool TimeManager::setAlarm1(int hour, int minute, int second, bool enabled) {
     if (!rtcFound) return false;
     
-    if (diagnosticManager) {
-        diagnosticManager->log(DiagnosticManager::LOG_INFO, "Time", 
-            "setAlarm1 called: hour=%d, minute=%d, second=%d, enabled=%s, rtcFound=%s", 
-            hour, minute, second, enabled ? "true" : "false", rtcFound ? "true" : "false");
-    }
-    
     if (enabled) {
         // Clear any existing alarm flag
         rtc.clearAlarm(1);
@@ -463,12 +457,6 @@ bool TimeManager::setAlarm1(int hour, int minute, int second, bool enabled) {
 
 bool TimeManager::setAlarm2(int hour, int minute, bool enabled) {
     if (!rtcFound) return false;
-    
-    if (diagnosticManager) {
-        diagnosticManager->log(DiagnosticManager::LOG_INFO, "Time", 
-            "setAlarm2 called: hour=%d, minute=%d, enabled=%s, rtcFound=%s", 
-            hour, minute, enabled ? "true" : "false", rtcFound ? "true" : "false");
-    }
     
     if (enabled) {
         // Clear any existing alarm flag
