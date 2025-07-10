@@ -18,6 +18,7 @@ public:
     bool isWiFiConnected() const;
     void startWiFiClient();
     void forceReconnect(); // Force WiFi reconnection
+    void startAP();
 private:
     ConfigManager* configManager = nullptr;
     DiagnosticManager* diagnosticManager = nullptr;
@@ -41,7 +42,6 @@ private:
     bool reconnectEnabled = true; // Enable automatic reconnection
     int reconnectAttempts = 0;
     int maxReconnectAttempts = 5; // Max attempts before falling back to AP
-    void startAP();
     int getConnectedClients();
     void handleWiFiDisconnection();
     void attemptReconnect();

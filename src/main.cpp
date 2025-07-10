@@ -179,5 +179,19 @@ void loop() {
         systemManager.getTimeManager().handleAlarmInterrupt();
     }
     systemManager.getTimeManager().updateRelayFromIntSqw();
+    // --- Touch sensor actions ---
+    // Only bring up AP if in AP mode, AP is not active, and touch is pressed (short press)
+    NetworkManager& netMgr = systemManager.getNetworkManager();
+    ConfigManager& cfgMgr = systemManager.getConfigManager();
+    const char* wifiMode = cfgMgr.get("wifi_mode");
+    if (touch.isTouched() && !netMgr.isAPActive() && wifiMode && strcmp(wifiMode, "ap") == 0) {
+        netMgr.startAP();
+    }
+    // Long press: reboot system
+    if (touch.isLongPressed()) {
+        Serial.println("[TouchSensor] Long press detected, rebooting system...");
+        delay(1000); // Give user feedback
+        ESP.restart();
+    }
     delay(10);
 }
