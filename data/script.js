@@ -66,6 +66,3 @@ function showError(message) {
 
 // Load system info when page loads
 window.addEventListener('DOMContentLoaded', loadSystemInfo);
-
-// Auto-refresh every 30 seconds
-setInterval(loadSystemInfo, 30000);

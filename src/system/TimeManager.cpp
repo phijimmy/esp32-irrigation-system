@@ -1,6 +1,14 @@
 #include "system/TimeManager.h"
 #include "devices/RelayController.h"
 #include <WiFi.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
+
+TimeManager::TimeManager() {
+    if (rtcMutex == nullptr) {
+        rtcMutex = xSemaphoreCreateMutex();
+    }
+}
 
 void TimeManager::begin(I2CManager* i2c, ConfigManager* config, DiagnosticManager* diag) {
     i2cManager = i2c;
@@ -178,9 +186,28 @@ void TimeManager::update() {
 }
 
 DateTime TimeManager::getTime() {
+    // Debug: log warnedInvalidRTC and this pointer
+    if (diagnosticManager) {
+        diagnosticManager->log(DiagnosticManager::LOG_DEBUG, "Time", "getTime: warnedInvalidRTC=%d, this=%p", warnedInvalidRTC, this);
+    }
+    static DateTime lastGoodTime;
     DateTime dt;
     if (rtcFound) {
+        if (rtcMutex) xSemaphoreTake(rtcMutex, portMAX_DELAY);
         dt = rtc.now();
+        if (rtcMutex) xSemaphoreGive(rtcMutex);
+        // Check for valid/sane date
+        bool valid = dt.isValid() && dt.year() >= 2000 && dt.year() < 2100 && dt.month() >= 1 && dt.month() <= 12 && dt.day() >= 1 && dt.day() <= 31;
+        if (valid) {
+            lastGoodTime = dt;
+            // Do NOT reset warnedInvalidRTC here; only set it true on first invalid
+        } else {
+            if (!warnedInvalidRTC && diagnosticManager) {
+                diagnosticManager->log(DiagnosticManager::LOG_WARN, "Time", "RTC returned invalid/corrupt date: %04d-%02d-%02d %02d:%02d:%02d (valid=%d) - using last known good time", dt.year(), dt.month(), dt.day(), dt.hour(), dt.minute(), dt.second(), dt.isValid());
+                warnedInvalidRTC = true;
+            }
+            dt = lastGoodTime;
+        }
         if (diagnosticManager) {
             diagnosticManager->log(DiagnosticManager::LOG_DEBUG, "Time", "getTime: RTC now: %04d-%02d-%02d %02d:%02d:%02d (valid=%d)",
                 dt.year(), dt.month(), dt.day(), dt.hour(), dt.minute(), dt.second(), dt.isValid());
@@ -206,7 +233,9 @@ DateTime TimeManager::getLocalTime() {
 
 void TimeManager::setTime(const DateTime& dt) {
     if (rtcFound) {
+        if (rtcMutex) xSemaphoreTake(rtcMutex, portMAX_DELAY);
         rtc.adjust(dt);
+        if (rtcMutex) xSemaphoreGive(rtcMutex);
         // Reinitialize lastDayId after time adjustment to prevent false "new day" detection
         int newDayId = dt.year() * 10000 + dt.month() * 100 + dt.day();
         if (diagnosticManager) {
@@ -705,13 +734,15 @@ int TimeManager::getCurrentDayOfWeek() {
 
 bool TimeManager::isNewDay() {
     DateTime now = getLocalTime();
+    static bool hasSeenValidDate = false;
     // Check for invalid date (e.g., RTC not set or time adjustment in progress)
     if (!now.isValid() || now.year() < 2000 || now.month() < 1 || now.month() > 12 || now.day() < 1 || now.day() > 31) {
-        if (diagnosticManager) {
+        if (diagnosticManager && hasSeenValidDate) {
             diagnosticManager->log(DiagnosticManager::LOG_WARN, "Time", "isNewDay: Invalid date detected (year=%d, month=%d, day=%d) - skipping new day check", now.year(), now.month(), now.day());
         }
         return false;
     }
+    hasSeenValidDate = true;
     // Create a unique day identifier using year, month, and day
     int currentDayId = now.year() * 10000 + now.month() * 100 + now.day();
     

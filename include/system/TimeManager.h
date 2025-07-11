@@ -9,11 +9,14 @@
 #include "system/I2CManager.h"
 #include "config/ConfigManager.h"
 #include "diagnostics/DiagnosticManager.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 
 class RelayController; // Forward declaration
 
 class TimeManager {
 public:
+    TimeManager();
     void begin(I2CManager* i2c, ConfigManager* config, DiagnosticManager* diag);
     void update();
     DateTime getTime();
@@ -79,9 +82,11 @@ private:
     bool ntpInitialSyncDone = false; // Track if initial NTP sync was completed
     int lastDayId = -1; // Track last day ID (YYYYMMDD) to detect day changes
     bool alarm1Active = false; // Track if alarm1 has triggered and we're waiting for alarm2
+    bool warnedInvalidRTC = false; // Track if invalid RTC warning has been logged this boot
     void setBuildTimeIfNeeded();
     DateTime buildTime();
     bool performNTPSync(const String& server, int timeoutMs); // Internal NTP sync method
+    SemaphoreHandle_t rtcMutex = nullptr; // Mutex for RTC/I2C access
 };
 
 #endif // TIME_MANAGER_H
