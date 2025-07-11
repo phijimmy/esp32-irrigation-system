@@ -6,6 +6,7 @@
 #include "devices/MQ135Sensor.h"
 #include "system/TimeManager.h"
 #include "config/ConfigManager.h" // Corrected include path
+#include <cJSON.h>
 
 class IrrigationManager {
 public:
@@ -27,6 +28,7 @@ private:
     TimeManager* timeManager = nullptr;
     ConfigManager* configManager = nullptr; // Add ConfigManager pointer
     RelayController* relayController = nullptr;
+    class DashboardManager* dashboardManager = nullptr; // Add DashboardManager pointer
     unsigned long stateStart = 0;
     bool completePrinted = false;
     bool wateringActive = false;
@@ -44,6 +46,7 @@ private:
     float lastAvgSoilCorrected = 0;
     float lastAvgAir = 0;
     time_t lastReadingTimestamp = 0;
+    time_t lastRunTimestamp = 0; // Track when irrigation sequence was last completed
     void startNextState(State next);
 public:
     float getLastAvgTemp() const { return lastAvgTemp; }
@@ -57,8 +60,15 @@ public:
     float getLastAvgSoilCorrected() const { return lastAvgSoilCorrected; }
     float getLastAvgAir() const { return lastAvgAir; }
     time_t getLastReadingTimestamp() const { return lastReadingTimestamp; }
+    time_t getLastRunTimestamp() const { return lastRunTimestamp; }
     void setConfigManager(ConfigManager* cfg) { configManager = cfg; } // Setter for ConfigManager
     void setRelayController(RelayController* rc) { relayController = rc; }
+    void setDashboardManager(class DashboardManager* dm) { dashboardManager = dm; } // Setter for DashboardManager
+    
+    // Status reporting methods
+    const char* getStateString() const;
+    void addStatusToJson(cJSON* parent) const;
+    void updateDashboardSensorValues(); // Update dashboard with latest sensor readings
 };
 
 #endif // IRRIGATION_MANAGER_H

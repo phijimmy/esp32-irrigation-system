@@ -11,6 +11,7 @@
 #include "devices/BME280Device.h"
 #include "devices/SoilMoistureSensor.h"
 #include "devices/MQ135Sensor.h"
+#include "devices/IrrigationManager.h"
 #include <cJSON.h>
 
 class DashboardManager {
@@ -41,6 +42,7 @@ public:
     void setBME280Device(BME280Device* bme280Dev);
     void setSoilMoistureSensor(SoilMoistureSensor* soilSensor);
     void setMQ135Sensor(MQ135Sensor* sensor);
+    void setIrrigationManager(IrrigationManager* irrigationMgr);
 private:
     TimeManager* timeManager;
     ConfigManager* configManager;
@@ -52,6 +54,7 @@ private:
     BME280Device* bme280Device = nullptr;
     SoilMoistureSensor* soilMoistureSensor = nullptr;
     MQ135Sensor* mq135Sensor = nullptr;
+    IrrigationManager* irrigationManager = nullptr;
     State state = UNINITIALIZED;
 
     // Helper to add config settings to JSON

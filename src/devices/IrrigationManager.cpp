@@ -194,6 +194,8 @@ void IrrigationManager::update() {
             }
             if (!completePrinted && !wateringActive) {
                 Serial.println("[IrrigationManager] Irrigation reading sequence complete.");
+                updateDashboardSensorValues(); // Update dashboard with latest sensor readings
+                lastRunTimestamp = time(nullptr); // Record when sequence completed
                 completePrinted = true;
             }
             break;
@@ -214,6 +216,8 @@ void IrrigationManager::update() {
             }
             if (!completePrinted && !wateringActive) {
                 Serial.println("[IrrigationManager] Water Now sequence complete.");
+                updateDashboardSensorValues(); // Update dashboard with latest sensor readings
+                lastRunTimestamp = time(nullptr); // Record when sequence completed
                 completePrinted = true;
             }
             break;
@@ -251,4 +255,107 @@ bool IrrigationManager::isComplete() const {
 void IrrigationManager::reset() {
     state = IDLE;
     completePrinted = false;
+}
+
+const char* IrrigationManager::getStateString() const {
+    switch (state) {
+        case IDLE: return "idle";
+        case START: return "starting";
+        case BME_READING: return "reading_environment";
+        case SOIL_READING: return "reading_soil";
+        case MQ135_READING: return "reading_air_quality";
+        case WATER_NOW: return "watering_manual";
+        case COMPLETE: return wateringActive ? "watering_scheduled" : "complete";
+        default: return "unknown";
+    }
+}
+
+void IrrigationManager::addStatusToJson(cJSON* parent) const {
+    if (!parent) return;
+    
+    cJSON* irrigationJson = cJSON_CreateObject();
+    
+    // Current state
+    cJSON_AddStringToObject(irrigationJson, "state", getStateString());
+    cJSON_AddBoolToObject(irrigationJson, "running", isRunning());
+    cJSON_AddBoolToObject(irrigationJson, "watering_active", wateringActive);
+    
+    // Scheduled time info
+    if (configManager) {
+        int schedHour = configManager->getInt("irrigation_scheduled_hour", 13);
+        int schedMin = configManager->getInt("irrigation_scheduled_minute", 15);
+        cJSON_AddNumberToObject(irrigationJson, "scheduled_hour", schedHour);
+        cJSON_AddNumberToObject(irrigationJson, "scheduled_minute", schedMin);
+    }
+    
+    // Watering info
+    if (wateringActive) {
+        unsigned long elapsed = (millis() - wateringStart) / 1000;
+        cJSON_AddNumberToObject(irrigationJson, "watering_elapsed_sec", elapsed);
+        cJSON_AddNumberToObject(irrigationJson, "watering_duration_sec", wateringDuration);
+    }
+    
+    // Last readings (if available)
+    if (lastReadingTimestamp > 0) {
+        cJSON* lastReadings = cJSON_CreateObject();
+        cJSON_AddNumberToObject(lastReadings, "temperature", lastAvgTemp);
+        cJSON_AddNumberToObject(lastReadings, "humidity", lastAvgHumidity);
+        cJSON_AddNumberToObject(lastReadings, "pressure", lastAvgPressure);
+        cJSON_AddNumberToObject(lastReadings, "heat_index", lastAvgHeatIndex);
+        cJSON_AddNumberToObject(lastReadings, "dew_point", lastAvgDewPoint);
+        cJSON_AddNumberToObject(lastReadings, "soil_raw", lastAvgSoilRaw);
+        cJSON_AddNumberToObject(lastReadings, "soil_voltage", lastAvgSoilVoltage);
+        cJSON_AddNumberToObject(lastReadings, "soil_percent", lastAvgSoilPercent);
+        cJSON_AddNumberToObject(lastReadings, "soil_corrected", lastAvgSoilCorrected);
+        cJSON_AddNumberToObject(lastReadings, "air_quality_voltage", lastAvgAir);
+        
+        // Format timestamp
+        char timeStr[32];
+        struct tm* tm_info = localtime(&lastReadingTimestamp);
+        strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", tm_info);
+        cJSON_AddStringToObject(lastReadings, "timestamp", timeStr);
+        
+        cJSON_AddItemToObject(irrigationJson, "last_readings", lastReadings);
+    } else {
+        cJSON_AddStringToObject(irrigationJson, "last_readings", "none");
+    }
+    
+    // Last run timestamp (when irrigation sequence was last completed)
+    if (lastRunTimestamp > 0) {
+        char runTimeStr[32];
+        struct tm* run_tm_info = localtime(&lastRunTimestamp);
+        strftime(runTimeStr, sizeof(runTimeStr), "%Y-%m-%d %H:%M:%S", run_tm_info);
+        cJSON_AddStringToObject(irrigationJson, "last_run_time", runTimeStr);
+    } else {
+        cJSON_AddStringToObject(irrigationJson, "last_run_time", "never");
+    }
+    
+    // Watering threshold info
+    if (configManager) {
+        float threshold = static_cast<float>(configManager->getInt("watering_threshold", 50));
+        cJSON_AddNumberToObject(irrigationJson, "watering_threshold", threshold);
+    }
+    
+    cJSON_AddItemToObject(parent, "irrigation", irrigationJson);
+}
+
+void IrrigationManager::updateDashboardSensorValues() {
+    if (!dashboardManager) return;
+    
+    // Update the dashboard's sensor devices with our latest readings
+    // This ensures the dashboard shows the most recent data from our irrigation cycle
+    
+    // The dashboard already has references to the actual sensor objects,
+    // so we don't need to push specific values - the sensors themselves
+    // contain the latest readings that the dashboard will use.
+    
+    // However, we can trigger the sensors to update their internal state
+    // if they have methods to do so, or we could add a method to force
+    // the dashboard to refresh its cached values.
+    
+    // For now, the dashboard will automatically pick up the latest readings
+    // from the sensor objects when getStatusJson() is called, since we're
+    // using the same sensor instances.
+    
+    Serial.println("[IrrigationManager] Updated dashboard with latest sensor values");
 }

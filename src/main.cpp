@@ -136,6 +136,8 @@ void setup() {
     );
     dashboard.setSoilMoistureSensor(&soilMoistureSensor);
     dashboard.setMQ135Sensor(&mq135Sensor);
+    dashboard.setIrrigationManager(&irrigationManager);
+    irrigationManager.setDashboardManager(&dashboard); // Connect irrigation manager to dashboard
     dashboard.begin();
     Serial.println("[DashboardManager] JSON status:");
     Serial.println(dashboard.getStatusString());

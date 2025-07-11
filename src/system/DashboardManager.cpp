@@ -89,6 +89,10 @@ void DashboardManager::setMQ135Sensor(MQ135Sensor* sensor) {
     mq135Sensor = sensor;
 }
 
+void DashboardManager::setIrrigationManager(IrrigationManager* irrigationMgr) {
+    irrigationManager = irrigationMgr;
+}
+
 cJSON* DashboardManager::getStatusJson() {
     cJSON* root = cJSON_CreateObject();
     // Add DashboardManager state
@@ -238,6 +242,18 @@ cJSON* DashboardManager::getStatusJson() {
         }
     }
     cJSON_AddItemToObject(root, "mq135", mq135Json);
+    
+    // Add irrigation status
+    if (irrigationManager) {
+        irrigationManager->addStatusToJson(root);
+    } else {
+        cJSON* irrigationJson = cJSON_CreateObject();
+        cJSON_AddStringToObject(irrigationJson, "state", "not_initialized");
+        cJSON_AddBoolToObject(irrigationJson, "running", false);
+        cJSON_AddStringToObject(irrigationJson, "last_readings", "none");
+        cJSON_AddItemToObject(root, "irrigation", irrigationJson);
+    }
+    
     // Add config settings
     addConfigSettingsToJson(root);
     // Add system info if available
