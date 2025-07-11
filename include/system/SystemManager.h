@@ -34,6 +34,7 @@ public:
     cJSON* getSystemInfoJson(); // Returns system info as a cJSON object
     cJSON* getFileSystemInfoJson(); // Returns file system info as a cJSON object
     cJSON* getHealthJson(); // Returns health info as a cJSON object
+    cJSON* getI2CInfoJson(); // Returns I2C info as a cJSON object
 
 private:
     void initHardware();

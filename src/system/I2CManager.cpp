@@ -100,3 +100,26 @@ uint8_t I2CManager::requestFrom(uint8_t address, uint8_t quantity) {
 int I2CManager::read() {
     return Wire.read();
 }
+
+cJSON* I2CManager::getI2CInfoJson() const {
+    cJSON* info = cJSON_CreateObject();
+    cJSON_AddNumberToObject(info, "sda_pin", sdaPin);
+    cJSON_AddNumberToObject(info, "scl_pin", sclPin);
+    cJSON* devices = cJSON_CreateArray();
+    for (uint8_t addr : detectedDevices) {
+        cJSON* dev = cJSON_CreateObject();
+        char addrStr[6];
+        snprintf(addrStr, sizeof(addrStr), "0x%02X", addr);
+        cJSON_AddStringToObject(dev, "address", addrStr);
+        // Map known addresses to device names
+        const char* name = "Unknown";
+        if (addr == 0x76 || addr == 0x77) name = "BME280";
+        else if (addr == 0x68) name = "DS3231";
+        else if (addr == 0x48) name = "ADS1115";
+        else if (addr == 0x57) name = "DS3231_ALARM";
+        cJSON_AddStringToObject(dev, "name", name);
+        cJSON_AddItemToArray(devices, dev);
+    }
+    cJSON_AddItemToObject(info, "devices", devices);
+    return info;
+}

@@ -26,6 +26,7 @@ public:
     int getSclPin() const { return sclPin; }
     const std::vector<uint8_t>& getDetectedDevices() const { return detectedDevices; }
     const std::vector<std::unique_ptr<BME280Device>>& getBME280Devices() const { return bme280Devices; }
+    cJSON* getI2CInfoJson() const; // Returns I2C info as a cJSON object
 
     // Wire-like API for compatibility with device drivers
     void beginTransmission(uint8_t address);

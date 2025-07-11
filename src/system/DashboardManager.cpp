@@ -44,6 +44,8 @@ cJSON* DashboardManager::getStatusJson() {
         cJSON_AddItemToObject(root, "filesystem", fsInfo);
         cJSON* healthInfo = systemManager->getHealthJson();
         cJSON_AddItemToObject(root, "health", healthInfo);
+        cJSON* i2cInfo = systemManager->getI2CInfoJson();
+        cJSON_AddItemToObject(root, "i2c", i2cInfo);
     }
     return root;
 }

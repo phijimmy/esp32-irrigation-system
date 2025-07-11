@@ -120,3 +120,7 @@ cJSON* SystemManager::getFileSystemInfoJson() {
 cJSON* SystemManager::getHealthJson() {
     return healthManager.getHealthJson();
 }
+
+cJSON* SystemManager::getI2CInfoJson() {
+    return i2cManager.getI2CInfoJson();
+}
