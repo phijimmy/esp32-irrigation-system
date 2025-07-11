@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 IoT System</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ESP32 IoT System</h1>
+            <p>System Information Dashboard</p>
+        </div>
+        
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">ℹ️</div>
+                    <div class="card-title">Device Information</div>
+                </div>
+                <div class="card-content">
+                    <div id="device-info" class="loading">Loading device information...</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon time-icon">🕐</div>
+                    <div class="card-title">System Time</div>
+                </div>
+                <div class="card-content">
+                    <div id="system-time" class="loading">Loading system time...</div>
+                </div>
+            </div>
+        </div>
+        
+        <button class="refresh-btn" onclick="loadSystemInfo()">🔄 Refresh Data</button>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html>

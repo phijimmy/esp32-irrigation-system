@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #include <FS.h>
-#include <SPIFFS.h>
+#include <LittleFS.h>
 #include <cJSON.h> // Include cJSON library for JSON handling
 
 class DiagnosticManager; // Forward declaration

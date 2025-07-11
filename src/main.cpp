@@ -7,6 +7,7 @@
 #include "devices/MQ135Sensor.h"
 #include "devices/IrrigationManager.h"
 #include "system/DashboardManager.h"
+#include "system/WebServerManager.h"
 
 SystemManager systemManager;
 LedDevice led;
@@ -24,6 +25,7 @@ unsigned long mq135LastProgressPrint = 0;
 enum SensorState { IDLE, SOIL_STABILISING, SOIL_DONE, MQ135_WARMUP, MQ135_DONE };
 SensorState sensorState = IDLE;
 IrrigationManager irrigationManager;
+WebServerManager* webServerManager = nullptr;
 unsigned long irrigationTriggerTime = 0;
 bool irrigationTriggerScheduled = false;
 bool irrigationTriggered = false;
@@ -141,6 +143,10 @@ void setup() {
     dashboard.begin();
     Serial.println("[DashboardManager] JSON status:");
     Serial.println(dashboard.getStatusString());
+    
+    // Initialize WebServer after dashboard is ready
+    webServerManager = new WebServerManager(&dashboard, &systemManager.getDiagnosticManager());
+    webServerManager->begin();
 }
 
 void loop() {

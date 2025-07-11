@@ -3,16 +3,16 @@
 
 bool FileSystemManager::begin(DiagnosticManager* diag) {
     diagnosticManager = diag;
-    if (!SPIFFS.begin(false)) {
-        if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_WARN, "FS", "SPIFFS Mount Failed, formatting...");
-        if (!SPIFFS.format() || !SPIFFS.begin(true)) {
-            if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_ERROR, "FS", "SPIFFS format or remount failed");
+    if (!LittleFS.begin(false)) {
+        if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_WARN, "FS", "LittleFS Mount Failed, formatting...");
+        if (!LittleFS.format() || !LittleFS.begin(true)) {
+            if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_ERROR, "FS", "LittleFS format or remount failed");
             return false;
         }
-        if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_INFO, "FS", "SPIFFS formatted and mounted successfully");
+        if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_INFO, "FS", "LittleFS formatted and mounted successfully");
         return true;
     }
-    if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_INFO, "FS", "SPIFFS Mounted Successfully");
+    if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_INFO, "FS", "LittleFS Mounted Successfully");
     return true;
 }
 
@@ -21,15 +21,15 @@ void FileSystemManager::setDiagnosticManager(DiagnosticManager* diag) {
 }
 
 bool FileSystemManager::format() {
-    return SPIFFS.format();
+    return LittleFS.format();
 }
 
 bool FileSystemManager::exists(const char* path) {
-    return SPIFFS.exists(path);
+    return LittleFS.exists(path);
 }
 
 String FileSystemManager::readFile(const char* path) {
-    File file = SPIFFS.open(path, FILE_READ);
+    File file = LittleFS.open(path, FILE_READ);
     if (!file) {
         if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_ERROR, "FS", "Failed to open file for reading: %s", path);
         return String();
@@ -40,7 +40,7 @@ String FileSystemManager::readFile(const char* path) {
 }
 
 bool FileSystemManager::writeFile(const char* path, const String& data) {
-    File file = SPIFFS.open(path, FILE_WRITE);
+    File file = LittleFS.open(path, FILE_WRITE);
     if (!file) {
         if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_ERROR, "FS", "Failed to open file for writing: %s", path);
         return false;
@@ -51,13 +51,13 @@ bool FileSystemManager::writeFile(const char* path, const String& data) {
 }
 
 bool FileSystemManager::removeFile(const char* path) {
-    return SPIFFS.remove(path);
+    return LittleFS.remove(path);
 }
 
 cJSON* FileSystemManager::getFileSystemInfoJson() {
     cJSON* info = cJSON_CreateObject();
-    size_t total = SPIFFS.totalBytes();
-    size_t used = SPIFFS.usedBytes();
+    size_t total = LittleFS.totalBytes();
+    size_t used = LittleFS.usedBytes();
     cJSON_AddNumberToObject(info, "total_bytes", (double)total);
     cJSON_AddNumberToObject(info, "used_bytes", (double)used);
     cJSON_AddNumberToObject(info, "free_bytes", (double)(total - used));
