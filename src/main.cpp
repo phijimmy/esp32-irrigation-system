@@ -6,6 +6,7 @@
 #include "devices/SoilMoistureSensor.h"
 #include "devices/MQ135Sensor.h"
 #include "devices/IrrigationManager.h"
+#include "system/DashboardManager.h"
 
 SystemManager systemManager;
 LedDevice led;
@@ -26,6 +27,7 @@ IrrigationManager irrigationManager;
 unsigned long irrigationTriggerTime = 0;
 bool irrigationTriggerScheduled = false;
 bool irrigationTriggered = false;
+DashboardManager dashboard(&systemManager.getTimeManager(), &systemManager.getConfigManager(), &systemManager.getDiagnosticManager());
 
 void setup() {
     systemManager.begin();
@@ -94,13 +96,17 @@ void setup() {
     //         } else {
     //             strcpy(timeStr, "N/A");
     //         }
-    //         Serial.printf("[BME280] Initial reading: T=%.2fC, H=%.2f%%, P=%.2fhPa, HI=%.2fC, DP=%.2fC | avgT=%.2fC, avgH=%.2f%%, avgP=%.2fhPa, avgHI=%.2fC, avgDP=%.2fC, time=%s\n",
+    //         Serial.printf("[BME280] Initial reading: T=%.2fC, H=%.2%%, P=%.2fhPa, HI=%.2fC, DP=%.2fC | avgT=%.2fC, avgH=%.2%%, avgP=%.2fhPa, avgHI=%.2fC, avgDP=%.2fC, time=%s\n",
     //             r.temperature, r.humidity, r.pressure, r.heatIndex, r.dewPoint,
     //             r.avgTemperature, r.avgHumidity, r.avgPressure, r.avgHeatIndex, r.avgDewPoint, timeStr);
     //     } else {
     //         Serial.println("[BME280] Initial reading: not valid");
     //     }
     // }
+    dashboard.begin();
+    // Print dashboard status to serial as a demo
+    Serial.println("[DashboardManager] JSON status:");
+    Serial.println(dashboard.getStatusString());
 }
 
 void loop() {
