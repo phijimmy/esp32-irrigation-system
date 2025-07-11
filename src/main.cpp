@@ -27,15 +27,6 @@ IrrigationManager irrigationManager;
 unsigned long irrigationTriggerTime = 0;
 bool irrigationTriggerScheduled = false;
 bool irrigationTriggered = false;
-DashboardManager dashboard(
-    &systemManager.getTimeManager(),
-    &systemManager.getConfigManager(),
-    &systemManager, // Pass SystemManager pointer
-    &systemManager.getDiagnosticManager(),
-    &led, // Pass LedDevice pointer
-    &relayController, // Pass RelayController pointer
-    &touch // Pass TouchSensorDevice pointer
-);
 
 void setup() {
     systemManager.begin();
@@ -111,11 +102,19 @@ void setup() {
     //         Serial.println("[BME280] Initial reading: not valid");
     //     }
     // }
-    dashboard.setLedDevice(&led);
-    dashboard.setRelayController(&relayController);
-    dashboard.setTouchSensorDevice(&touch);
+    
+    // Now create and initialize DashboardManager LAST
+    static DashboardManager dashboard(
+        &systemManager.getTimeManager(),
+        &systemManager.getConfigManager(),
+        &systemManager, // Pass SystemManager pointer
+        &systemManager.getDiagnosticManager(),
+        &led, // Pass LedDevice pointer
+        &relayController, // Pass RelayController pointer
+        &touch, // Pass TouchSensorDevice pointer
+        systemManager.getDeviceManager().getBME280Device() // Pass BME280Device pointer
+    );
     dashboard.begin();
-    // Print dashboard status to serial as a demo
     Serial.println("[DashboardManager] JSON status:");
     Serial.println(dashboard.getStatusString());
 }
@@ -124,6 +123,28 @@ void loop() {
     systemManager.update();
     irrigationManager.update();
     irrigationManager.checkAndRunScheduled();
+    // --- BME280 hourly reading logic ---
+    static int lastBmeHour = -1;
+    BME280Device* bme = systemManager.getDeviceManager().getBME280Device();
+    TimeManager& timeMgr = systemManager.getTimeManager();
+    DateTime now = timeMgr.getTime();
+    if (bme && now.isValid() && now.minute() == 0 && now.second() == 0 && now.hour() != lastBmeHour) {
+        BME280Reading r = bme->readData();
+        lastBmeHour = now.hour();
+        if (r.valid) {
+            char timeStr[32] = "";
+            if (r.timestamp.isValid()) {
+                snprintf(timeStr, sizeof(timeStr), "%04d-%02d-%02d %02d:%02d:%02d", r.timestamp.year(), r.timestamp.month(), r.timestamp.day(), r.timestamp.hour(), r.timestamp.minute(), r.timestamp.second());
+            } else {
+                strcpy(timeStr, "N/A");
+            }
+            Serial.printf("[BME280] Hourly reading: T=%.2fC, H=%.2f%%, P=%.2fhPa, HI=%.2fC, DP=%.2fC | avgT=%.2fC, avgH=%.2f%%, avgP=%.2fhPa, avgHI=%.2fC, avgDP=%.2fC, time=%s\n",
+                r.temperature, r.humidity, r.pressure, r.heatIndex, r.dewPoint,
+                r.avgTemperature, r.avgHumidity, r.avgPressure, r.avgHeatIndex, r.avgDewPoint, timeStr);
+        } else {
+            Serial.println("[BME280] Hourly reading: not valid");
+        }
+    }
     switch (sensorState) {
         case IDLE:
             // Serial.println("[SoilMoistureSensor] Reading requested, starting stabilisation...");

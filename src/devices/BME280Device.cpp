@@ -9,18 +9,33 @@ void BME280Device::setTimeManager(TimeManager* timeMgr) {
 }
 
 bool BME280Device::begin() {
+    state = READING;
     if (!bme.begin(address)) {
         if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_WARN, "BME280", "Device not found at 0x%02X", address);
         initialized = false;
+        state = ERROR;
+        lastError = "Device not found";
         return false;
     }
     bme.setSampling(Adafruit_BME280::MODE_SLEEP, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::FILTER_X16, Adafruit_BME280::STANDBY_MS_0_5);
     initialized = true;
+    state = READY;
     if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_INFO, "BME280", "Initialized at 0x%02X", address);
+    // Take a full set of readings after initialization
+    readData();
+    if (diagnosticManager) {
+        diagnosticManager->log(DiagnosticManager::LOG_INFO, "BME280", "Initial reading: T=%.2fC, H=%.2f%%, P=%.2fhPa, HI=%.2fC, DP=%.2fC, ts=%04d-%02d-%02d %02d:%02d:%02d", 
+            lastReading.temperature, lastReading.humidity, lastReading.pressure, lastReading.heatIndex, lastReading.dewPoint,
+            lastReading.timestamp.year(), lastReading.timestamp.month(), lastReading.timestamp.day(),
+            lastReading.timestamp.hour(), lastReading.timestamp.minute(), lastReading.timestamp.second());
+        diagnosticManager->log(DiagnosticManager::LOG_INFO, "BME280", "Averaged: T=%.2fC, H=%.2f%%, P=%.2fhPa, HI=%.2fC, DP=%.2fC", 
+            lastReading.avgTemperature, lastReading.avgHumidity, lastReading.avgPressure, lastReading.avgHeatIndex, lastReading.avgDewPoint);
+    }
     return true;
 }
 
 BME280Reading BME280Device::readData() {
+    state = UPDATING;
     const int N = 10;
     BME280Reading readings[N];
     for (int i = 0; i < N; ++i) {
@@ -28,6 +43,8 @@ BME280Reading BME280Device::readData() {
             if (!begin()) {
                 BME280Reading result;
                 result.valid = false;
+                state = ERROR;
+                lastError = "Not initialized";
                 return result;
             }
         }
@@ -47,6 +64,7 @@ BME280Reading BME280Device::readData() {
     filterAndAverage(readings, N, result);
     lastReading = result;
     bme.setSampling(Adafruit_BME280::MODE_SLEEP, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::FILTER_X16, Adafruit_BME280::STANDBY_MS_0_5);
+    state = READY;
     return result;
 }
 

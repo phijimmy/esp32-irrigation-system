@@ -4,11 +4,31 @@
 #include "devices/LedDevice.h"
 #include "devices/RelayController.h"
 #include "devices/TouchSensorDevice.h"
+#include "devices/BME280Device.h"
 
-DashboardManager::DashboardManager(TimeManager* timeMgr, ConfigManager* configMgr, SystemManager* sysMgr, DiagnosticManager* diagMgr, LedDevice* ledDev, RelayController* relayCtrl, TouchSensorDevice* touchDev)
-    : timeManager(timeMgr), configManager(configMgr), systemManager(sysMgr), diagnosticManager(diagMgr), ledDevice(ledDev), relayController(relayCtrl), touchSensorDevice(touchDev) {}
+// Add DashboardManager state enum and member
+enum State {
+    UNINITIALIZED,
+    INITIALIZED,
+    ERROR,
+    UPDATING
+};
+
+static const char* stateToString(State s) {
+    switch (s) {
+        case UNINITIALIZED: return "uninitialized";
+        case INITIALIZED: return "initialized";
+        case ERROR: return "error";
+        case UPDATING: return "updating";
+        default: return "unknown";
+    }
+}
+
+DashboardManager::DashboardManager(TimeManager* timeMgr, ConfigManager* configMgr, SystemManager* sysMgr, DiagnosticManager* diagMgr, LedDevice* ledDev, RelayController* relayCtrl, TouchSensorDevice* touchDev, BME280Device* bme280Dev)
+    : timeManager(timeMgr), configManager(configMgr), systemManager(sysMgr), diagnosticManager(diagMgr), ledDevice(ledDev), relayController(relayCtrl), touchSensorDevice(touchDev), bme280Device(bme280Dev), state(UNINITIALIZED) {}
 
 void DashboardManager::begin() {
+    state = INITIALIZED;
     if (diagnosticManager) {
         diagnosticManager->log(DiagnosticManager::LOG_INFO, "DashboardManager", "DashboardManager initialized");
     }
@@ -35,8 +55,14 @@ void DashboardManager::setTouchSensorDevice(TouchSensorDevice* touchDev) {
     touchSensorDevice = touchDev;
 }
 
+void DashboardManager::setBME280Device(BME280Device* bme280Dev) {
+    bme280Device = bme280Dev;
+}
+
 cJSON* DashboardManager::getStatusJson() {
     cJSON* root = cJSON_CreateObject();
+    // Add DashboardManager state
+    cJSON_AddStringToObject(root, "dashboard_state", stateToString(state));
     if (!timeManager) return root;
     DateTime now = timeManager->getLocalTime();
     char iso8601[25];
@@ -49,6 +75,44 @@ cJSON* DashboardManager::getStatusJson() {
     // Human-readable time
     String timeStr = timeManager->getCurrentTimeString();
     cJSON_AddStringToObject(root, "time_human", timeStr.c_str());
+    // Always add BME280 state
+    cJSON* bmeJson = cJSON_CreateObject();
+    if (bme280Device) {
+        char addrStr[6];
+        snprintf(addrStr, sizeof(addrStr), "0x%02X", bme280Device->getAddress());
+        cJSON_AddStringToObject(bmeJson, "address", addrStr);
+        cJSON_AddStringToObject(bmeJson, "state", BME280Device::stateToString(bme280Device->getState()));
+        cJSON_AddBoolToObject(bmeJson, "initialized", bme280Device->getState() == BME280Device::READY);
+        cJSON_AddStringToObject(bmeJson, "last_error", bme280Device->getLastError().c_str());
+        // Add last reading (raw and averaged)
+        const BME280Reading& r = bme280Device->getLastReading();
+        cJSON* readingJson = cJSON_CreateObject();
+        cJSON_AddNumberToObject(readingJson, "temperature", r.temperature);
+        cJSON_AddNumberToObject(readingJson, "humidity", r.humidity);
+        cJSON_AddNumberToObject(readingJson, "pressure", r.pressure);
+        cJSON_AddNumberToObject(readingJson, "heat_index", r.heatIndex);
+        cJSON_AddNumberToObject(readingJson, "dew_point", r.dewPoint);
+        cJSON_AddBoolToObject(readingJson, "valid", r.valid);
+        cJSON_AddNumberToObject(readingJson, "avg_temperature", r.avgTemperature);
+        cJSON_AddNumberToObject(readingJson, "avg_humidity", r.avgHumidity);
+        cJSON_AddNumberToObject(readingJson, "avg_pressure", r.avgPressure);
+        cJSON_AddNumberToObject(readingJson, "avg_heat_index", r.avgHeatIndex);
+        cJSON_AddNumberToObject(readingJson, "avg_dew_point", r.avgDewPoint);
+        char tsStr[32] = "";
+        if (r.timestamp.isValid()) {
+            snprintf(tsStr, sizeof(tsStr), "%04d-%02d-%02d %02d:%02d:%02d", r.timestamp.year(), r.timestamp.month(), r.timestamp.day(), r.timestamp.hour(), r.timestamp.minute(), r.timestamp.second());
+        } else {
+            strcpy(tsStr, "N/A");
+        }
+        cJSON_AddStringToObject(readingJson, "timestamp", tsStr);
+        cJSON_AddItemToObject(bmeJson, "last_reading", readingJson);
+    } else {
+        cJSON_AddStringToObject(bmeJson, "address", "none");
+        cJSON_AddStringToObject(bmeJson, "state", "not_present");
+        cJSON_AddBoolToObject(bmeJson, "initialized", false);
+        cJSON_AddStringToObject(bmeJson, "last_error", "not available");
+    }
+    cJSON_AddItemToObject(root, "bme280", bmeJson);
     // Add LED state if available
     if (ledDevice) {
         cJSON* ledJson = cJSON_CreateObject();

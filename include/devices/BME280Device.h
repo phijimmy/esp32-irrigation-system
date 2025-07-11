@@ -27,12 +27,25 @@ struct BME280Reading {
 class TimeManager; // Forward declaration
 class BME280Device {
 public:
+    enum State { UNINITIALIZED, READY, READING, UPDATING, ERROR };
+    static const char* stateToString(State s) {
+        switch (s) {
+            case UNINITIALIZED: return "uninitialized";
+            case READY: return "ready";
+            case READING: return "reading";
+            case UPDATING: return "updating";
+            case ERROR: return "error";
+            default: return "unknown";
+        }
+    }
     BME280Device(uint8_t address, I2CManager* i2c, DiagnosticManager* diag);
     void setTimeManager(TimeManager* timeMgr);
     bool begin();
     BME280Reading readData();
     const BME280Reading& getLastReading() const { return lastReading; }
     uint8_t getAddress() const { return address; }
+    State getState() const { return state; }
+    const String& getLastError() const { return lastError; }
 private:
     uint8_t address;
     I2CManager* i2cManager;
@@ -41,6 +54,8 @@ private:
     Adafruit_BME280 bme;
     bool initialized = false;
     BME280Reading lastReading; // Store the last reading
+    State state = UNINITIALIZED;
+    String lastError;
     float computeHeatIndex(float t, float h);
     float computeDewPoint(float t, float h);
     void filterAndAverage(const BME280Reading* readings, int count, BME280Reading& avgResult);
