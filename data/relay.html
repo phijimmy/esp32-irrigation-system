@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relay Status</title>
+    <link rel="stylesheet" href="style.css">
+    <script defer src="relay.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Relay Status</h1>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="sensors.html">Sensors</a>
+            <a href="relay.html" class="active">Relays</a>
+        </nav>
+    </header>
+    <main>
+        <section class="card">
+            <h2>Current Relay States</h2>
+            <table id="relay-table">
+                <thead>
+                    <tr>
+                        <th>Relay</th>
+                        <th>GPIO</th>
+                        <th>State</th>
+                        <th>Mode</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Populated by relay.js -->
+                </tbody>
+            </table>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2025 ESP32 IoT Dashboard</p>
+    </footer>
+</body>
+</html>

@@ -42,6 +42,12 @@ void WebServerManager::begin() {
     server->on("/sensors.html", HTTP_GET, [this](AsyncWebServerRequest* request) {
         handleStaticFile(request);
     });
+    server->on("/relay.html", HTTP_GET, [this](AsyncWebServerRequest* request) {
+        handleStaticFile(request);
+    });
+    server->on("/relay.js", HTTP_GET, [this](AsyncWebServerRequest* request) {
+        handleStaticFile(request);
+    });
     
     server->onNotFound([this](AsyncWebServerRequest* request) {
         handleNotFound(request);
