@@ -116,3 +116,7 @@ cJSON* SystemManager::getSystemInfoJson() {
 cJSON* SystemManager::getFileSystemInfoJson() {
     return fileSystemManager.getFileSystemInfoJson();
 }
+
+cJSON* SystemManager::getHealthJson() {
+    return healthManager.getHealthJson();
+}

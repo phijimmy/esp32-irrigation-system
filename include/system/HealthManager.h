@@ -13,6 +13,7 @@ public:
     bool isSubsystemHealthy(const char* name) const;
     void setSubsystemHealth(const char* name, bool healthy);
     void runAllChecks();
+    cJSON* getHealthJson() const;
 private:
     DiagnosticManager* diagnosticManager = nullptr;
     ConfigManager* configManager = nullptr;

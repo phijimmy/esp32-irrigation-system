@@ -60,3 +60,12 @@ void HealthManager::setSubsystemHealth(const char* name, bool healthy) {
         ++subsystemCount;
     }
 }
+
+cJSON* HealthManager::getHealthJson() const {
+    cJSON* health = cJSON_CreateObject();
+    for (int i = 0; i < subsystemCount; ++i) {
+        cJSON_AddBoolToObject(health, subsystems[i].name.c_str(), subsystems[i].healthy);
+    }
+    cJSON_AddBoolToObject(health, "overall", overallHealth);
+    return health;
+}

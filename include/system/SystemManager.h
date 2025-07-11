@@ -33,6 +33,7 @@ public:
     ADS1115Manager& getADS1115Manager();
     cJSON* getSystemInfoJson(); // Returns system info as a cJSON object
     cJSON* getFileSystemInfoJson(); // Returns file system info as a cJSON object
+    cJSON* getHealthJson(); // Returns health info as a cJSON object
 
 private:
     void initHardware();

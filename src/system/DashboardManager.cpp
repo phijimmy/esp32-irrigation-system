@@ -42,6 +42,8 @@ cJSON* DashboardManager::getStatusJson() {
         cJSON_AddItemToObject(root, "system", sysInfo);
         cJSON* fsInfo = systemManager->getFileSystemInfoJson();
         cJSON_AddItemToObject(root, "filesystem", fsInfo);
+        cJSON* healthInfo = systemManager->getHealthJson();
+        cJSON_AddItemToObject(root, "health", healthInfo);
     }
     return root;
 }
