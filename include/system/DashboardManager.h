@@ -10,6 +10,7 @@
 #include "devices/TouchSensorDevice.h"
 #include "devices/BME280Device.h"
 #include "devices/SoilMoistureSensor.h"
+#include "devices/MQ135Sensor.h"
 #include <cJSON.h>
 
 class DashboardManager {
@@ -39,6 +40,7 @@ public:
     void setTouchSensorDevice(TouchSensorDevice* touchDev);
     void setBME280Device(BME280Device* bme280Dev);
     void setSoilMoistureSensor(SoilMoistureSensor* soilSensor);
+    void setMQ135Sensor(MQ135Sensor* sensor);
 private:
     TimeManager* timeManager;
     ConfigManager* configManager;
@@ -49,6 +51,7 @@ private:
     TouchSensorDevice* touchSensorDevice = nullptr;
     BME280Device* bme280Device = nullptr;
     SoilMoistureSensor* soilMoistureSensor = nullptr;
+    MQ135Sensor* mq135Sensor = nullptr;
     State state = UNINITIALIZED;
 
     // Helper to add config settings to JSON

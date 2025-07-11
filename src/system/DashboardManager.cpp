@@ -6,6 +6,7 @@
 #include "devices/TouchSensorDevice.h"
 #include "devices/BME280Device.h"
 #include "devices/SoilMoistureSensor.h"
+#include "devices/MQ135Sensor.h"
 
 // Add DashboardManager state enum and member
 enum State {
@@ -29,6 +30,26 @@ DashboardManager::DashboardManager(TimeManager* timeMgr, ConfigManager* configMg
     : timeManager(timeMgr), configManager(configMgr), systemManager(sysMgr), diagnosticManager(diagMgr), ledDevice(ledDev), relayController(relayCtrl), touchSensorDevice(touchDev), bme280Device(bme280Dev), state(UNINITIALIZED) {}
 
 void DashboardManager::begin() {
+    // Robustly ensure MQ135Sensor is set and ready before initializing dashboard
+    if (!mq135Sensor) {
+        state = ERROR;
+        if (diagnosticManager) {
+            diagnosticManager->log(DiagnosticManager::LOG_ERROR, "DashboardManager", "MQ135Sensor pointer not set before DashboardManager::begin()!");
+        }
+        return;
+    }
+    unsigned long start = millis();
+    // Wait up to 2 minutes for sensor to finish warming up and have a valid reading
+    while (mq135Sensor->isWarmingUp() || mq135Sensor->getLastReading().raw == 0) {
+        delay(100);
+        if (millis() - start > 120000) {
+            state = ERROR;
+            if (diagnosticManager) {
+                diagnosticManager->log(DiagnosticManager::LOG_ERROR, "DashboardManager", "Timeout waiting for MQ135Sensor to finish warmup/reading!");
+            }
+            return;
+        }
+    }
     state = INITIALIZED;
     if (diagnosticManager) {
         diagnosticManager->log(DiagnosticManager::LOG_INFO, "DashboardManager", "DashboardManager initialized");
@@ -62,6 +83,10 @@ void DashboardManager::setBME280Device(BME280Device* bme280Dev) {
 
 void DashboardManager::setSoilMoistureSensor(SoilMoistureSensor* soilSensor) {
     soilMoistureSensor = soilSensor;
+}
+
+void DashboardManager::setMQ135Sensor(MQ135Sensor* sensor) {
+    mq135Sensor = sensor;
 }
 
 cJSON* DashboardManager::getStatusJson() {
@@ -177,6 +202,42 @@ cJSON* DashboardManager::getStatusJson() {
         cJSON_AddStringToObject(soilJson, "timestamp", tsStr);
         cJSON_AddItemToObject(root, "soil_moisture", soilJson);
     }
+    // Add MQ135 sensor state and last reading
+    // Always output the mq135 object, and log an error if not set
+    cJSON* mq135Json = cJSON_CreateObject();
+    if (mq135Sensor) {
+        // Always output the real sensor data, even if DashboardManager is in error state
+        cJSON_AddStringToObject(mq135Json, "state", mq135Sensor->stateToString());
+        cJSON_AddBoolToObject(mq135Json, "warming_up", mq135Sensor->isWarmingUp());
+        cJSON_AddNumberToObject(mq135Json, "warmup_time_sec", mq135Sensor->getWarmupTimeSec());
+        int elapsed = mq135Sensor->isWarmingUp() ? (millis() - mq135Sensor->getWarmupStart()) / 1000 : 0;
+        cJSON_AddNumberToObject(mq135Json, "warmup_elapsed_sec", elapsed);
+        const MQ135Sensor::Reading& r = mq135Sensor->getLastReading();
+        cJSON_AddNumberToObject(mq135Json, "raw", r.raw);
+        cJSON_AddNumberToObject(mq135Json, "voltage", r.voltage);
+        cJSON_AddNumberToObject(mq135Json, "avg_raw", r.avgRaw);
+        cJSON_AddNumberToObject(mq135Json, "avg_voltage", r.avgVoltage);
+        cJSON_AddStringToObject(mq135Json, "aqi_label", MQ135Sensor::getAirQualityLabel(r.avgVoltage));
+        char tsStr[32] = "";
+        struct tm* tm_info = localtime(&r.timestamp);
+        strftime(tsStr, sizeof(tsStr), "%Y-%m-%d %H:%M:%S", tm_info);
+        cJSON_AddStringToObject(mq135Json, "timestamp", tsStr);
+    } else {
+        cJSON_AddStringToObject(mq135Json, "state", "error_not_initialized");
+        cJSON_AddBoolToObject(mq135Json, "warming_up", false);
+        cJSON_AddNumberToObject(mq135Json, "warmup_time_sec", 0);
+        cJSON_AddNumberToObject(mq135Json, "warmup_elapsed_sec", 0);
+        cJSON_AddNumberToObject(mq135Json, "raw", 0);
+        cJSON_AddNumberToObject(mq135Json, "voltage", 0.0);
+        cJSON_AddNumberToObject(mq135Json, "avg_raw", 0);
+        cJSON_AddNumberToObject(mq135Json, "avg_voltage", 0.0);
+        cJSON_AddStringToObject(mq135Json, "aqi_label", "not available");
+        cJSON_AddStringToObject(mq135Json, "timestamp", "N/A");
+        if (diagnosticManager) {
+            diagnosticManager->log(DiagnosticManager::LOG_ERROR, "DashboardManager", "MQ135Sensor not initialized before dashboard status requested!");
+        }
+    }
+    cJSON_AddItemToObject(root, "mq135", mq135Json);
     // Add config settings
     addConfigSettingsToJson(root);
     // Add system info if available

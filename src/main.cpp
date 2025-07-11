@@ -135,6 +135,7 @@ void setup() {
         systemManager.getDeviceManager().getBME280Device() // Pass BME280Device pointer
     );
     dashboard.setSoilMoistureSensor(&soilMoistureSensor);
+    dashboard.setMQ135Sensor(&mq135Sensor);
     dashboard.begin();
     Serial.println("[DashboardManager] JSON status:");
     Serial.println(dashboard.getStatusString());
