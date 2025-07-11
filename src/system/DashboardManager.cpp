@@ -2,9 +2,10 @@
 #include "system/SystemManager.h"
 #include <Arduino.h>
 #include "devices/LedDevice.h"
+#include "devices/RelayController.h"
 
-DashboardManager::DashboardManager(TimeManager* timeMgr, ConfigManager* configMgr, SystemManager* sysMgr, DiagnosticManager* diagMgr, LedDevice* ledDev)
-    : timeManager(timeMgr), configManager(configMgr), systemManager(sysMgr), diagnosticManager(diagMgr), ledDevice(ledDev) {}
+DashboardManager::DashboardManager(TimeManager* timeMgr, ConfigManager* configMgr, SystemManager* sysMgr, DiagnosticManager* diagMgr, LedDevice* ledDev, RelayController* relayCtrl)
+    : timeManager(timeMgr), configManager(configMgr), systemManager(sysMgr), diagnosticManager(diagMgr), ledDevice(ledDev), relayController(relayCtrl) {}
 
 void DashboardManager::begin() {
     if (diagnosticManager) {
@@ -23,6 +24,10 @@ void DashboardManager::addConfigSettingsToJson(cJSON* root) {
 
 void DashboardManager::setLedDevice(LedDevice* ledDev) {
     ledDevice = ledDev;
+}
+
+void DashboardManager::setRelayController(RelayController* relayCtrl) {
+    relayController = relayCtrl;
 }
 
 cJSON* DashboardManager::getStatusJson() {
@@ -51,6 +56,25 @@ cJSON* DashboardManager::getStatusJson() {
             ledDevice->getMode() == LedDevice::TOGGLE ? "toggle" : "unknown");
         cJSON_AddNumberToObject(ledJson, "blink_rate", ledDevice->getBlinkRate());
         cJSON_AddItemToObject(root, "led", ledJson);
+    }
+    // Add relay states if available
+    if (relayController) {
+        cJSON* relaysJson = cJSON_CreateArray();
+        for (int i = 0; i < 4; ++i) {
+            cJSON* relayJson = cJSON_CreateObject();
+            cJSON_AddNumberToObject(relayJson, "index", i);
+            cJSON_AddNumberToObject(relayJson, "gpio", relayController->getRelayGpio(i));
+            cJSON_AddStringToObject(relayJson, "state", relayController->getRelayState(i) ? "on" : "off");
+            Relay* relay = relayController->getRelay(i);
+            if (relay) {
+                cJSON_AddStringToObject(relayJson, "mode", 
+                    relay->getMode() == Relay::ON ? "on" :
+                    relay->getMode() == Relay::OFF ? "off" :
+                    relay->getMode() == Relay::TOGGLE ? "toggle" : "unknown");
+            }
+            cJSON_AddItemToArray(relaysJson, relayJson);
+        }
+        cJSON_AddItemToObject(root, "relays", relaysJson);
     }
     // Add config settings
     addConfigSettingsToJson(root);

@@ -32,7 +32,8 @@ DashboardManager dashboard(
     &systemManager.getConfigManager(),
     &systemManager, // Pass SystemManager pointer
     &systemManager.getDiagnosticManager(),
-    &led // Pass LedDevice pointer
+    &led, // Pass LedDevice pointer
+    &relayController // Pass RelayController pointer
 );
 
 void setup() {
@@ -110,6 +111,7 @@ void setup() {
     //     }
     // }
     dashboard.setLedDevice(&led);
+    dashboard.setRelayController(&relayController);
     dashboard.begin();
     // Print dashboard status to serial as a demo
     Serial.println("[DashboardManager] JSON status:");
