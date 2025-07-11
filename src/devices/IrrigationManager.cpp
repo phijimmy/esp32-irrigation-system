@@ -223,7 +223,7 @@ void IrrigationManager::update() {
 void IrrigationManager::checkAndRunScheduled() {
     if (!configManager || !timeManager) return;
     int schedHour = configManager->getInt("irrigation_scheduled_hour", 13);
-    int schedMin = configManager->getInt("irrigation_scheduled_minute", 30);
+    int schedMin = configManager->getInt("irrigation_scheduled_minute", 15);
     time_t now = timeManager->getLocalTime().unixtime();
     struct tm* tm_info = localtime(&now);
     static int lastRunDay = -1;
