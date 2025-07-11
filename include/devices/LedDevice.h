@@ -18,6 +18,7 @@ public:
     Mode getMode() const;
     uint32_t getBlinkRate() const;
     uint8_t getGpio() const;
+    bool isOn() const { return ledState; }
 
 private:
     void applyMode();

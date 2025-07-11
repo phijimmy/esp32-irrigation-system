@@ -31,7 +31,8 @@ DashboardManager dashboard(
     &systemManager.getTimeManager(),
     &systemManager.getConfigManager(),
     &systemManager, // Pass SystemManager pointer
-    &systemManager.getDiagnosticManager()
+    &systemManager.getDiagnosticManager(),
+    &led // Pass LedDevice pointer
 );
 
 void setup() {
@@ -108,6 +109,7 @@ void setup() {
     //         Serial.println("[BME280] Initial reading: not valid");
     //     }
     // }
+    dashboard.setLedDevice(&led);
     dashboard.begin();
     // Print dashboard status to serial as a demo
     Serial.println("[DashboardManager] JSON status:");
