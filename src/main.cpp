@@ -7,6 +7,7 @@
 #include "devices/MQ135Sensor.h"
 #include "devices/IrrigationManager.h"
 #include "system/DashboardManager.h"
+
 #include "system/WebServerManager.h"
 
 SystemManager systemManager;
@@ -21,6 +22,7 @@ bool mq135ReadingTaken = false;
 bool mq135ReadingRequested = false;
 unsigned long lastStabilisationPrint = 0;
 unsigned long mq135LastProgressPrint = 0;
+
 // Sensor state machine
 enum SensorState { IDLE, SOIL_STABILISING, SOIL_DONE, MQ135_WARMUP, MQ135_DONE };
 SensorState sensorState = IDLE;
@@ -38,6 +40,8 @@ bool irrigationTriggerScheduled = false;
 bool irrigationTriggered = false;
 
 DashboardManager* dashboard = nullptr;
+
+
 
 void setup() {
     systemManager.begin();
@@ -74,7 +78,7 @@ void setup() {
     led.setDiagnosticManager(&systemManager.getDiagnosticManager());
     systemManager.getDeviceManager().addDevice(&led);
     led.begin(); // Explicitly call begin() since DeviceManager.begin() was called before adding this device
-    led.setMode(LedDevice::BLINK);
+    // led.setMode(LedDevice::BLINK); // Set LED ON at boot
 
     // Get touch config from proper config sections
     int touchGpio = cJSON_GetObjectItem(root, "touch_gpio") ? cJSON_GetObjectItem(root, "touch_gpio")->valueint : 4;

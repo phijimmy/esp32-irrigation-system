@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LED Status</title>
+    <link rel="stylesheet" href="style.css">
+    <script defer src="led.js"></script>
+</head>
+<body>
+    <header>
+        <h1>LED Status</h1>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="sensors.html">Sensors</a>
+            <a href="relay.html">Relays</a>
+            <a href="led.html" class="active">LED</a>
+        </nav>
+    </header>
+    <main>
+        <section class="card">
+            <h2>Current LED State</h2>
+            <div id="led-status" class="led-status">Loading...</div>
+            <div id="led-meta" class="led-meta"></div>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2025 ESP32 IoT Dashboard</p>
+    </footer>
+</body>
+</html>

@@ -90,6 +90,9 @@ void DashboardManager::setIrrigationManager(IrrigationManager* irrigationMgr) {
 }
 
 cJSON* DashboardManager::getStatusJson() {
+    if (ledDevice) {
+        ledDevice->update();
+    }
     cJSON* root = cJSON_CreateObject();
     // Add DashboardManager state
     cJSON_AddStringToObject(root, "dashboard_state", stateToString(state));
@@ -147,7 +150,9 @@ cJSON* DashboardManager::getStatusJson() {
     if (ledDevice) {
         cJSON* ledJson = cJSON_CreateObject();
         cJSON_AddNumberToObject(ledJson, "gpio", ledDevice->getGpio());
-        cJSON_AddStringToObject(ledJson, "state", ledDevice->isOn() ? "on" : "off");
+        // Read actual pin state for accurate dashboard reporting (active-high logic)
+        int pinState = digitalRead(ledDevice->getGpio());
+        cJSON_AddStringToObject(ledJson, "state", pinState == HIGH ? "on" : "off");
         cJSON_AddStringToObject(ledJson, "mode", 
             ledDevice->getMode() == LedDevice::ON ? "on" :
             ledDevice->getMode() == LedDevice::OFF ? "off" :
