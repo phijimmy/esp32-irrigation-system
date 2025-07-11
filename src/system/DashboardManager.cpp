@@ -3,9 +3,10 @@
 #include <Arduino.h>
 #include "devices/LedDevice.h"
 #include "devices/RelayController.h"
+#include "devices/TouchSensorDevice.h"
 
-DashboardManager::DashboardManager(TimeManager* timeMgr, ConfigManager* configMgr, SystemManager* sysMgr, DiagnosticManager* diagMgr, LedDevice* ledDev, RelayController* relayCtrl)
-    : timeManager(timeMgr), configManager(configMgr), systemManager(sysMgr), diagnosticManager(diagMgr), ledDevice(ledDev), relayController(relayCtrl) {}
+DashboardManager::DashboardManager(TimeManager* timeMgr, ConfigManager* configMgr, SystemManager* sysMgr, DiagnosticManager* diagMgr, LedDevice* ledDev, RelayController* relayCtrl, TouchSensorDevice* touchDev)
+    : timeManager(timeMgr), configManager(configMgr), systemManager(sysMgr), diagnosticManager(diagMgr), ledDevice(ledDev), relayController(relayCtrl), touchSensorDevice(touchDev) {}
 
 void DashboardManager::begin() {
     if (diagnosticManager) {
@@ -28,6 +29,10 @@ void DashboardManager::setLedDevice(LedDevice* ledDev) {
 
 void DashboardManager::setRelayController(RelayController* relayCtrl) {
     relayController = relayCtrl;
+}
+
+void DashboardManager::setTouchSensorDevice(TouchSensorDevice* touchDev) {
+    touchSensorDevice = touchDev;
 }
 
 cJSON* DashboardManager::getStatusJson() {
@@ -75,6 +80,16 @@ cJSON* DashboardManager::getStatusJson() {
             cJSON_AddItemToArray(relaysJson, relayJson);
         }
         cJSON_AddItemToObject(root, "relays", relaysJson);
+    }
+    // Add touch sensor state if available
+    if (touchSensorDevice) {
+        cJSON* touchJson = cJSON_CreateObject();
+        cJSON_AddNumberToObject(touchJson, "gpio", touchSensorDevice->getGpio());
+        cJSON_AddStringToObject(touchJson, "state", touchSensorDevice->isTouched() ? "touched" : "released");
+        cJSON_AddStringToObject(touchJson, "long_press", touchSensorDevice->isLongPressed() ? "true" : "false");
+        cJSON_AddNumberToObject(touchJson, "threshold", touchSensorDevice->getThreshold());
+        cJSON_AddNumberToObject(touchJson, "long_press_duration", touchSensorDevice->getLongPressDuration());
+        cJSON_AddItemToObject(root, "touch", touchJson);
     }
     // Add config settings
     addConfigSettingsToJson(root);
