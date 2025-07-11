@@ -32,6 +32,7 @@ public:
     TimeManager& getTimeManager();
     ADS1115Manager& getADS1115Manager();
     cJSON* getSystemInfoJson(); // Returns system info as a cJSON object
+    cJSON* getFileSystemInfoJson(); // Returns file system info as a cJSON object
 
 private:
     void initHardware();

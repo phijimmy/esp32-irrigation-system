@@ -40,6 +40,8 @@ cJSON* DashboardManager::getStatusJson() {
     if (systemManager) {
         cJSON* sysInfo = systemManager->getSystemInfoJson();
         cJSON_AddItemToObject(root, "system", sysInfo);
+        cJSON* fsInfo = systemManager->getFileSystemInfoJson();
+        cJSON_AddItemToObject(root, "filesystem", fsInfo);
     }
     return root;
 }

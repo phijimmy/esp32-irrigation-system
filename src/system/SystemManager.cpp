@@ -112,3 +112,7 @@ cJSON* SystemManager::getSystemInfoJson() {
     cJSON_AddStringToObject(info, "chip_id", String((uint32_t)ESP.getEfuseMac(), HEX).c_str());
     return info;
 }
+
+cJSON* SystemManager::getFileSystemInfoJson() {
+    return fileSystemManager.getFileSystemInfoJson();
+}

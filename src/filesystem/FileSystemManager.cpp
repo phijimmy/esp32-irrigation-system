@@ -53,3 +53,13 @@ bool FileSystemManager::writeFile(const char* path, const String& data) {
 bool FileSystemManager::removeFile(const char* path) {
     return SPIFFS.remove(path);
 }
+
+cJSON* FileSystemManager::getFileSystemInfoJson() {
+    cJSON* info = cJSON_CreateObject();
+    size_t total = SPIFFS.totalBytes();
+    size_t used = SPIFFS.usedBytes();
+    cJSON_AddNumberToObject(info, "total_bytes", (double)total);
+    cJSON_AddNumberToObject(info, "used_bytes", (double)used);
+    cJSON_AddNumberToObject(info, "free_bytes", (double)(total - used));
+    return info;
+}

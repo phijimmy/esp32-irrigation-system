@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <FS.h>
 #include <SPIFFS.h>
+#include <cJSON.h> // Include cJSON library for JSON handling
 
 class DiagnosticManager; // Forward declaration
 
@@ -16,6 +17,7 @@ public:
     String readFile(const char* path);
     bool writeFile(const char* path, const String& data);
     bool removeFile(const char* path);
+    cJSON* getFileSystemInfoJson(); // Returns file system info as a cJSON object
 private:
     DiagnosticManager* diagnosticManager = nullptr;
 };
