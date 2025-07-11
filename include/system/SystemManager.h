@@ -2,6 +2,7 @@
 #define SYSTEM_MANAGER_H
 
 #include <Arduino.h>
+#include <cJSON.h>
 #include "filesystem/FileSystemManager.h"
 #include "config/ConfigManager.h"
 #include "devices/DeviceManager.h"
@@ -30,6 +31,7 @@ public:
     I2CManager& getI2CManager();
     TimeManager& getTimeManager();
     ADS1115Manager& getADS1115Manager();
+    cJSON* getSystemInfoJson(); // Returns system info as a cJSON object
 
 private:
     void initHardware();

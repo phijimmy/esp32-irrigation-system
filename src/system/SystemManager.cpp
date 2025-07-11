@@ -2,6 +2,7 @@
 #include "system/I2CManager.h"
 #include "devices/BME280Device.h"
 #include "system/TimeManager.h"
+#include <cJSON.h>
 
 void SystemManager::begin() {
     initHardware();
@@ -87,4 +88,27 @@ void SystemManager::initHardware() {
 
 void SystemManager::checkSystemHealth() {
     healthy = healthManager.isHealthy();
+}
+
+cJSON* SystemManager::getSystemInfoJson() {
+    cJSON* info = cJSON_CreateObject();
+    // Free heap (bytes)
+    cJSON_AddNumberToObject(info, "free_heap", ESP.getFreeHeap());
+    // Uptime (ms)
+    cJSON_AddNumberToObject(info, "uptime_ms", millis());
+    // Chip revision
+    cJSON_AddNumberToObject(info, "chip_revision", ESP.getChipRevision());
+    // CPU frequency (MHz)
+    cJSON_AddNumberToObject(info, "cpu_freq_mhz", ESP.getCpuFreqMHz());
+    // Flash chip size (bytes)
+    cJSON_AddNumberToObject(info, "flash_chip_size", ESP.getFlashChipSize());
+    // SDK version
+    cJSON_AddStringToObject(info, "sdk_version", ESP.getSdkVersion());
+    // Sketch size (bytes)
+    cJSON_AddNumberToObject(info, "sketch_size", ESP.getSketchSize());
+    // Sketch free space (bytes)
+    cJSON_AddNumberToObject(info, "sketch_free_space", ESP.getFreeSketchSpace());
+    // Chip ID (MAC address as string)
+    cJSON_AddStringToObject(info, "chip_id", String((uint32_t)ESP.getEfuseMac(), HEX).c_str());
+    return info;
 }

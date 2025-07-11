@@ -4,17 +4,19 @@
 #include "system/TimeManager.h"
 #include "config/ConfigManager.h"
 #include "diagnostics/DiagnosticManager.h"
+#include "system/SystemManager.h"
 #include <cJSON.h>
 
 class DashboardManager {
 public:
-    DashboardManager(TimeManager* timeMgr, ConfigManager* configMgr, DiagnosticManager* diagMgr = nullptr);
+    DashboardManager(TimeManager* timeMgr, ConfigManager* configMgr, SystemManager* sysMgr = nullptr, DiagnosticManager* diagMgr = nullptr);
     void begin();
     cJSON* getStatusJson(); // Returns a cJSON object with current datetime info
     String getStatusString(); // Returns JSON as string
 private:
     TimeManager* timeManager;
     ConfigManager* configManager;
+    SystemManager* systemManager;
     DiagnosticManager* diagnosticManager;
 
     // Helper to add config settings to JSON

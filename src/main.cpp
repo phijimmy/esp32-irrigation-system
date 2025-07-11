@@ -27,7 +27,12 @@ IrrigationManager irrigationManager;
 unsigned long irrigationTriggerTime = 0;
 bool irrigationTriggerScheduled = false;
 bool irrigationTriggered = false;
-DashboardManager dashboard(&systemManager.getTimeManager(), &systemManager.getConfigManager(), &systemManager.getDiagnosticManager());
+DashboardManager dashboard(
+    &systemManager.getTimeManager(),
+    &systemManager.getConfigManager(),
+    &systemManager, // Pass SystemManager pointer
+    &systemManager.getDiagnosticManager()
+);
 
 void setup() {
     systemManager.begin();

@@ -1,8 +1,9 @@
 #include "system/DashboardManager.h"
+#include "system/SystemManager.h"
 #include <Arduino.h>
 
-DashboardManager::DashboardManager(TimeManager* timeMgr, ConfigManager* configMgr, DiagnosticManager* diagMgr)
-    : timeManager(timeMgr), configManager(configMgr), diagnosticManager(diagMgr) {}
+DashboardManager::DashboardManager(TimeManager* timeMgr, ConfigManager* configMgr, SystemManager* sysMgr, DiagnosticManager* diagMgr)
+    : timeManager(timeMgr), configManager(configMgr), systemManager(sysMgr), diagnosticManager(diagMgr) {}
 
 void DashboardManager::begin() {
     if (diagnosticManager) {
@@ -14,19 +15,8 @@ void DashboardManager::addConfigSettingsToJson(cJSON* root) {
     if (!configManager) return;
     cJSON* configRoot = configManager->getRoot();
     if (!configRoot) return;
-    cJSON* configJson = cJSON_CreateObject();
-    cJSON* item = nullptr;
-    cJSON_ArrayForEach(item, configRoot) {
-        // Only add primitive types (number, string, bool) for dashboard
-        if (cJSON_IsNumber(item)) {
-            cJSON_AddNumberToObject(configJson, item->string, item->valuedouble);
-        } else if (cJSON_IsString(item)) {
-            cJSON_AddStringToObject(configJson, item->string, item->valuestring);
-        } else if (cJSON_IsBool(item)) {
-            cJSON_AddBoolToObject(configJson, item->string, cJSON_IsTrue(item));
-        }
-        // For objects/arrays, you could add a summary or skip for now
-    }
+    // Deep copy the entire config tree, including nested objects/arrays
+    cJSON* configJson = cJSON_Duplicate(configRoot, 1); // 1 = recursive deep copy
     cJSON_AddItemToObject(root, "config", configJson);
 }
 
@@ -46,6 +36,11 @@ cJSON* DashboardManager::getStatusJson() {
     cJSON_AddStringToObject(root, "time_human", timeStr.c_str());
     // Add config settings
     addConfigSettingsToJson(root);
+    // Add system info if available
+    if (systemManager) {
+        cJSON* sysInfo = systemManager->getSystemInfoJson();
+        cJSON_AddItemToObject(root, "system", sysInfo);
+    }
     return root;
 }
 
