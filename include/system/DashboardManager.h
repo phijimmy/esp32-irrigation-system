@@ -43,6 +43,8 @@ public:
     void setSoilMoistureSensor(SoilMoistureSensor* soilSensor);
     void setMQ135Sensor(MQ135Sensor* sensor);
     void setIrrigationManager(IrrigationManager* irrigationMgr);
+    // Returns true if all required sensors have valid data
+    bool hasValidSensorData();
 private:
     TimeManager* timeManager;
     ConfigManager* configManager;

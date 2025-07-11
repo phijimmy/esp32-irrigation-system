@@ -56,6 +56,13 @@ BME280Reading BME280Device::readData() {
         readings[i].heatIndex = computeHeatIndex(readings[i].temperature, readings[i].humidity);
         readings[i].dewPoint = computeDewPoint(readings[i].temperature, readings[i].humidity);
         readings[i].timestamp = timeManager ? timeManager->getTime() : DateTime();
+        // Defensive check for invalid timestamp
+        if (!readings[i].timestamp.isValid() || readings[i].timestamp.year() < 2000 || readings[i].timestamp.month() < 1 || readings[i].timestamp.month() > 12 || readings[i].timestamp.day() < 1 || readings[i].timestamp.day() > 31) {
+            if (diagnosticManager) {
+                diagnosticManager->log(DiagnosticManager::LOG_WARN, "BME280", "Invalid timestamp detected after reading (year=%d, month=%d, day=%d) - setting to 0", readings[i].timestamp.year(), readings[i].timestamp.month(), readings[i].timestamp.day());
+            }
+            readings[i].timestamp = DateTime(1970, 1, 1, 0, 0, 0); // Set to known invalid value
+        }
         readings[i].valid = true;
     }
     // Store the first reading as the 'single' value

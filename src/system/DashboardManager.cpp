@@ -197,8 +197,22 @@ cJSON* DashboardManager::getStatusJson() {
         cJSON_AddNumberToObject(soilJson, "avg_voltage", r.avgVoltage);
         cJSON_AddNumberToObject(soilJson, "avg_percent", r.avgPercent);
         char tsStr[32] = "";
-        struct tm* tm_info = localtime(&r.timestamp);
-        strftime(tsStr, sizeof(tsStr), "%Y-%m-%d %H:%M:%S", tm_info);
+        if (r.timestamp > 0) {
+            struct tm* tm_info = localtime(&r.timestamp);
+            if (tm_info && (tm_info->tm_year + 1900) >= 2000 && (tm_info->tm_year + 1900) < 2100) {
+                strftime(tsStr, sizeof(tsStr), "%Y-%m-%d %H:%M:%S", tm_info);
+            } else {
+                strcpy(tsStr, "N/A");
+                if (diagnosticManager) {
+                    diagnosticManager->log(DiagnosticManager::LOG_WARN, "DashboardManager", "SoilMoistureSensor: Invalid timestamp in last reading (raw value: %ld)", (long)r.timestamp);
+                }
+            }
+        } else {
+            strcpy(tsStr, "N/A");
+            if (diagnosticManager) {
+                diagnosticManager->log(DiagnosticManager::LOG_WARN, "DashboardManager", "SoilMoistureSensor: Invalid timestamp in last reading (raw value: %ld)", (long)r.timestamp);
+            }
+        }
         cJSON_AddStringToObject(soilJson, "timestamp", tsStr);
         cJSON_AddItemToObject(root, "soil_moisture", soilJson);
     }
@@ -219,8 +233,22 @@ cJSON* DashboardManager::getStatusJson() {
         cJSON_AddNumberToObject(mq135Json, "avg_voltage", r.avgVoltage);
         cJSON_AddStringToObject(mq135Json, "aqi_label", MQ135Sensor::getAirQualityLabel(r.avgVoltage));
         char tsStr[32] = "";
-        struct tm* tm_info = localtime(&r.timestamp);
-        strftime(tsStr, sizeof(tsStr), "%Y-%m-%d %H:%M:%S", tm_info);
+        if (r.timestamp > 0) {
+            struct tm* tm_info = localtime(&r.timestamp);
+            if (tm_info && (tm_info->tm_year + 1900) >= 2000 && (tm_info->tm_year + 1900) < 2100) {
+                strftime(tsStr, sizeof(tsStr), "%Y-%m-%d %H:%M:%S", tm_info);
+            } else {
+                strcpy(tsStr, "N/A");
+                if (diagnosticManager) {
+                    diagnosticManager->log(DiagnosticManager::LOG_WARN, "DashboardManager", "MQ135Sensor: Invalid timestamp in last reading (raw value: %ld)", (long)r.timestamp);
+                }
+            }
+        } else {
+            strcpy(tsStr, "N/A");
+            if (diagnosticManager) {
+                diagnosticManager->log(DiagnosticManager::LOG_WARN, "DashboardManager", "MQ135Sensor: Invalid timestamp in last reading (raw value: %ld)", (long)r.timestamp);
+            }
+        }
         cJSON_AddStringToObject(mq135Json, "timestamp", tsStr);
     } else {
         cJSON_AddStringToObject(mq135Json, "state", "error_not_initialized");
@@ -273,4 +301,23 @@ String DashboardManager::getStatusString() {
     cJSON_free(jsonStr);
     cJSON_Delete(obj);
     return result;
+}
+
+bool DashboardManager::hasValidSensorData() {
+    bool bmeValid = false;
+    bool soilValid = false;
+    bool mq135Valid = false;
+    if (bme280Device) {
+        BME280Reading r = bme280Device->getLastReading();
+        bmeValid = r.valid && r.timestamp.isValid();
+    }
+    if (soilMoistureSensor) {
+        SoilMoistureSensor::Reading r = soilMoistureSensor->getLastReading();
+        soilValid = r.timestamp > 0; // Only check timestamp for validity
+    }
+    if (mq135Sensor) {
+        MQ135Sensor::Reading r = mq135Sensor->getLastReading();
+        mq135Valid = r.timestamp > 0;
+    }
+    return bmeValid && soilValid && mq135Valid;
 }

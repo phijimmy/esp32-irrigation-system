@@ -36,6 +36,13 @@ void WebServerManager::begin() {
         handleStaticFile(request);
     });
     
+    server->on("/index.html", HTTP_GET, [this](AsyncWebServerRequest* request) {
+        handleStaticFile(request);
+    });
+    server->on("/sensors.html", HTTP_GET, [this](AsyncWebServerRequest* request) {
+        handleStaticFile(request);
+    });
+    
     server->onNotFound([this](AsyncWebServerRequest* request) {
         handleNotFound(request);
     });

@@ -3,10 +3,11 @@
 
 MQ135Sensor::MQ135Sensor() { state = IDLE; }
 
-void MQ135Sensor::begin(ADS1115Manager* adsMgr, ConfigManager* configMgr, RelayController* relayCtrl) {
+void MQ135Sensor::begin(ADS1115Manager* adsMgr, ConfigManager* configMgr, RelayController* relayCtrl, DiagnosticManager* diagMgr) {
     ads = adsMgr;
     config = configMgr;
     relay = relayCtrl;
+    diagnosticManager = diagMgr;
     if (config) {
         int t = config->getInt("mq135_warmup_time", 60);
         if (t > 0) warmupTimeSec = t;
@@ -46,7 +47,14 @@ void MQ135Sensor::takeReading() {
     filterAndAverage(rawVals, voltVals, N, lastReading.avgRaw, lastReading.avgVoltage);
     if (timeManager) {
         DateTime dt = timeManager->getLocalTime();
-        lastReading.timestamp = dt.unixtime();
+        if (!dt.isValid() || dt.year() < 2000 || dt.month() < 1 || dt.month() > 12 || dt.day() < 1 || dt.day() > 31) {
+            if (diagnosticManager) {
+                diagnosticManager->log(DiagnosticManager::LOG_WARN, "MQ135Sensor", "Invalid timestamp detected after reading (year=%d, month=%d, day=%d) - setting to 0", dt.year(), dt.month(), dt.day());
+            }
+            lastReading.timestamp = 0;
+        } else {
+            lastReading.timestamp = dt.unixtime();
+        }
     } else {
         lastReading.timestamp = time(nullptr);
     }

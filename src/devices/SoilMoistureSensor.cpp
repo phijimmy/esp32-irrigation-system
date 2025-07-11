@@ -5,10 +5,11 @@
 
 SoilMoistureSensor::SoilMoistureSensor() {}
 
-void SoilMoistureSensor::begin(ADS1115Manager* adsMgr, ConfigManager* configMgr, TimeManager* timeMgr) {
+void SoilMoistureSensor::begin(ADS1115Manager* adsMgr, ConfigManager* configMgr, TimeManager* timeMgr, DiagnosticManager* diagMgr) {
     ads = adsMgr;
     config = configMgr;
     timeManager = timeMgr;
+    diagnosticManager = diagMgr;
     state = IDLE;
     // Get stabilisation time from config if available
     if (config) {
@@ -81,7 +82,14 @@ void SoilMoistureSensor::takeReading() {
     filterAndAverage(rawVals, voltVals, percentVals, N, lastReading.avgRaw, lastReading.avgVoltage, lastReading.avgPercent);
     if (timeManager) {
         DateTime dt = timeManager->getLocalTime();
-        lastReading.timestamp = dt.unixtime();
+        if (!dt.isValid() || dt.year() < 2000 || dt.month() < 1 || dt.month() > 12 || dt.day() < 1 || dt.day() > 31) {
+            if (diagnosticManager) {
+                diagnosticManager->log(DiagnosticManager::LOG_WARN, "SoilMoistureSensor", "Invalid timestamp detected after reading (year=%d, month=%d, day=%d) - setting to 0", dt.year(), dt.month(), dt.day());
+            }
+            lastReading.timestamp = 0; // Set to known invalid value
+        } else {
+            lastReading.timestamp = dt.unixtime();
+        }
     } else {
         lastReading.timestamp = time(nullptr);
     }

@@ -7,6 +7,7 @@
 #include "config/ConfigManager.h"
 #include "devices/RelayController.h"
 #include "system/TimeManager.h"
+#include "diagnostics/DiagnosticManager.h"
 
 class TimeManager;
 
@@ -14,7 +15,7 @@ class MQ135Sensor {
 public:
     enum State { IDLE, WARMING_UP, READING, ERROR };
     MQ135Sensor();
-    void begin(ADS1115Manager* adsMgr, ConfigManager* configMgr, RelayController* relayCtrl);
+    void begin(ADS1115Manager* adsMgr, ConfigManager* configMgr, RelayController* relayCtrl, DiagnosticManager* diagMgr = nullptr);
     void startReading(); // Activates relay, starts warmup
     bool readyForReading() const; // True if warmup time has elapsed
     void takeReading(); // Takes the reading, deactivates relay
@@ -55,6 +56,7 @@ private:
     ConfigManager* config = nullptr;
     RelayController* relay = nullptr;
     TimeManager* timeManager = nullptr;
+    DiagnosticManager* diagnosticManager = nullptr;
     static constexpr uint8_t channel = 1; // A1
     static constexpr ADS1115Manager::Gain gain = ADS1115Manager::GAIN_TWOTHIRDS; // For 6V (±6.144V)
     Reading lastReading{};

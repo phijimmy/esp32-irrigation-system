@@ -178,11 +178,30 @@ void TimeManager::update() {
 }
 
 DateTime TimeManager::getTime() {
+    DateTime dt;
     if (rtcFound) {
-        return rtc.now();
+        dt = rtc.now();
+        if (diagnosticManager) {
+            diagnosticManager->log(DiagnosticManager::LOG_DEBUG, "Time", "getTime: RTC now: %04d-%02d-%02d %02d:%02d:%02d (valid=%d)",
+                dt.year(), dt.month(), dt.day(), dt.hour(), dt.minute(), dt.second(), dt.isValid());
+        }
+    } else {
+        dt = buildTime();
+        if (diagnosticManager) {
+            diagnosticManager->log(DiagnosticManager::LOG_DEBUG, "Time", "getTime: buildTime fallback: %04d-%02d-%02d %02d:%02d:%02d (valid=%d)",
+                dt.year(), dt.month(), dt.day(), dt.hour(), dt.minute(), dt.second(), dt.isValid());
+        }
     }
-    // Fallback to build time if RTC not available
-    return buildTime();
+    return dt;
+}
+
+DateTime TimeManager::getLocalTime() {
+    DateTime dt = getTime();
+    if (diagnosticManager) {
+        diagnosticManager->log(DiagnosticManager::LOG_DEBUG, "Time", "getLocalTime: %04d-%02d-%02d %02d:%02d:%02d (valid=%d)",
+            dt.year(), dt.month(), dt.day(), dt.hour(), dt.minute(), dt.second(), dt.isValid());
+    }
+    return dt;
 }
 
 void TimeManager::setTime(const DateTime& dt) {
@@ -195,11 +214,6 @@ void TimeManager::setTime(const DateTime& dt) {
         }
         lastDayId = newDayId;
     }
-}
-
-DateTime TimeManager::getLocalTime() {
-    // RTC stores local time directly
-    return getTime();
 }
 
 bool TimeManager::isDSTActive(const DateTime& localTime) {
@@ -783,16 +797,25 @@ DateTime TimeManager::buildTime() {
     // Extract compile date and time from __DATE__ and __TIME__ macros
     // __DATE__ format: "MMM DD YYYY" (e.g., "Jul 09 2025")
     // __TIME__ format: "HH:MM:SS" (e.g., "10:30:45")
-    
-    char month_str[4];
-    int day, year, hour, minute, second;
-    
-    // Parse __DATE__
-    sscanf(__DATE__, "%s %d %d", month_str, &day, &year);
-    
-    // Parse __TIME__
-    sscanf(__TIME__, "%d:%d:%d", &hour, &minute, &second);
-    
+
+    char month_str[4] = {0};
+    int day = 1, year = 2000, hour = 0, minute = 0, second = 0;
+
+    // Parse __DATE__ safely
+    if (sscanf(__DATE__, "%3s %d %d", month_str, &day, &year) != 3) {
+        // Fallback to a safe default if parsing fails
+        strcpy(month_str, "Jan");
+        day = 1;
+        year = 2000;
+    }
+
+    // Parse __TIME__ safely
+    if (sscanf(__TIME__, "%d:%d:%d", &hour, &minute, &second) != 3) {
+        hour = 0;
+        minute = 0;
+        second = 0;
+    }
+
     // Convert month string to number
     const char* months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
                            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
@@ -803,7 +826,14 @@ DateTime TimeManager::buildTime() {
             break;
         }
     }
-    
+
+    // Final sanity check
+    if (year < 2000 || month < 1 || month > 12 || day < 1 || day > 31) {
+        year = 2000;
+        month = 1;
+        day = 1;
+    }
+
     return DateTime(year, month, day, hour, minute, second);
 }
 

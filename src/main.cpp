@@ -32,9 +32,12 @@ bool sensorsInitialized = false;
 bool hourlyReadingRequested = false;
 IrrigationManager irrigationManager;
 WebServerManager* webServerManager = nullptr;
+bool webServerStarted = false;
 unsigned long irrigationTriggerTime = 0;
 bool irrigationTriggerScheduled = false;
 bool irrigationTriggered = false;
+
+DashboardManager* dashboard = nullptr;
 
 void setup() {
     systemManager.begin();
@@ -117,32 +120,26 @@ void setup() {
     // }
     
     // Now create and initialize DashboardManager LAST
-    static DashboardManager dashboard(
-        &systemManager.getTimeManager(),
-        &systemManager.getConfigManager(),
-        &systemManager, // Pass SystemManager pointer
-        &systemManager.getDiagnosticManager(),
-        &led, // Pass LedDevice pointer
-        &relayController, // Pass RelayController pointer
-        &touch, // Pass TouchSensorDevice pointer
-        systemManager.getDeviceManager().getBME280Device() // Pass BME280Device pointer
-    );
-    dashboard.setSoilMoistureSensor(&soilMoistureSensor);
-    dashboard.setMQ135Sensor(&mq135Sensor);
-    dashboard.setIrrigationManager(&irrigationManager);
-    irrigationManager.setDashboardManager(&dashboard); // Connect irrigation manager to dashboard
-    dashboard.begin();
-    Serial.println("[DashboardManager] JSON status:");
-    Serial.println(dashboard.getStatusString());
-    
-    // Initialize WebServer after dashboard is ready
-    webServerManager = new WebServerManager(&dashboard, &systemManager.getDiagnosticManager());
-    webServerManager->begin();
+    // dashboard.setSoilMoistureSensor(&soilMoistureSensor);
+    // dashboard.setMQ135Sensor(&mq135Sensor);
+    // dashboard.setIrrigationManager(&irrigationManager);
+    // irrigationManager.setDashboardManager(&dashboard); // Connect irrigation manager to dashboard
+    // dashboard.begin();
+    // Serial.println("[DashboardManager] JSON status:");
+    // Serial.println(dashboard.getStatusString());
+    // REMOVE webServerManager = new WebServerManager(&dashboard, &systemManager.getDiagnosticManager());
+    // REMOVE webServerManager->begin();
 }
 
 void loop() {
     systemManager.update();
-    
+    // --- WebServer non-blocking initialization ---
+    if (!webServerStarted && dashboard && dashboard->hasValidSensorData()) {
+        webServerManager = new WebServerManager(dashboard, &systemManager.getDiagnosticManager());
+        webServerManager->begin();
+        webServerStarted = true;
+        Serial.println("[WebServerManager] Started after valid sensor data detected.");
+    }
     // --- Sequential sensor initialization (non-blocking) ---
     if (!sensorsInitialized) {
         switch (initState) {
@@ -205,6 +202,24 @@ void loop() {
                 Serial.println("[INIT] All sensors initialized!");
                 sensorsInitialized = true;
                 initState = INIT_COMPLETE;
+                // Now create and initialize DashboardManager
+                dashboard = new DashboardManager(
+                    &systemManager.getTimeManager(),
+                    &systemManager.getConfigManager(),
+                    &systemManager,
+                    &systemManager.getDiagnosticManager(),
+                    &led,
+                    &relayController,
+                    &touch,
+                    systemManager.getDeviceManager().getBME280Device()
+                );
+                dashboard->setSoilMoistureSensor(&soilMoistureSensor);
+                dashboard->setMQ135Sensor(&mq135Sensor);
+                dashboard->setIrrigationManager(&irrigationManager);
+                irrigationManager.setDashboardManager(dashboard);
+                dashboard->begin();
+                Serial.println("[DashboardManager] JSON status:");
+                Serial.println(dashboard->getStatusString());
                 break;
                 
             case INIT_COMPLETE:

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sensor Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+    <style>
+        /* Use the same card style as index.html */
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 1.5rem 2rem;
+            margin: 1.5rem auto;
+            max-width: 400px;
+            text-align: center;
+        }
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        .sensor-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
+        }
+        .sensor-label {
+            color: #888;
+            font-size: 1rem;
+        }
+        .sensor-meta {
+            font-size: 0.95rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+        .cards-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 2rem;
+        }
+        @media (max-width: 900px) {
+            .cards-container {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align:center; margin-top:1.5rem;">Sensor Data</h1>
+    <div class="cards-container">
+        <!-- BME280 Card -->
+        <div class="card" id="bme280-card">
+            <div class="card-title">BME280 (Temperature, Humidity, Pressure)</div>
+            <div class="sensor-value" id="bme280-temp">-- &deg;C</div>
+            <div class="sensor-label">Temperature</div>
+            <div class="sensor-value" id="bme280-humidity">-- %</div>
+            <div class="sensor-label">Humidity</div>
+            <div class="sensor-value" id="bme280-pressure">-- hPa</div>
+            <div class="sensor-label">Pressure</div>
+            <div class="sensor-meta" id="bme280-meta">Last update: --</div>
+        </div>
+        <!-- Soil Moisture Card -->
+        <div class="card" id="soil-card">
+            <div class="card-title">Soil Moisture</div>
+            <div class="sensor-value" id="soil-percent">-- %</div>
+            <div class="sensor-label">Moisture</div>
+            <div class="sensor-value" id="soil-raw">--</div>
+            <div class="sensor-label">Raw Value</div>
+            <div class="sensor-value" id="soil-voltage">-- V</div>
+            <div class="sensor-label">Voltage</div>
+            <div class="sensor-meta" id="soil-meta">Last update: --</div>
+        </div>
+        <!-- Air Quality Card -->
+        <div class="card" id="air-card">
+            <div class="card-title">Air Quality (MQ135)</div>
+            <div class="sensor-value" id="air-voltage">-- V</div>
+            <div class="sensor-label">Voltage</div>
+            <div class="sensor-value" id="air-raw">--</div>
+            <div class="sensor-label">Raw Value</div>
+            <div class="sensor-value" id="air-label">--</div>
+            <div class="sensor-label">Air Quality</div>
+            <div class="sensor-meta" id="air-meta">Last update: --</div>
+        </div>
+    </div>
+    <script>
+    // Fetch and update sensor data (assumes /api/status returns JSON like index.html)
+    async function updateSensors() {
+        try {
+            const res = await fetch('/api/status');
+            const data = await res.json();
+            // BME280
+            if (data.bme280 && data.bme280.last_reading) {
+                document.getElementById('bme280-temp').textContent = data.bme280.last_reading.temperature.toFixed(2) + ' °C';
+                document.getElementById('bme280-humidity').textContent = data.bme280.last_reading.humidity.toFixed(2) + ' %';
+                document.getElementById('bme280-pressure').textContent = data.bme280.last_reading.pressure.toFixed(2) + ' hPa';
+                document.getElementById('bme280-meta').textContent = 'Last update: ' + (data.bme280.last_reading.timestamp || '--');
+            }
+            // Soil Moisture
+            if (data.soil_moisture) {
+                document.getElementById('soil-percent').textContent = (data.soil_moisture.percent !== undefined ? data.soil_moisture.percent.toFixed(2) + ' %' : '--');
+                document.getElementById('soil-raw').textContent = (data.soil_moisture.raw !== undefined ? data.soil_moisture.raw : '--');
+                document.getElementById('soil-voltage').textContent = (data.soil_moisture.voltage !== undefined ? data.soil_moisture.voltage.toFixed(3) + ' V' : '--');
+                document.getElementById('soil-meta').textContent = 'Last update: ' + (data.soil_moisture.timestamp || '--');
+            }
+            // Air Quality
+            if (data.mq135) {
+                document.getElementById('air-voltage').textContent = (data.mq135.voltage !== undefined ? data.mq135.voltage.toFixed(3) + ' V' : '--');
+                document.getElementById('air-raw').textContent = (data.mq135.raw !== undefined ? data.mq135.raw : '--');
+                document.getElementById('air-label').textContent = (data.mq135.aqi_label || '--');
+                document.getElementById('air-meta').textContent = 'Last update: ' + (data.mq135.timestamp || '--');
+            }
+        } catch (e) {
+            // Optionally show error
+        }
+    }
+    updateSensors();
+    setInterval(updateSensors, 5000);
+    </script>
+</body>
+</html>
