@@ -9,6 +9,12 @@
 
 class SoilMoistureSensor {
 public:
+    enum State {
+        IDLE,
+        STABILISING,
+        READING,
+        ERROR
+    };
     struct Reading {
         int16_t raw;
         float voltage;
@@ -33,6 +39,17 @@ public:
     unsigned long getStabilisationStart() const { return stabilisationStart; }
     int getStabilisationTimeSec() const { return stabilisationTimeSec; }
     void setPowerGpio(int gpio) { soilPowerGpio = gpio; }
+    int getPowerGpio() const { return soilPowerGpio; }
+    static const char* stateToString(State s) {
+        switch (s) {
+            case IDLE: return "idle";
+            case STABILISING: return "stabilising";
+            case READING: return "reading";
+            case ERROR: return "error";
+            default: return "unknown";
+        }
+    }
+    State getState() const { return state; }
 private:
     ADS1115Manager* ads = nullptr;
     ConfigManager* config = nullptr;
@@ -43,6 +60,7 @@ private:
     unsigned long stabilisationStart = 0;
     int stabilisationTimeSec = 10;
     int soilPowerGpio = -1;
+    State state = IDLE;
     void filterAndAverage(float* rawVals, float* voltVals, float* percentVals, int count, float& avgRaw, float& avgVolt, float& avgPercent);
 };
 

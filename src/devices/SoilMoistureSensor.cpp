@@ -9,6 +9,7 @@ void SoilMoistureSensor::begin(ADS1115Manager* adsMgr, ConfigManager* configMgr,
     ads = adsMgr;
     config = configMgr;
     timeManager = timeMgr;
+    state = IDLE;
     // Get stabilisation time from config if available
     if (config) {
         int t = config->getInt("soil_stabilisation_time", 10);
@@ -20,7 +21,19 @@ void SoilMoistureSensor::begin(ADS1115Manager* adsMgr, ConfigManager* configMgr,
             digitalWrite(soilPowerGpio, LOW); // Ensure off at boot
         }
     }
-    // Do NOT call beginStabilisation() here!
+    // Take initial reading after stabilisation
+    beginStabilisation();
+    if (soilPowerGpio >= 0) {
+        Serial.printf("[SoilMoistureSensor] Powering on sensor (GPIO %d) for initial reading...\n", soilPowerGpio);
+    }
+    Serial.printf("[SoilMoistureSensor] Waiting for stabilisation: %d seconds...\n", stabilisationTimeSec);
+    unsigned long start = millis();
+    while ((millis() - start) < (unsigned long)(stabilisationTimeSec * 1000)) {
+        delay(50);
+    }
+    takeReading();
+    Serial.println("[SoilMoistureSensor] Initial reading after stabilisation:");
+    printReading();
 }
 
 void SoilMoistureSensor::printReading() const {
@@ -45,6 +58,7 @@ void SoilMoistureSensor::printReading() const {
 
 void SoilMoistureSensor::beginStabilisation() {
     stabilisationStart = millis();
+    state = STABILISING;
     if (soilPowerGpio >= 0) {
         digitalWrite(soilPowerGpio, HIGH); // Power on sensor
     }
@@ -55,6 +69,7 @@ bool SoilMoistureSensor::readyForReading() const {
 }
 
 void SoilMoistureSensor::takeReading() {
+    state = READING;
     // Take 10 readings in quick succession
     const int N = 10;
     float rawVals[N], voltVals[N], percentVals[N];
@@ -79,6 +94,7 @@ void SoilMoistureSensor::takeReading() {
     if (soilPowerGpio >= 0) {
         digitalWrite(soilPowerGpio, LOW); // Power off sensor after reading
     }
+    state = IDLE;
 }
 
 void SoilMoistureSensor::filterAndAverage(float* rawVals, float* voltVals, float* percentVals, int count, float& avgRaw, float& avgVolt, float& avgPercent) {

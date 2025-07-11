@@ -114,6 +114,7 @@ void setup() {
         &touch, // Pass TouchSensorDevice pointer
         systemManager.getDeviceManager().getBME280Device() // Pass BME280Device pointer
     );
+    dashboard.setSoilMoistureSensor(&soilMoistureSensor);
     dashboard.begin();
     Serial.println("[DashboardManager] JSON status:");
     Serial.println(dashboard.getStatusString());
@@ -123,8 +124,9 @@ void loop() {
     systemManager.update();
     irrigationManager.update();
     irrigationManager.checkAndRunScheduled();
-    // --- BME280 hourly reading logic ---
+    // --- BME280 and SoilMoistureSensor hourly reading logic ---
     static int lastBmeHour = -1;
+    static int lastSoilHour = -1;
     BME280Device* bme = systemManager.getDeviceManager().getBME280Device();
     TimeManager& timeMgr = systemManager.getTimeManager();
     DateTime now = timeMgr.getTime();
@@ -143,6 +145,22 @@ void loop() {
                 r.avgTemperature, r.avgHumidity, r.avgPressure, r.avgHeatIndex, r.avgDewPoint, timeStr);
         } else {
             Serial.println("[BME280] Hourly reading: not valid");
+        }
+        // After BME280, take soil moisture reading
+        if (now.hour() != lastSoilHour) {
+            soilMoistureSensor.beginStabilisation();
+            Serial.printf("[SoilMoistureSensor] Hourly: Powering on sensor (GPIO %d) for reading...\n", soilMoistureSensor.getPowerGpio());
+            Serial.printf("[SoilMoistureSensor] Hourly: Waiting for stabilisation: %d seconds...\n", soilMoistureSensor.getStabilisationTimeSec());
+            unsigned long start = millis();
+            while ((millis() - start) < (unsigned long)(soilMoistureSensor.getStabilisationTimeSec() * 1000)) {
+                delay(50);
+            }
+            soilMoistureSensor.takeReading();
+            // Ensure power GPIO is set LOW after reading
+            digitalWrite(soilMoistureSensor.getPowerGpio(), LOW);
+            Serial.println("[SoilMoistureSensor] Hourly reading after stabilisation:");
+            soilMoistureSensor.printReading();
+            lastSoilHour = now.hour();
         }
     }
     switch (sensorState) {

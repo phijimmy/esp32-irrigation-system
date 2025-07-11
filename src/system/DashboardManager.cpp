@@ -5,6 +5,7 @@
 #include "devices/RelayController.h"
 #include "devices/TouchSensorDevice.h"
 #include "devices/BME280Device.h"
+#include "devices/SoilMoistureSensor.h"
 
 // Add DashboardManager state enum and member
 enum State {
@@ -57,6 +58,10 @@ void DashboardManager::setTouchSensorDevice(TouchSensorDevice* touchDev) {
 
 void DashboardManager::setBME280Device(BME280Device* bme280Dev) {
     bme280Device = bme280Dev;
+}
+
+void DashboardManager::setSoilMoistureSensor(SoilMoistureSensor* soilSensor) {
+    soilMoistureSensor = soilSensor;
 }
 
 cJSON* DashboardManager::getStatusJson() {
@@ -154,6 +159,23 @@ cJSON* DashboardManager::getStatusJson() {
         cJSON_AddNumberToObject(touchJson, "threshold", touchSensorDevice->getThreshold());
         cJSON_AddNumberToObject(touchJson, "long_press_duration", touchSensorDevice->getLongPressDuration());
         cJSON_AddItemToObject(root, "touch", touchJson);
+    }
+    // Add soil moisture sensor state and last reading
+    if (soilMoistureSensor) {
+        cJSON* soilJson = cJSON_CreateObject();
+        cJSON_AddStringToObject(soilJson, "state", SoilMoistureSensor::stateToString(soilMoistureSensor->getState()));
+        const SoilMoistureSensor::Reading& r = soilMoistureSensor->getLastReading();
+        cJSON_AddNumberToObject(soilJson, "raw", r.raw);
+        cJSON_AddNumberToObject(soilJson, "voltage", r.voltage);
+        cJSON_AddNumberToObject(soilJson, "percent", r.percent);
+        cJSON_AddNumberToObject(soilJson, "avg_raw", r.avgRaw);
+        cJSON_AddNumberToObject(soilJson, "avg_voltage", r.avgVoltage);
+        cJSON_AddNumberToObject(soilJson, "avg_percent", r.avgPercent);
+        char tsStr[32] = "";
+        struct tm* tm_info = localtime(&r.timestamp);
+        strftime(tsStr, sizeof(tsStr), "%Y-%m-%d %H:%M:%S", tm_info);
+        cJSON_AddStringToObject(soilJson, "timestamp", tsStr);
+        cJSON_AddItemToObject(root, "soil_moisture", soilJson);
     }
     // Add config settings
     addConfigSettingsToJson(root);
