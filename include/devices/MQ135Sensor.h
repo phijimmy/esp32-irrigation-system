@@ -12,6 +12,7 @@ class TimeManager;
 
 class MQ135Sensor {
 public:
+    enum State { IDLE, WARMING_UP, READING, ERROR };
     MQ135Sensor();
     void begin(ADS1115Manager* adsMgr, ConfigManager* configMgr, RelayController* relayCtrl);
     void startReading(); // Activates relay, starts warmup
@@ -31,6 +32,16 @@ public:
     unsigned long getWarmupStart() const { return warmupStart; }
     int getWarmupTimeSec() const { return warmupTimeSec; }
     void setTimeManager(TimeManager* tm) { timeManager = tm; }
+    State getState() const { return state; }
+    const char* stateToString() const {
+        switch (state) {
+            case IDLE: return "idle";
+            case WARMING_UP: return "warming_up";
+            case READING: return "reading";
+            case ERROR: return "error";
+            default: return "unknown";
+        }
+    }
     // Returns a qualitative air quality label based on avgVoltage
     static const char* getAirQualityLabel(float voltage) {
         if (voltage < 0.25f) return "Excellent";
@@ -50,6 +61,7 @@ private:
     unsigned long warmupStart = 0;
     int warmupTimeSec = 60;
     bool warmingUp = false;
+    State state = IDLE;
     void filterAndAverage(float* rawVals, float* voltVals, int count, float& avgRaw, float& avgVolt);
 };
 

@@ -84,6 +84,26 @@ void setup() {
     // Connect TimeManager to RelayController for INT/SQW relay control
     systemManager.getTimeManager().setRelayController(&relayController);
 
+    // Now that relays are initialized, initialize MQ135
+    mq135Sensor.begin(&systemManager.getADS1115Manager(), &systemManager.getConfigManager(), &relayController);
+    mq135Sensor.setTimeManager(&systemManager.getTimeManager());
+    // Take initial MQ135 reading after warmup
+    mq135Sensor.startReading();
+    Serial.println("[MQ135Sensor] Powering on sensor for initial reading (relay 3)...");
+    Serial.printf("[MQ135Sensor] Waiting for warmup: %d seconds...\n", mq135Sensor.getWarmupTimeSec());
+    unsigned long mq135Start = millis();
+    while ((millis() - mq135Start) < (unsigned long)(mq135Sensor.getWarmupTimeSec() * 1000)) {
+        delay(50);
+    }
+    mq135Sensor.takeReading();
+    Serial.println("[MQ135Sensor] Initial reading after warmup:");
+    const MQ135Sensor::Reading& mq135r = mq135Sensor.getLastReading();
+    char timeStr[32];
+    struct tm* tm_info = localtime(&mq135r.timestamp);
+    strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", tm_info);
+    Serial.printf("[MQ135Sensor] Reading: raw=%d, voltage=%.4f V | avgRaw=%.1f, avgVoltage=%.4f V, AQI=%s, timestamp=%s\n",
+        mq135r.raw, mq135r.voltage, mq135r.avgRaw, mq135r.avgVoltage, MQ135Sensor::getAirQualityLabel(mq135r.avgVoltage), timeStr);
+    
     // Print initial BME280 reading if available
     // BME280Device* bme = systemManager.getDeviceManager().getBME280Device();
     // if (bme) {

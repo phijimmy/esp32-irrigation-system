@@ -1,7 +1,7 @@
 #include "devices/MQ135Sensor.h"
 #include <time.h>
 
-MQ135Sensor::MQ135Sensor() {}
+MQ135Sensor::MQ135Sensor() { state = IDLE; }
 
 void MQ135Sensor::begin(ADS1115Manager* adsMgr, ConfigManager* configMgr, RelayController* relayCtrl) {
     ads = adsMgr;
@@ -12,13 +12,16 @@ void MQ135Sensor::begin(ADS1115Manager* adsMgr, ConfigManager* configMgr, RelayC
         if (t > 0) warmupTimeSec = t;
     }
     warmingUp = false;
+    state = IDLE;
+    // Do NOT power on or take a reading here! Only set up pointers/config.
 }
 
 void MQ135Sensor::startReading() {
-    if (!relay) return;
+    if (!relay) { state = ERROR; return; }
     relay->activateRelay(3); // GPIO 26
     warmupStart = millis();
     warmingUp = true;
+    state = WARMING_UP;
 }
 
 bool MQ135Sensor::readyForReading() const {
@@ -26,7 +29,8 @@ bool MQ135Sensor::readyForReading() const {
 }
 
 void MQ135Sensor::takeReading() {
-    if (!ads || !relay) return;
+    if (!ads || !relay) { state = ERROR; return; }
+    state = READING;
     // Take 10 readings in quick succession
     const int N = 10;
     float rawVals[N], voltVals[N];
@@ -49,6 +53,7 @@ void MQ135Sensor::takeReading() {
     lastReading.valid = true;
     relay->deactivateRelay(3); // Power off sensor
     warmingUp = false;
+    state = IDLE;
 }
 
 void MQ135Sensor::filterAndAverage(float* rawVals, float* voltVals, int count, float& avgRaw, float& avgVolt) {
