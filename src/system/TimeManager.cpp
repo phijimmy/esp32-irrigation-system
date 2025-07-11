@@ -228,8 +228,23 @@ void TimeManager::updateDSTTransition() {
         return; // DST disabled, no transitions to handle
     }
     
+    // Only check for DST transitions periodically (every 10 minutes) to avoid false positives
+    unsigned long now = millis();
+    if (lastDSTCheck != 0 && (now - lastDSTCheck) < 600000) { // 10 minutes
+        return;
+    }
+    lastDSTCheck = now;
+    
     DateTime localTime = getTime(); // RTC stores local time
     bool currentDSTState = isDSTActive(localTime);
+    
+    // Only perform DST transitions during the actual transition periods (March/October)
+    // and only if we're within a few days of the transition
+    if (localTime.month() != 3 && localTime.month() != 10) {
+        // Not in transition months, just update the state without transitions
+        lastDSTState = currentDSTState;
+        return;
+    }
     
     // Check if DST state changed and perform actual time adjustment
     if (currentDSTState != lastDSTState) {
@@ -667,14 +682,22 @@ bool TimeManager::isNewDay() {
     int currentDayId = now.year() * 10000 + now.month() * 100 + now.day();
     
     if (lastDayId == -1) {
-        // First check, initialize
+        // First check, initialize but don't consider it a "new day"
         lastDayId = currentDayId;
         return false;
     }
     
     if (currentDayId != lastDayId) {
-        lastDayId = currentDayId;
-        return true;
+        // Only consider it a new day if the time has actually moved forward
+        // This prevents false positives from time adjustments or reboots
+        if (currentDayId > lastDayId) {
+            lastDayId = currentDayId;
+            return true;
+        } else {
+            // Time went backwards (DST, NTP adjustment, etc.), just update without triggering "new day"
+            lastDayId = currentDayId;
+            return false;
+        }
     }
     
     return false;
@@ -735,9 +758,10 @@ DateTime TimeManager::buildTime() {
 void TimeManager::enableAlarmInterrupts() {
     if (!rtcFound) return;
     
-    // Clear any existing alarm flags
+    // Clear any existing alarm flags BEFORE enabling interrupts
     rtc.clearAlarm(1);
     rtc.clearAlarm(2);
+    alarm1Active = false; // Reset alarm state
     
     // Configure DS3231 control register to enable alarm interrupts
     // This will make the INT/SQW pin respond to alarm triggers
@@ -747,6 +771,11 @@ void TimeManager::enableAlarmInterrupts() {
     // Set alarms for today's schedule
     setAlarmsForToday();
     
+    // Clear alarm flags AGAIN after setting alarms to ensure clean start
+    rtc.clearAlarm(1);
+    rtc.clearAlarm(2);
+    alarm1Active = false;
+    
     if (diagnosticManager) {
         diagnosticManager->log(DiagnosticManager::LOG_INFO, "Time", "DS3231 alarm interrupts enabled");
     }
@@ -755,18 +784,55 @@ void TimeManager::enableAlarmInterrupts() {
 void TimeManager::handleAlarmInterrupt() {
     if (!rtcFound || intSqwGpio == 255) return;
     
-    // Always check alarm flags, not just on pin state changes
+    // Check alarm flags, but only process them if they represent new triggers
     bool alarm1Triggered = rtc.alarmFired(1);
     bool alarm2Triggered = rtc.alarmFired(2);
     
+    // Only process alarm1 if it wasn't already active and current time is actually at or past the alarm time
     if (alarm1Triggered && !alarm1Active) {
-        if (diagnosticManager) {
-            diagnosticManager->log(DiagnosticManager::LOG_INFO, "Time", "Alarm 1 triggered - INT/SQW should go LOW");
+        DateTime currentTime = getTime();
+        
+        // Get today's alarm1 time from config to verify this is a legitimate trigger
+        bool useWeeklySchedule = configManager ? configManager->getBool("use_weekly_schedule", true) : true;
+        int expectedHour = 18; // Default
+        int expectedMinute = 0; // Default
+        
+        if (useWeeklySchedule && configManager) {
+            int dayOfWeek = currentTime.dayOfTheWeek();
+            const char* dayNames[] = {"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"};
+            cJSON* weeklySchedule = configManager->getSection("weekly_schedule");
+            if (weeklySchedule) {
+                cJSON* todaySchedule = cJSON_GetObjectItem(weeklySchedule, dayNames[dayOfWeek]);
+                if (todaySchedule) {
+                    cJSON* alarm1Config = cJSON_GetObjectItem(todaySchedule, "alarm1");
+                    if (alarm1Config) {
+                        expectedHour = cJSON_GetObjectItem(alarm1Config, "hour") ? cJSON_GetObjectItem(alarm1Config, "hour")->valueint : 18;
+                        expectedMinute = cJSON_GetObjectItem(alarm1Config, "minute") ? cJSON_GetObjectItem(alarm1Config, "minute")->valueint : 0;
+                    }
+                }
+            }
         }
-        alarm1Active = true;
-        // DON'T clear alarm1 yet - this keeps INT/SQW LOW
-        // rtc.clearAlarm(1); // Commented out to keep INT/SQW LOW
+        
+        // Only trigger if current time is actually at or past the expected alarm time
+        if (currentTime.hour() > expectedHour || 
+            (currentTime.hour() == expectedHour && currentTime.minute() >= expectedMinute)) {
+            
+            if (diagnosticManager) {
+                diagnosticManager->log(DiagnosticManager::LOG_INFO, "Time", "Alarm 1 triggered at %02d:%02d (expected %02d:%02d) - INT/SQW should go LOW", 
+                                       currentTime.hour(), currentTime.minute(), expectedHour, expectedMinute);
+            }
+            alarm1Active = true;
+            // DON'T clear alarm1 yet - this keeps INT/SQW LOW
+        } else {
+            // False alarm - clear it without processing
+            if (diagnosticManager) {
+                diagnosticManager->log(DiagnosticManager::LOG_DEBUG, "Time", "Alarm 1 flag set but time mismatch (%02d:%02d vs expected %02d:%02d) - clearing flag", 
+                                       currentTime.hour(), currentTime.minute(), expectedHour, expectedMinute);
+            }
+            rtc.clearAlarm(1);
+        }
     }
+    
     if (alarm2Triggered) {
         if (diagnosticManager) {
             diagnosticManager->log(DiagnosticManager::LOG_INFO, "Time", "Alarm 2 triggered - clearing both alarms, INT/SQW should go HIGH");
