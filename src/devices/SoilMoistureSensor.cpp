@@ -21,19 +21,13 @@ void SoilMoistureSensor::begin(ADS1115Manager* adsMgr, ConfigManager* configMgr,
             digitalWrite(soilPowerGpio, LOW); // Ensure off at boot
         }
     }
-    // Take initial reading after stabilisation
+    // Start initial stabilisation (non-blocking)
     beginStabilisation();
     if (soilPowerGpio >= 0) {
         Serial.printf("[SoilMoistureSensor] Powering on sensor (GPIO %d) for initial reading...\n", soilPowerGpio);
     }
-    Serial.printf("[SoilMoistureSensor] Waiting for stabilisation: %d seconds...\n", stabilisationTimeSec);
-    unsigned long start = millis();
-    while ((millis() - start) < (unsigned long)(stabilisationTimeSec * 1000)) {
-        delay(50);
-    }
-    takeReading();
-    Serial.println("[SoilMoistureSensor] Initial reading after stabilisation:");
-    printReading();
+    Serial.printf("[SoilMoistureSensor] Starting non-blocking stabilisation: %d seconds...\n", stabilisationTimeSec);
+    // Note: Initial reading will be taken when readyForReading() returns true
 }
 
 void SoilMoistureSensor::printReading() const {

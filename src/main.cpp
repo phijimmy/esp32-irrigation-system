@@ -24,6 +24,12 @@ unsigned long mq135LastProgressPrint = 0;
 // Sensor state machine
 enum SensorState { IDLE, SOIL_STABILISING, SOIL_DONE, MQ135_WARMUP, MQ135_DONE };
 SensorState sensorState = IDLE;
+// Sequential sensor initialization state 
+enum InitState { INIT_IDLE, INIT_SOIL_STABILISING, INIT_SOIL_DONE, INIT_MQ135_WARMUP, INIT_MQ135_DONE, INIT_COMPLETE };
+InitState initState = INIT_IDLE;
+bool sensorsInitialized = false;
+// Hourly reading state
+bool hourlyReadingRequested = false;
 IrrigationManager irrigationManager;
 WebServerManager* webServerManager = nullptr;
 unsigned long irrigationTriggerTime = 0;
@@ -86,25 +92,10 @@ void setup() {
     // Connect TimeManager to RelayController for INT/SQW relay control
     systemManager.getTimeManager().setRelayController(&relayController);
 
-    // Now that relays are initialized, initialize MQ135
+    // Now that relays are initialized, initialize MQ135 (but don't start it yet)
     mq135Sensor.begin(&systemManager.getADS1115Manager(), &systemManager.getConfigManager(), &relayController);
     mq135Sensor.setTimeManager(&systemManager.getTimeManager());
-    // Take initial MQ135 reading after warmup
-    mq135Sensor.startReading();
-    Serial.println("[MQ135Sensor] Powering on sensor for initial reading (relay 3)...");
-    Serial.printf("[MQ135Sensor] Waiting for warmup: %d seconds...\n", mq135Sensor.getWarmupTimeSec());
-    unsigned long mq135Start = millis();
-    while ((millis() - mq135Start) < (unsigned long)(mq135Sensor.getWarmupTimeSec() * 1000)) {
-        delay(50);
-    }
-    mq135Sensor.takeReading();
-    Serial.println("[MQ135Sensor] Initial reading after warmup:");
-    const MQ135Sensor::Reading& mq135r = mq135Sensor.getLastReading();
-    char timeStr[32];
-    struct tm* tm_info = localtime(&mq135r.timestamp);
-    strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", tm_info);
-    Serial.printf("[MQ135Sensor] Reading: raw=%d, voltage=%.4f V | avgRaw=%.1f, avgVoltage=%.4f V, AQI=%s, timestamp=%s\n",
-        mq135r.raw, mq135r.voltage, mq135r.avgRaw, mq135r.avgVoltage, MQ135Sensor::getAirQualityLabel(mq135r.avgVoltage), timeStr);
+    // Note: MQ135 reading will start after soil sensor initialization is complete (sequential)
     
     // Print initial BME280 reading if available
     // BME280Device* bme = systemManager.getDeviceManager().getBME280Device();
@@ -151,6 +142,79 @@ void setup() {
 
 void loop() {
     systemManager.update();
+    
+    // --- Sequential sensor initialization (non-blocking) ---
+    if (!sensorsInitialized) {
+        switch (initState) {
+            case INIT_IDLE:
+                // Start soil sensor stabilization first
+                soilMoistureSensor.beginStabilisation();
+                Serial.println("[INIT] Starting soil sensor stabilisation...");
+                initState = INIT_SOIL_STABILISING;
+                lastStabilisationPrint = millis();
+                break;
+                
+            case INIT_SOIL_STABILISING: {
+                unsigned long now = millis();
+                int elapsed = (now - soilMoistureSensor.getStabilisationStart()) / 1000;
+                int total = soilMoistureSensor.getStabilisationTimeSec();
+                if (now - lastStabilisationPrint >= 1000) {
+                    Serial.printf("[INIT][SoilMoistureSensor] Stabilising... %d/%d seconds\n", elapsed, total);
+                    lastStabilisationPrint = now;
+                }
+                if (soilMoistureSensor.readyForReading()) {
+                    Serial.println("[INIT] Soil sensor stabilisation complete, taking reading...");
+                    soilMoistureSensor.takeReading();
+                    soilMoistureSensor.printReading();
+                    initState = INIT_SOIL_DONE;
+                }
+                break;
+            }
+            
+            case INIT_SOIL_DONE:
+                // Soil is done, now start MQ135 warmup (sequential to avoid ADS1115 conflicts)
+                Serial.println("[INIT] Soil sensor done, starting MQ135 warmup...");
+                mq135Sensor.startReading(); // Start MQ135 warmup
+                initState = INIT_MQ135_WARMUP;
+                mq135LastProgressPrint = millis();
+                break;
+                
+            case INIT_MQ135_WARMUP: {
+                unsigned long now = millis();
+                int elapsed = (now - mq135Sensor.getWarmupStart()) / 1000;
+                int total = mq135Sensor.isWarmingUp() ? mq135Sensor.getWarmupTimeSec() : 0;
+                if (mq135Sensor.isWarmingUp() && now - mq135LastProgressPrint >= 1000) {
+                    Serial.printf("[INIT][MQ135Sensor] Warming up... %d/%d seconds\n", elapsed, total);
+                    mq135LastProgressPrint = now;
+                }
+                if (mq135Sensor.readyForReading()) {
+                    Serial.println("[INIT] MQ135 warmup complete, taking reading...");
+                    mq135Sensor.takeReading();
+                    const MQ135Sensor::Reading& r = mq135Sensor.getLastReading();
+                    char timeStr[32];
+                    struct tm* tm_info = localtime(&r.timestamp);
+                    strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", tm_info);
+                    Serial.printf("[INIT][MQ135Sensor] Reading: raw=%d, voltage=%.4f V | avgRaw=%.1f, avgVoltage=%.4f V, AQI=%s, timestamp=%s\n",
+                        r.raw, r.voltage, r.avgRaw, r.avgVoltage, MQ135Sensor::getAirQualityLabel(r.avgVoltage), timeStr);
+                    initState = INIT_MQ135_DONE;
+                }
+                break;
+            }
+            
+            case INIT_MQ135_DONE:
+                Serial.println("[INIT] All sensors initialized!");
+                sensorsInitialized = true;
+                initState = INIT_COMPLETE;
+                break;
+                
+            case INIT_COMPLETE:
+                // Sensors are ready
+                break;
+        }
+        // Don't continue with normal operations until initialization is complete
+        return;
+    }
+    
     irrigationManager.update();
     irrigationManager.checkAndRunScheduled();
     // --- BME280 and SoilMoistureSensor hourly reading logic ---
@@ -175,23 +239,28 @@ void loop() {
         } else {
             Serial.println("[BME280] Hourly reading: not valid");
         }
-        // After BME280, take soil moisture reading
+        // After BME280, start soil moisture reading (non-blocking)
         if (now.hour() != lastSoilHour) {
             soilMoistureSensor.beginStabilisation();
-            Serial.printf("[SoilMoistureSensor] Hourly: Powering on sensor (GPIO %d) for reading...\n", soilMoistureSensor.getPowerGpio());
-            Serial.printf("[SoilMoistureSensor] Hourly: Waiting for stabilisation: %d seconds...\n", soilMoistureSensor.getStabilisationTimeSec());
-            unsigned long start = millis();
-            while ((millis() - start) < (unsigned long)(soilMoistureSensor.getStabilisationTimeSec() * 1000)) {
-                delay(50);
-            }
-            soilMoistureSensor.takeReading();
-            // Ensure power GPIO is set LOW after reading
-            digitalWrite(soilMoistureSensor.getPowerGpio(), LOW);
-            Serial.println("[SoilMoistureSensor] Hourly reading after stabilisation:");
-            soilMoistureSensor.printReading();
+            Serial.printf("[SoilMoistureSensor] Hourly: Starting non-blocking stabilisation (GPIO %d)...\n", soilMoistureSensor.getPowerGpio());
+            Serial.printf("[SoilMoistureSensor] Hourly: Stabilisation time: %d seconds...\n", soilMoistureSensor.getStabilisationTimeSec());
+            // Set flag to handle reading completion
+            hourlyReadingRequested = true;
             lastSoilHour = now.hour();
         }
     }
+    
+    // --- Handle hourly soil reading completion (non-blocking) ---
+    if (hourlyReadingRequested && soilMoistureSensor.readyForReading()) {
+        Serial.println("[SoilMoistureSensor] Hourly stabilisation complete, taking reading...");
+        soilMoistureSensor.takeReading();
+        // Ensure power GPIO is set LOW after reading
+        digitalWrite(soilMoistureSensor.getPowerGpio(), LOW);
+        Serial.println("[SoilMoistureSensor] Hourly reading after stabilisation:");
+        soilMoistureSensor.printReading();
+        hourlyReadingRequested = false;
+    }
+    
     switch (sensorState) {
         case IDLE:
             // Serial.println("[SoilMoistureSensor] Reading requested, starting stabilisation...");

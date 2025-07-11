@@ -30,7 +30,7 @@ DashboardManager::DashboardManager(TimeManager* timeMgr, ConfigManager* configMg
     : timeManager(timeMgr), configManager(configMgr), systemManager(sysMgr), diagnosticManager(diagMgr), ledDevice(ledDev), relayController(relayCtrl), touchSensorDevice(touchDev), bme280Device(bme280Dev), state(UNINITIALIZED) {}
 
 void DashboardManager::begin() {
-    // Robustly ensure MQ135Sensor is set and ready before initializing dashboard
+    // Check if MQ135Sensor is ready (non-blocking approach)
     if (!mq135Sensor) {
         state = ERROR;
         if (diagnosticManager) {
@@ -38,18 +38,14 @@ void DashboardManager::begin() {
         }
         return;
     }
-    unsigned long start = millis();
-    // Wait up to 2 minutes for sensor to finish warming up and have a valid reading
-    while (mq135Sensor->isWarmingUp() || mq135Sensor->getLastReading().raw == 0) {
-        delay(100);
-        if (millis() - start > 120000) {
-            state = ERROR;
-            if (diagnosticManager) {
-                diagnosticManager->log(DiagnosticManager::LOG_ERROR, "DashboardManager", "Timeout waiting for MQ135Sensor to finish warmup/reading!");
-            }
-            return;
+    
+    // Non-blocking: Dashboard can initialize even if sensor isn't ready yet
+    if (mq135Sensor->isWarmingUp() || mq135Sensor->getLastReading().raw == 0) {
+        if (diagnosticManager) {
+            diagnosticManager->log(DiagnosticManager::LOG_INFO, "DashboardManager", "MQ135Sensor still warming up - dashboard will show initial values");
         }
     }
+    
     state = INITIALIZED;
     if (diagnosticManager) {
         diagnosticManager->log(DiagnosticManager::LOG_INFO, "DashboardManager", "DashboardManager initialized");

@@ -82,6 +82,13 @@ void TimeManager::begin(I2CManager* i2c, ConfigManager* config, DiagnosticManage
                 dstStart.month(), dstStart.day(),
                 dstEnd.month(), dstEnd.day());
         }
+        
+        // Initialize lastDayId to prevent false "new day" detection during startup
+        DateTime now = getLocalTime();
+        lastDayId = now.year() * 10000 + now.month() * 100 + now.day();
+        if (diagnosticManager) {
+            diagnosticManager->log(DiagnosticManager::LOG_INFO, "Time", "begin: initialized lastDayId=%d", lastDayId);
+        }
     } else {
         if (diagnosticManager) {
             diagnosticManager->log(DiagnosticManager::LOG_WARN, "Time", "DS3231 RTC not found!");
@@ -181,6 +188,12 @@ DateTime TimeManager::getTime() {
 void TimeManager::setTime(const DateTime& dt) {
     if (rtcFound) {
         rtc.adjust(dt);
+        // Reinitialize lastDayId after time adjustment to prevent false "new day" detection
+        int newDayId = dt.year() * 10000 + dt.month() * 100 + dt.day();
+        if (diagnosticManager) {
+            diagnosticManager->log(DiagnosticManager::LOG_INFO, "Time", "setTime: updating lastDayId from %d to %d", lastDayId, newDayId);
+        }
+        lastDayId = newDayId;
     }
 }
 
@@ -678,24 +691,56 @@ int TimeManager::getCurrentDayOfWeek() {
 
 bool TimeManager::isNewDay() {
     DateTime now = getLocalTime();
+    // Check for invalid date (e.g., RTC not set or time adjustment in progress)
+    if (!now.isValid() || now.year() < 2000 || now.month() < 1 || now.month() > 12 || now.day() < 1 || now.day() > 31) {
+        if (diagnosticManager) {
+            diagnosticManager->log(DiagnosticManager::LOG_WARN, "Time", "isNewDay: Invalid date detected (year=%d, month=%d, day=%d) - skipping new day check", now.year(), now.month(), now.day());
+        }
+        return false;
+    }
     // Create a unique day identifier using year, month, and day
     int currentDayId = now.year() * 10000 + now.month() * 100 + now.day();
     
     if (lastDayId == -1) {
         // First check, initialize but don't consider it a "new day"
         lastDayId = currentDayId;
+        if (diagnosticManager) {
+            diagnosticManager->log(DiagnosticManager::LOG_INFO, "Time", "isNewDay: Initialized lastDayId=%d (not a new day)", lastDayId);
+        }
         return false;
     }
     
     if (currentDayId != lastDayId) {
-        // Only consider it a new day if the time has actually moved forward
-        // This prevents false positives from time adjustments or reboots
-        if (currentDayId > lastDayId) {
+        // Extract year, month, day from both IDs to compare properly
+        int lastYear = lastDayId / 10000;
+        int lastMonth = (lastDayId % 10000) / 100;
+        int lastDay = lastDayId % 100;
+        
+        int currentYear = now.year();
+        int currentMonth = now.month();
+        int currentDay = now.day();
+        
+        if (diagnosticManager) {
+            diagnosticManager->log(DiagnosticManager::LOG_INFO, "Time", "isNewDay: dayId changed from %d to %d (%04d-%02d-%02d vs %04d-%02d-%02d)", 
+                lastDayId, currentDayId, lastYear, lastMonth, lastDay, currentYear, currentMonth, currentDay);
+        }
+        
+        // Only consider it a new day if we've actually moved to a different calendar day
+        // This prevents false positives from time adjustments within the same day
+        if (currentYear > lastYear || 
+            (currentYear == lastYear && currentMonth > lastMonth) ||
+            (currentYear == lastYear && currentMonth == lastMonth && currentDay > lastDay)) {
             lastDayId = currentDayId;
+            if (diagnosticManager) {
+                diagnosticManager->log(DiagnosticManager::LOG_INFO, "Time", "isNewDay: TRUE - calendar day advanced");
+            }
             return true;
         } else {
-            // Time went backwards (DST, NTP adjustment, etc.), just update without triggering "new day"
+            // Time adjustment within same day or backwards, just update without triggering "new day"
             lastDayId = currentDayId;
+            if (diagnosticManager) {
+                diagnosticManager->log(DiagnosticManager::LOG_INFO, "Time", "isNewDay: FALSE - time adjustment within same/previous day");
+            }
             return false;
         }
     }
@@ -711,6 +756,13 @@ void TimeManager::setBuildTimeIfNeeded() {
     if (forceBuildTime || rtc.lostPower()) {
         DateTime buildDateTime = buildTime();
         rtc.adjust(buildDateTime);
+        
+        // Reinitialize lastDayId after time adjustment
+        int newDayId = buildDateTime.year() * 10000 + buildDateTime.month() * 100 + buildDateTime.day();
+        if (diagnosticManager) {
+            diagnosticManager->log(DiagnosticManager::LOG_INFO, "Time", "setBuildTimeIfNeeded: updating lastDayId from %d to %d", lastDayId, newDayId);
+        }
+        lastDayId = newDayId;
         
         if (diagnosticManager) {
             diagnosticManager->log(DiagnosticManager::LOG_INFO, "Time", 
