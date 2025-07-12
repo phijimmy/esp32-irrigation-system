@@ -282,12 +282,16 @@ void loop() {
     
     switch (sensorState) {
         case IDLE:
-            // Serial.println("[SoilMoistureSensor] Reading requested, starting stabilisation...");
-            // soilReadingRequested = true;
-            // soilReadingTaken = false;
-            // soilMoistureSensor.beginStabilisation();
-            // lastStabilisationPrint = millis();
-            // sensorState = SOIL_STABILISING;
+            // If a manual MQ135 reading was requested, start warmup
+            if (mq135ReadingRequested) {
+                Serial.println("[MQ135Sensor] Manual air quality reading requested, starting warmup...");
+                mq135Sensor.startReading();
+                mq135ReadingRequested = false;
+                mq135ReadingTaken = false;
+                mq135LastProgressPrint = millis();
+                sensorState = MQ135_WARMUP;
+            }
+            // ...existing code...
             break;
         case SOIL_STABILISING: {
             unsigned long now = millis();

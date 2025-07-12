@@ -50,9 +50,26 @@ async function updateSensors() {
             let mqHtml = '';
             mqHtml += `<b>AQI:</b> ${data.mq135.aqi_label || '--'}<br>`;
             mqHtml += `<b>Timestamp:</b> ${data.mq135.timestamp || '--'}<br>`;
+            mqHtml += `<b>State:</b> ${data.mq135.state || '--'}<br>`;
+            if (data.mq135.state === 'warming_up') {
+                mqHtml += `<b>Warmup:</b> ${data.mq135.warmup_elapsed_sec || 0} / ${data.mq135.warmup_time_sec || 0} sec<br>`;
+            }
             document.getElementById('mq135-data').innerHTML = mqHtml;
+            if (window.mqBtn) {
+                if (data.mq135.state === 'warming_up' || data.mq135.state === 'reading') {
+                    window.mqBtn.disabled = true;
+                    window.mqBtn.textContent = (data.mq135.state === 'warming_up') ? 'Warming up...' : 'Reading...';
+                } else {
+                    window.mqBtn.disabled = false;
+                    window.mqBtn.textContent = 'Take Air Quality Reading';
+                }
+            }
         } else {
             document.getElementById('mq135-data').textContent = '--';
+            if (window.mqBtn) {
+                window.mqBtn.disabled = false;
+                window.mqBtn.textContent = 'Take Air Quality Reading';
+            }
         }
     } catch (e) {
         // Optionally show error
@@ -104,6 +121,22 @@ window.addEventListener('DOMContentLoaded', () => {
             } catch (e) {
                 soilBtn.textContent = 'Error';
                 soilBtn.disabled = false;
+            }
+        });
+    }
+
+    // MQ135 Air Quality button handler - only attach once
+    window.mqBtn = document.getElementById('mq135-read-btn');
+    if (window.mqBtn) {
+        window.mqBtn.addEventListener('click', async function() {
+            window.mqBtn.disabled = true;
+            window.mqBtn.textContent = 'Warming up...';
+            try {
+                await fetch('/api/mq135/trigger', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+                // No need to handle response, updateSensors will poll and update state
+            } catch (e) {
+                window.mqBtn.textContent = 'Error';
+                window.mqBtn.disabled = false;
             }
         });
     }

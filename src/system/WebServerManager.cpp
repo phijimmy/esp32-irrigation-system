@@ -14,6 +14,23 @@ WebServerManager::WebServerManager(DashboardManager* dashMgr, DiagnosticManager*
 void WebServerManager::begin() {
     // Create server before registering any routes
     server = new AsyncWebServer(80);
+    // MQ135 Air Quality trigger API
+    extern MQ135Sensor mq135Sensor;
+    server->on("/api/mq135/trigger", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,
+        [](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
+            extern MQ135Sensor mq135Sensor;
+            mq135Sensor.startReading();
+            // Set state machine so main loop will process the reading
+            extern bool mq135ReadingRequested;
+            mq135ReadingRequested = true;
+            cJSON* resp = cJSON_CreateObject();
+            cJSON_AddStringToObject(resp, "result", "started");
+            cJSON_AddStringToObject(resp, "message", "Air quality reading started. Poll /api/status for result.");
+            char* respStr = cJSON_PrintUnformatted(resp);
+            request->send(200, "application/json", respStr);
+            cJSON_free(respStr);
+            cJSON_Delete(resp);
+        });
     // Soil Moisture trigger API
     extern SoilMoistureSensor soilMoistureSensor;
     server->on("/api/soilmoisture/trigger", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,
