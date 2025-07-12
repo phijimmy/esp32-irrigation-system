@@ -89,22 +89,15 @@ void ConfigManager::loadDefaults() {
     for (int day = 0; day < 7; day++) {
         cJSON* daySchedule = cJSON_CreateObject();
         
-        // Alarm1 settings for this day
+        // Alarm1 settings for this day (always 18:00)
         cJSON* dayAlarm1 = cJSON_CreateObject();
-        if (day == 5) { // Friday
-            cJSON_AddNumberToObject(dayAlarm1, "hour", 19);
-            cJSON_AddNumberToObject(dayAlarm1, "minute", 0);
-            cJSON_AddNumberToObject(dayAlarm1, "second", 0);
-            cJSON_AddBoolToObject(dayAlarm1, "enabled", true);
-        } else {
-            cJSON_AddNumberToObject(dayAlarm1, "hour", 18);
-            cJSON_AddNumberToObject(dayAlarm1, "minute", 0);
-            cJSON_AddNumberToObject(dayAlarm1, "second", 0);
-            cJSON_AddBoolToObject(dayAlarm1, "enabled", true);
-        }
+        cJSON_AddNumberToObject(dayAlarm1, "hour", 18);
+        cJSON_AddNumberToObject(dayAlarm1, "minute", 0);
+        cJSON_AddNumberToObject(dayAlarm1, "second", 0);
+        cJSON_AddBoolToObject(dayAlarm1, "enabled", true);
         cJSON_AddItemToObject(daySchedule, "alarm1", dayAlarm1);
         
-        // Alarm2 settings for this day - 22:00 for all days
+        // Alarm2 settings for this day (always 22:00)
         cJSON* dayAlarm2 = cJSON_CreateObject();
         cJSON_AddNumberToObject(dayAlarm2, "hour", 22);
         cJSON_AddNumberToObject(dayAlarm2, "minute", 0);
@@ -295,17 +288,10 @@ void ConfigManager::mergeDefaults() {
             cJSON* daySchedule = cJSON_CreateObject();
             
             cJSON* dayAlarm1 = cJSON_CreateObject();
-            if (day == 5) { // Friday
-                cJSON_AddNumberToObject(dayAlarm1, "hour", 19);
-                cJSON_AddNumberToObject(dayAlarm1, "minute", 0);
-                cJSON_AddNumberToObject(dayAlarm1, "second", 0);
-                cJSON_AddBoolToObject(dayAlarm1, "enabled", true);
-            } else {
-                cJSON_AddNumberToObject(dayAlarm1, "hour", 18);
-                cJSON_AddNumberToObject(dayAlarm1, "minute", 0);
-                cJSON_AddNumberToObject(dayAlarm1, "second", 0);
-                cJSON_AddBoolToObject(dayAlarm1, "enabled", true);
-            }
+            cJSON_AddNumberToObject(dayAlarm1, "hour", 18);
+            cJSON_AddNumberToObject(dayAlarm1, "minute", 0);
+            cJSON_AddNumberToObject(dayAlarm1, "second", 0);
+            cJSON_AddBoolToObject(dayAlarm1, "enabled", true);
             cJSON_AddItemToObject(daySchedule, "alarm1", dayAlarm1);
             
             cJSON* dayAlarm2 = cJSON_CreateObject();
