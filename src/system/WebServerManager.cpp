@@ -1,10 +1,12 @@
 #include "system/WebServerManager.h"
 #include <Arduino.h>
 
+
 #include <LittleFS.h>
 #include "devices/LedDevice.h"
 
 extern LedDevice led;
+extern SystemManager systemManager;
 
 WebServerManager::WebServerManager(DashboardManager* dashMgr, DiagnosticManager* diagMgr)
     : dashboardManager(dashMgr), diagnosticManager(diagMgr), server(nullptr) {}
@@ -12,6 +14,27 @@ WebServerManager::WebServerManager(DashboardManager* dashMgr, DiagnosticManager*
 void WebServerManager::begin() {
     // Create server before registering any routes
     server = new AsyncWebServer(80);
+    // BME280 trigger API
+    server->on("/api/bme280/trigger", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,
+        [](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
+            BME280Device* bme = systemManager.getDeviceManager().getBME280Device();
+            cJSON* resp = cJSON_CreateObject();
+            if (bme) {
+                BME280Reading r = bme->readData();
+                cJSON_AddStringToObject(resp, "result", r.valid ? "ok" : "error");
+                cJSON_AddNumberToObject(resp, "temperature", r.temperature);
+                cJSON_AddNumberToObject(resp, "humidity", r.humidity);
+                cJSON_AddNumberToObject(resp, "pressure", r.pressure);
+                cJSON_AddNumberToObject(resp, "heat_index", r.heatIndex);
+                cJSON_AddNumberToObject(resp, "dew_point", r.dewPoint);
+            } else {
+                cJSON_AddStringToObject(resp, "result", "error");
+            }
+            char* respStr = cJSON_PrintUnformatted(resp);
+            request->send(200, "application/json", respStr);
+            cJSON_free(respStr);
+            cJSON_Delete(resp);
+        });
 
     // Relay control API
     extern RelayController relayController;

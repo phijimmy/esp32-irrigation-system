@@ -47,4 +47,34 @@ async function updateSensors() {
 window.addEventListener('DOMContentLoaded', () => {
     updateSensors();
     setInterval(updateSensors, 5000);
+
+    const bmeBtn = document.getElementById('bme280-read-btn');
+    if (bmeBtn) {
+        bmeBtn.addEventListener('click', async function() {
+            bmeBtn.disabled = true;
+            bmeBtn.textContent = 'Reading...';
+            try {
+                const res = await fetch('/api/bme280/trigger', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+                const data = await res.json();
+                if (data.result === 'ok') {
+                    let bmeHtml = '';
+                    bmeHtml += `<b>Temperature:</b> ${data.temperature?.toFixed(2)} °C<br>`;
+                    bmeHtml += `<b>Humidity:</b> ${data.humidity?.toFixed(2)} %<br>`;
+                    bmeHtml += `<b>Pressure:</b> ${data.pressure?.toFixed(2)} hPa<br>`;
+                    bmeHtml += `<b>Heat Index:</b> ${data.heat_index?.toFixed(2)} °C<br>`;
+                    bmeHtml += `<b>Dew Point:</b> ${data.dew_point?.toFixed(2)} °C<br>`;
+                    document.getElementById('bme280-data').innerHTML = bmeHtml;
+                    bmeBtn.textContent = 'Take BME280 Reading';
+                } else {
+                    bmeBtn.textContent = 'Error';
+                }
+            } catch (e) {
+                bmeBtn.textContent = 'Error';
+            }
+            setTimeout(() => {
+                bmeBtn.textContent = 'Take BME280 Reading';
+                bmeBtn.disabled = false;
+            }, 2000);
+        });
+    }
 });
