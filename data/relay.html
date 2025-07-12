@@ -28,19 +28,7 @@
                     <div class="card-title">Current Relay States</div>
                 </div>
                 <div class="card-content">
-                    <table id="relay-table">
-                        <thead>
-                            <tr>
-                                <th>Relay</th>
-                                <th>GPIO</th>
-                                <th>State</th>
-                                <th>Mode</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Populated by relay.js -->
-                        </tbody>
-                    </table>
+                    <!-- Relay indicators and controls -->
                 </div>
                 <div class="relay-controls" style="margin-top:1.5rem; text-align:center;">
                     <div>
@@ -48,24 +36,28 @@
                         <button class="relay-on" data-relay="0">On</button>
                         <button class="relay-off" data-relay="0">Off</button>
                         <button class="relay-toggle" data-relay="0">Toggle</button>
+                        <span id="relay-indicator-0" class="relay-indicator"></span>
                     </div>
                     <div>
                         <span>Relay 1: </span>
                         <button class="relay-on" data-relay="1">On</button>
                         <button class="relay-off" data-relay="1">Off</button>
                         <button class="relay-toggle" data-relay="1">Toggle</button>
+                        <span id="relay-indicator-1" class="relay-indicator"></span>
                     </div>
                     <div>
                         <span>Relay 2: </span>
                         <button class="relay-on" data-relay="2">On</button>
                         <button class="relay-off" data-relay="2">Off</button>
                         <button class="relay-toggle" data-relay="2">Toggle</button>
+                        <span id="relay-indicator-2" class="relay-indicator"></span>
                     </div>
                     <div>
                         <span>Relay 3: </span>
                         <button class="relay-on" data-relay="3">On</button>
                         <button class="relay-off" data-relay="3">Off</button>
                         <button class="relay-toggle" data-relay="3">Toggle</button>
+                        <span id="relay-indicator-3" class="relay-indicator"></span>
                     </div>
                 </div>
             </div>

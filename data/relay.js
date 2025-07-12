@@ -1,15 +1,21 @@
 document.addEventListener('DOMContentLoaded', function() {
-    function refreshRelayTable() {
+    function refreshRelayIndicators() {
         fetch('/api/status')
             .then(response => response.json())
             .then(data => {
-                populateRelayTable(data.relays);
+                updateRelayIndicators(data.relays);
             })
             .catch(err => {
-                document.querySelector('#relay-table tbody').innerHTML = '<tr><td colspan="4">Failed to load relay data</td></tr>';
+                for (let i = 0; i < 4; i++) {
+                    const indicator = document.getElementById('relay-indicator-' + i);
+                    if (indicator) {
+                        indicator.style.background = '#ccc';
+                        indicator.title = 'Failed to load';
+                    }
+                }
             });
     }
-    refreshRelayTable();
+    refreshRelayIndicators();
 
     function sendRelayCommand(relay, command) {
         fetch('/api/relay', {
@@ -18,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
             body: JSON.stringify({ relay, command })
         })
         .then(r => r.json())
-        .then(() => refreshRelayTable());
+        .then(() => refreshRelayIndicators());
     }
 
     document.querySelectorAll('.relay-on').forEach(btn => {
@@ -41,21 +47,23 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-function populateRelayTable(relays) {
-    const tbody = document.querySelector('#relay-table tbody');
-    tbody.innerHTML = '';
-    if (!relays || relays.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4">No relay data available</td></tr>';
-        return;
+function updateRelayIndicators(relays) {
+    for (let i = 0; i < 4; i++) {
+        const indicator = document.getElementById('relay-indicator-' + i);
+        if (!indicator) continue;
+        indicator.className = 'relay-indicator';
+        indicator.textContent = '';
+        if (!relays || !relays[i]) {
+            indicator.style.background = '#ccc';
+            indicator.title = 'No data';
+            continue;
+        }
+        if (relays[i].state === 'on') {
+            indicator.style.background = '#4caf50'; // green
+            indicator.title = 'On';
+        } else {
+            indicator.style.background = '#b0b0b0'; // gray
+            indicator.title = 'Off';
+        }
     }
-    relays.forEach(relay => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${relay.index}</td>
-            <td>${relay.gpio}</td>
-            <td>${relay.state}</td>
-            <td>${relay.mode !== undefined ? relay.mode : ''}</td>
-        `;
-        tbody.appendChild(tr);
-    });
 }
