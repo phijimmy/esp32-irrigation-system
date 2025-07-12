@@ -285,6 +285,13 @@ cJSON* DashboardManager::getStatusJson() {
     
     // Add config settings
     addConfigSettingsToJson(root);
+
+    // Add network info
+    if (systemManager) {
+        NetworkManager& netMgr = systemManager->getNetworkManager();
+        cJSON* netJson = netMgr.getNetworkInfoJson();
+        cJSON_AddItemToObject(root, "network", netJson);
+    }
     // Add system info if available
     if (systemManager) {
         cJSON* sysInfo = systemManager->getSystemInfoJson();

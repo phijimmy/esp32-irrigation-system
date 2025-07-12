@@ -1,6 +1,7 @@
 #include "system/NetworkManager.h"
 #include "system/TimeManager.h"
 #include <WiFi.h>
+#include <cJSON.h>
 
 void NetworkManager::begin(ConfigManager* config, DiagnosticManager* diag, PowerManager* power) {
     configManager = config;
@@ -233,4 +234,16 @@ void NetworkManager::forceReconnect() {
         // Force reconnection
         attemptReconnect();
     }
+}
+
+cJSON* NetworkManager::getNetworkInfoJson() const {
+    cJSON* net = cJSON_CreateObject();
+    cJSON_AddStringToObject(net, "mode", wifiMode.c_str());
+    cJSON_AddStringToObject(net, "ssid", wifiMode == "ap" ? apSsid.c_str() : wifiSsid.c_str());
+    cJSON_AddStringToObject(net, "ip", WiFi.isConnected() ? WiFi.localIP().toString().c_str() : "0.0.0.0");
+    cJSON_AddStringToObject(net, "mac", WiFi.macAddress().c_str());
+    cJSON_AddBoolToObject(net, "connected", WiFi.isConnected());
+    cJSON_AddBoolToObject(net, "ap_active", apActive);
+    cJSON_AddNumberToObject(net, "ap_clients", apActive ? WiFi.softAPgetStationNum() : 0);
+    return net;
 }

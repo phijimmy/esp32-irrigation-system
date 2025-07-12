@@ -10,6 +10,9 @@ class TimeManager; // Forward declaration
 
 class NetworkManager {
 public:
+    // ...existing code...
+    cJSON* getNetworkInfoJson() const;
+public:
     void begin(ConfigManager* config, DiagnosticManager* diag, PowerManager* power);
     void setTimeManager(TimeManager* timeMgr) { timeManager = timeMgr; }
     void update();
