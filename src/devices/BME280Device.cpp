@@ -10,14 +10,20 @@ void BME280Device::setTimeManager(TimeManager* timeMgr) {
 
 bool BME280Device::begin() {
     state = READING;
-    if (!bme.begin(address)) {
+    bool ok = false;
+    if (i2cManager && i2cManager->getI2CMutex()) xSemaphoreTake(i2cManager->getI2CMutex(), portMAX_DELAY);
+    ok = bme.begin(address);
+    if (i2cManager && i2cManager->getI2CMutex()) xSemaphoreGive(i2cManager->getI2CMutex());
+    if (!ok) {
         if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_WARN, "BME280", "Device not found at 0x%02X", address);
         initialized = false;
         state = ERROR;
         lastError = "Device not found";
         return false;
     }
+    if (i2cManager && i2cManager->getI2CMutex()) xSemaphoreTake(i2cManager->getI2CMutex(), portMAX_DELAY);
     bme.setSampling(Adafruit_BME280::MODE_SLEEP, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::FILTER_X16, Adafruit_BME280::STANDBY_MS_0_5);
+    if (i2cManager && i2cManager->getI2CMutex()) xSemaphoreGive(i2cManager->getI2CMutex());
     initialized = true;
     state = READY;
     if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_INFO, "BME280", "Initialized at 0x%02X", address);
@@ -48,6 +54,7 @@ BME280Reading BME280Device::readData() {
                 return result;
             }
         }
+        if (i2cManager && i2cManager->getI2CMutex()) xSemaphoreTake(i2cManager->getI2CMutex(), portMAX_DELAY);
         bme.setSampling(Adafruit_BME280::MODE_FORCED, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::FILTER_X16, Adafruit_BME280::STANDBY_MS_0_5);
         delay(100);
         readings[i].temperature = bme.readTemperature();
@@ -55,6 +62,7 @@ BME280Reading BME280Device::readData() {
         readings[i].pressure = bme.readPressure() / 100.0F;
         readings[i].heatIndex = computeHeatIndex(readings[i].temperature, readings[i].humidity);
         readings[i].dewPoint = computeDewPoint(readings[i].temperature, readings[i].humidity);
+        if (i2cManager && i2cManager->getI2CMutex()) xSemaphoreGive(i2cManager->getI2CMutex());
         readings[i].timestamp = timeManager ? timeManager->getTime() : DateTime();
         // Defensive check for invalid timestamp
         if (!readings[i].timestamp.isValid() || readings[i].timestamp.year() < 2000 || readings[i].timestamp.month() < 1 || readings[i].timestamp.month() > 12 || readings[i].timestamp.day() < 1 || readings[i].timestamp.day() > 31) {
@@ -70,7 +78,9 @@ BME280Reading BME280Device::readData() {
     // Filter outliers and average
     filterAndAverage(readings, N, result);
     lastReading = result;
+    if (i2cManager && i2cManager->getI2CMutex()) xSemaphoreTake(i2cManager->getI2CMutex(), portMAX_DELAY);
     bme.setSampling(Adafruit_BME280::MODE_SLEEP, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::FILTER_X16, Adafruit_BME280::STANDBY_MS_0_5);
+    if (i2cManager && i2cManager->getI2CMutex()) xSemaphoreGive(i2cManager->getI2CMutex());
     state = READY;
     return result;
 }

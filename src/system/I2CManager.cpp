@@ -6,6 +6,9 @@
 void I2CManager::begin(ConfigManager* config, DiagnosticManager* diag) {
     configManager = config;
     diagnosticManager = diag;
+    if (i2cMutex == nullptr) {
+        i2cMutex = xSemaphoreCreateMutex();
+    }
     const char* sdaStr = configManager->get("i2c_sda");
     const char* sclStr = configManager->get("i2c_scl");
     sdaPin = sdaStr && *sdaStr ? atoi(sdaStr) : 21;

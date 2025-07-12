@@ -86,7 +86,6 @@ private:
     void setBuildTimeIfNeeded();
     DateTime buildTime();
     bool performNTPSync(const String& server, int timeoutMs); // Internal NTP sync method
-    SemaphoreHandle_t rtcMutex = nullptr; // Mutex for RTC/I2C access
 };
 
 #endif // TIME_MANAGER_H

@@ -18,7 +18,7 @@ void SystemManager::begin() {
     // Connect TimeManager to NetworkManager for NTP sync on WiFi connect
     networkManager.setTimeManager(&timeManager);
     i2cManager.autoRegisterBME280s(&timeManager, &deviceManager);
-    ads1115Manager.begin(&i2cManager);
+    ads1115Manager.begin(i2cManager.getI2CMutex());
     healthy = true;
 }
 

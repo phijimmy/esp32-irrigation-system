@@ -12,6 +12,7 @@
 class TimeManager; // Forward declaration
 class DeviceManager; // Forward declaration
 
+
 class I2CManager {
 public:
     void begin(ConfigManager* config, DiagnosticManager* diag);
@@ -34,6 +35,10 @@ public:
     uint8_t endTransmission();
     uint8_t requestFrom(uint8_t address, uint8_t quantity);
     int read();
+
+    // Mutex for I2C bus protection
+    SemaphoreHandle_t getI2CMutex() const { return i2cMutex; }
+
 private:
     int sdaPin = 21;
     int sclPin = 22;
@@ -41,6 +46,7 @@ private:
     DiagnosticManager* diagnosticManager = nullptr;
     std::vector<uint8_t> detectedDevices;
     std::vector<std::unique_ptr<BME280Device>> bme280Devices;
+    SemaphoreHandle_t i2cMutex = nullptr;
 };
 
 #endif // I2C_MANAGER_H

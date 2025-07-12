@@ -15,7 +15,7 @@ public:
     };
 
     ADS1115Manager();
-    void begin(void* unused = nullptr, uint8_t i2cAddress = 0x48); // I2CManager no longer required
+    void begin(SemaphoreHandle_t i2cMutex = nullptr, uint8_t i2cAddress = 0x48);
     float readVoltage(uint8_t channel, Gain gain = GAIN_TWOTHIRDS, uint16_t timeoutMs = 100);
     bool isConnected() const;
     uint8_t getAddress() const;
@@ -24,6 +24,7 @@ public:
 private:
     uint8_t address = 0x48;
     bool connected = false;
+    SemaphoreHandle_t i2cMutex = nullptr;
     bool checkConnection();
 };
 

@@ -4,11 +4,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 
-TimeManager::TimeManager() {
-    if (rtcMutex == nullptr) {
-        rtcMutex = xSemaphoreCreateMutex();
-    }
-}
+TimeManager::TimeManager() {}
 
 void TimeManager::begin(I2CManager* i2c, ConfigManager* config, DiagnosticManager* diag) {
     i2cManager = i2c;
@@ -22,7 +18,9 @@ void TimeManager::begin(I2CManager* i2c, ConfigManager* config, DiagnosticManage
     }
     
     // Initialize RTC
+    if (i2cManager && i2cManager->getI2CMutex()) xSemaphoreTake(i2cManager->getI2CMutex(), portMAX_DELAY);
     rtcFound = rtc.begin();
+    if (i2cManager && i2cManager->getI2CMutex()) xSemaphoreGive(i2cManager->getI2CMutex());
     if (rtcFound) {
         if (diagnosticManager) {
             diagnosticManager->log(DiagnosticManager::LOG_INFO, "Time", "DS3231 RTC detected and initialized");
@@ -33,12 +31,16 @@ void TimeManager::begin(I2CManager* i2c, ConfigManager* config, DiagnosticManage
         
         // Enable alarm interrupts on INT/SQW pin
         // Clear any existing alarm flags first
+        if (i2cManager && i2cManager->getI2CMutex()) xSemaphoreTake(i2cManager->getI2CMutex(), portMAX_DELAY);
         rtc.clearAlarm(1);
         rtc.clearAlarm(2);
+        if (i2cManager && i2cManager->getI2CMutex()) xSemaphoreGive(i2cManager->getI2CMutex());
         alarm1Active = false; // Reset alarm state
         // Enable alarm interrupts (this will control the INT/SQW pin)
+        if (i2cManager && i2cManager->getI2CMutex()) xSemaphoreTake(i2cManager->getI2CMutex(), portMAX_DELAY);
         rtc.writeSqwPinMode(DS3231_OFF); // Disable square wave, enable alarm interrupts
         rtc.disable32K(); // Disable 32K output to save power
+        if (i2cManager && i2cManager->getI2CMutex()) xSemaphoreGive(i2cManager->getI2CMutex());
         // The INT/SQW pin will now be controlled by alarm interrupts
         if (diagnosticManager) {
             diagnosticManager->log(DiagnosticManager::LOG_INFO, "Time", "DS3231 INT/SQW pin configured for alarm interrupts");
@@ -193,9 +195,9 @@ DateTime TimeManager::getTime() {
     static DateTime lastGoodTime;
     DateTime dt;
     if (rtcFound) {
-        if (rtcMutex) xSemaphoreTake(rtcMutex, portMAX_DELAY);
+        if (i2cManager && i2cManager->getI2CMutex()) xSemaphoreTake(i2cManager->getI2CMutex(), portMAX_DELAY);
         dt = rtc.now();
-        if (rtcMutex) xSemaphoreGive(rtcMutex);
+        if (i2cManager && i2cManager->getI2CMutex()) xSemaphoreGive(i2cManager->getI2CMutex());
         // Check for valid/sane date
         bool valid = dt.isValid() && dt.year() >= 2000 && dt.year() < 2100 && dt.month() >= 1 && dt.month() <= 12 && dt.day() >= 1 && dt.day() <= 31;
         if (valid) {
@@ -233,9 +235,9 @@ DateTime TimeManager::getLocalTime() {
 
 void TimeManager::setTime(const DateTime& dt) {
     if (rtcFound) {
-        if (rtcMutex) xSemaphoreTake(rtcMutex, portMAX_DELAY);
+        if (i2cManager && i2cManager->getI2CMutex()) xSemaphoreTake(i2cManager->getI2CMutex(), portMAX_DELAY);
         rtc.adjust(dt);
-        if (rtcMutex) xSemaphoreGive(rtcMutex);
+        if (i2cManager && i2cManager->getI2CMutex()) xSemaphoreGive(i2cManager->getI2CMutex());
         // Reinitialize lastDayId after time adjustment to prevent false "new day" detection
         int newDayId = dt.year() * 10000 + dt.month() * 100 + dt.day();
         if (diagnosticManager) {
@@ -669,19 +671,34 @@ void TimeManager::setAlarmsForToday() {
         return;
     }
     
-    // Set Alarm1 for today
+    // Set Alarm1 for today only if scheduled time is in the future
     cJSON* alarm1Config = cJSON_GetObjectItem(todaySchedule, "alarm1");
     if (alarm1Config) {
         int hour = cJSON_GetObjectItem(alarm1Config, "hour") ? cJSON_GetObjectItem(alarm1Config, "hour")->valueint : 8;
         int minute = cJSON_GetObjectItem(alarm1Config, "minute") ? cJSON_GetObjectItem(alarm1Config, "minute")->valueint : 0;
         int second = cJSON_GetObjectItem(alarm1Config, "second") ? cJSON_GetObjectItem(alarm1Config, "second")->valueint : 0;
         bool enabled = cJSON_GetObjectItem(alarm1Config, "enabled") ? cJSON_IsTrue(cJSON_GetObjectItem(alarm1Config, "enabled")) : false;
-        
-        if (diagnosticManager) {
-            diagnosticManager->log(DiagnosticManager::LOG_INFO, "Time", "%s Alarm1: %02d:%02d:%02d %s", 
-                dayName.c_str(), hour, minute, second, enabled ? "enabled" : "disabled");
+
+        bool shouldSetAlarm = false;
+        if (enabled) {
+            // Compare scheduled time to current time
+            DateTime now = rtc.now();
+            int nowSec = now.hour() * 3600 + now.minute() * 60 + now.second();
+            int alarmSec = hour * 3600 + minute * 60 + second;
+            if (alarmSec > nowSec) {
+                shouldSetAlarm = true;
+            }
         }
-        setAlarm1(hour, minute, second, enabled);
+
+        if (diagnosticManager) {
+            diagnosticManager->log(DiagnosticManager::LOG_INFO, "Time", "%s Alarm1: %02d:%02d:%02d %s (will %s)",
+                dayName.c_str(), hour, minute, second, enabled ? "enabled" : "disabled", shouldSetAlarm ? "set" : "clear");
+        }
+        if (shouldSetAlarm) {
+            setAlarm1(hour, minute, second, true);
+        } else {
+            setAlarm1(hour, minute, second, false); // disables and clears alarm
+        }
     }
     
     // Set Alarm2 for today

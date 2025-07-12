@@ -3,15 +3,18 @@
 
 ADS1115Manager::ADS1115Manager() {}
 
-void ADS1115Manager::begin(void* unused, uint8_t i2cAddress) {
+void ADS1115Manager::begin(SemaphoreHandle_t mutex, uint8_t i2cAddress) {
     address = i2cAddress;
+    i2cMutex = mutex;
     Wire.begin();
     connected = checkConnection();
 }
 
 bool ADS1115Manager::checkConnection() {
+    if (i2cMutex) xSemaphoreTake(i2cMutex, portMAX_DELAY);
     Wire.beginTransmission(address);
     uint8_t error = Wire.endTransmission();
+    if (i2cMutex) xSemaphoreGive(i2cMutex);
     return (error == 0);
 }
 
@@ -24,6 +27,7 @@ uint8_t ADS1115Manager::getAddress() const {
 }
 
 uint16_t ADS1115Manager::readRaw(uint8_t channel, Gain gain, uint16_t timeoutMs) {
+    if (i2cMutex) xSemaphoreTake(i2cMutex, portMAX_DELAY);
     // Config register bits
     uint16_t config = 0x8000; // Start single conversion
     // Set MUX for single-ended mode: 0x04,0x05,0x06,0x07 for A0-A3
@@ -56,6 +60,7 @@ uint16_t ADS1115Manager::readRaw(uint8_t channel, Gain gain, uint16_t timeoutMs)
     Wire.endTransmission();
     Wire.requestFrom(address, (uint8_t)2);
     uint16_t raw = ((uint16_t)Wire.read() << 8) | Wire.read();
+    if (i2cMutex) xSemaphoreGive(i2cMutex);
     return raw;
 }
 
