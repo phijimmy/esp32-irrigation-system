@@ -307,12 +307,18 @@ void loop() {
             break;
         }
         case SOIL_DONE:
-            Serial.println("[MQ135Sensor] Starting air quality sensor warmup...");
-            mq135Sensor.startReading();
-            mq135ReadingRequested = true;
-            mq135ReadingTaken = false;
-            mq135LastProgressPrint = millis();
-            sensorState = MQ135_WARMUP;
+            // Only trigger MQ135 if this was part of the initialisation or hourly reading, not from manual soil reading
+            if (soilReadingRequested) {
+                Serial.println("[MQ135Sensor] Starting air quality sensor warmup...");
+                mq135Sensor.startReading();
+                mq135ReadingRequested = true;
+                mq135ReadingTaken = false;
+                mq135LastProgressPrint = millis();
+                sensorState = MQ135_WARMUP;
+            } else {
+                // Manual soil reading: return to idle
+                sensorState = IDLE;
+            }
             break;
         case MQ135_WARMUP: {
             unsigned long now = millis();

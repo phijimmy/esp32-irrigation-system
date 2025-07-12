@@ -20,15 +20,30 @@ async function updateSensors() {
             document.getElementById('bme280-data').textContent = '--';
         }
         // Soil Moisture
+        const soilBtn = document.getElementById('soilmoisture-read-btn');
         if (data.soil_moisture) {
             const s = data.soil_moisture;
             let soilHtml = '';
             soilHtml += `<b>Percent:</b> ${s.percent !== undefined ? s.percent.toFixed(2) + ' %' : '--'}<br>`;
             soilHtml += `<b>Raw Value:</b> ${s.raw !== undefined ? s.raw : '--'}<br>`;
             soilHtml += `<b>Timestamp:</b> ${s.timestamp || '--'}<br>`;
+            soilHtml += `<b>State:</b> ${s.state || '--'}<br>`;
             document.getElementById('soilmoisture-data').innerHTML = soilHtml;
+            if (soilBtn) {
+                if (s.state === 'stabilising' || s.state === 'reading') {
+                    soilBtn.disabled = true;
+                    soilBtn.textContent = 'Reading...';
+                } else {
+                    soilBtn.disabled = false;
+                    soilBtn.textContent = 'Take Soil Moisture Reading';
+                }
+            }
         } else {
             document.getElementById('soilmoisture-data').textContent = '--';
+            if (soilBtn) {
+                soilBtn.disabled = false;
+                soilBtn.textContent = 'Take Soil Moisture Reading';
+            }
         }
         // Air Quality
         if (data.mq135) {
@@ -75,6 +90,21 @@ window.addEventListener('DOMContentLoaded', () => {
                 bmeBtn.textContent = 'Take BME280 Reading';
                 bmeBtn.disabled = false;
             }, 2000);
+        });
+    }
+
+    const soilBtn = document.getElementById('soilmoisture-read-btn');
+    if (soilBtn) {
+        soilBtn.addEventListener('click', async function() {
+            soilBtn.disabled = true;
+            soilBtn.textContent = 'Reading...';
+            try {
+                await fetch('/api/soilmoisture/trigger', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+                // No need to handle response, updateSensors will poll and update state
+            } catch (e) {
+                soilBtn.textContent = 'Error';
+                soilBtn.disabled = false;
+            }
         });
     }
 });

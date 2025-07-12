@@ -14,6 +14,26 @@ WebServerManager::WebServerManager(DashboardManager* dashMgr, DiagnosticManager*
 void WebServerManager::begin() {
     // Create server before registering any routes
     server = new AsyncWebServer(80);
+    // Soil Moisture trigger API
+    extern SoilMoistureSensor soilMoistureSensor;
+    server->on("/api/soilmoisture/trigger", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,
+        [](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
+            extern SoilMoistureSensor soilMoistureSensor;
+            soilMoistureSensor.beginStabilisation();
+            // Set state machine so main loop will process the reading
+            extern bool soilReadingTaken;
+            extern int sensorState;
+            // SensorState enum: IDLE=0, SOIL_STABILISING=1, ...
+            soilReadingTaken = false;
+            sensorState = 1; // SOIL_STABILISING
+            cJSON* resp = cJSON_CreateObject();
+            cJSON_AddStringToObject(resp, "result", "started");
+            cJSON_AddStringToObject(resp, "message", "Soil moisture reading started. Poll /api/status for result.");
+            char* respStr = cJSON_PrintUnformatted(resp);
+            request->send(200, "application/json", respStr);
+            cJSON_free(respStr);
+            cJSON_Delete(resp);
+        });
     // BME280 trigger API
     server->on("/api/bme280/trigger", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,
         [](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
