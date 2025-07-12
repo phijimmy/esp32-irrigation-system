@@ -60,6 +60,10 @@ function updateIrrigationState() {
             } else {
                 soilHtml = 'No soil moisture data';
             }
+            // Add corrected soil moisture from irrigation manager if available
+            if (data.irrigation && typeof data.irrigation.soil_corrected === 'number') {
+                soilHtml += `<b>Corrected Soil Moisture (Irrigation):</b> ${data.irrigation.soil_corrected.toFixed(2)} %<br>`;
+            }
             document.getElementById('soilmoisture-data').innerHTML = soilHtml;
         })
         .catch(() => {
@@ -72,4 +76,32 @@ function updateIrrigationState() {
 document.addEventListener('DOMContentLoaded', function() {
     updateIrrigationState();
     setInterval(updateIrrigationState, 2000);
+
+    const btn = document.getElementById('start-irrigation-btn');
+    if (btn) {
+        btn.addEventListener('click', function() {
+            btn.disabled = true;
+            btn.textContent = 'Starting...';
+            fetch('/api/irrigation/trigger', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: '{}'
+            })
+            .then(res => res.json())
+            .then(data => {
+                btn.textContent = data.result === 'ok' ? 'Started!' : 'Error';
+                setTimeout(() => {
+                    btn.textContent = 'Start Irrigation';
+                    btn.disabled = false;
+                }, 2000);
+            })
+            .catch(() => {
+                btn.textContent = 'Error';
+                setTimeout(() => {
+                    btn.textContent = 'Start Irrigation';
+                    btn.disabled = false;
+                }, 2000);
+            });
+        });
+    }
 });

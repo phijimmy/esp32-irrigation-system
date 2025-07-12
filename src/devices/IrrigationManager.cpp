@@ -195,7 +195,11 @@ void IrrigationManager::update() {
             if (!completePrinted && !wateringActive) {
                 Serial.println("[IrrigationManager] Irrigation reading sequence complete.");
                 updateDashboardSensorValues(); // Update dashboard with latest sensor readings
-                lastRunTimestamp = time(nullptr); // Record when sequence completed
+                if (timeManager) {
+                    lastRunTimestamp = timeManager->getLocalTime().unixtime();
+                } else {
+                    lastRunTimestamp = time(nullptr);
+                }
                 completePrinted = true;
             }
             break;
@@ -217,7 +221,11 @@ void IrrigationManager::update() {
             if (!completePrinted && !wateringActive) {
                 Serial.println("[IrrigationManager] Water Now sequence complete.");
                 updateDashboardSensorValues(); // Update dashboard with latest sensor readings
-                lastRunTimestamp = time(nullptr); // Record when sequence completed
+                if (timeManager) {
+                    lastRunTimestamp = timeManager->getLocalTime().unixtime();
+                } else {
+                    lastRunTimestamp = time(nullptr);
+                }
                 completePrinted = true;
             }
             break;
@@ -308,13 +316,13 @@ void IrrigationManager::addStatusToJson(cJSON* parent) const {
         cJSON_AddNumberToObject(lastReadings, "soil_percent", lastAvgSoilPercent);
         cJSON_AddNumberToObject(lastReadings, "soil_corrected", lastAvgSoilCorrected);
         cJSON_AddNumberToObject(lastReadings, "air_quality_voltage", lastAvgAir);
-        
+        // Also expose corrected soil moisture at the top level for dashboard convenience
+        cJSON_AddNumberToObject(irrigationJson, "soil_corrected", lastAvgSoilCorrected);
         // Format timestamp
         char timeStr[32];
         struct tm* tm_info = localtime(&lastReadingTimestamp);
         strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", tm_info);
         cJSON_AddStringToObject(lastReadings, "timestamp", timeStr);
-        
         cJSON_AddItemToObject(irrigationJson, "last_readings", lastReadings);
     } else {
         cJSON_AddStringToObject(irrigationJson, "last_readings", "none");

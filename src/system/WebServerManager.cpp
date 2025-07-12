@@ -16,6 +16,20 @@ void WebServerManager::begin() {
     // Relay control API
     extern RelayController relayController;
     RelayController* relayControllerPtr = &relayController;
+
+    // Irrigation trigger API
+    extern IrrigationManager irrigationManager;
+    server->on("/api/irrigation/trigger", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,
+        [](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
+            int result = 0;
+            irrigationManager.trigger();
+            cJSON* resp = cJSON_CreateObject();
+            cJSON_AddStringToObject(resp, "result", "ok");
+            char* respStr = cJSON_PrintUnformatted(resp);
+            request->send(200, "application/json", respStr);
+            cJSON_free(respStr);
+            cJSON_Delete(resp);
+        });
     server->on("/api/relay", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,
         [relayControllerPtr](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
             String body = String((char*)data).substring(0, len);
