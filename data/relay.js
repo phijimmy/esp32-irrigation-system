@@ -1,13 +1,44 @@
 document.addEventListener('DOMContentLoaded', function() {
-    fetch('/api/status')
-        .then(response => response.json())
-        .then(data => {
-            // DashboardManager JSON: relays is a top-level property
-            populateRelayTable(data.relays);
+    function refreshRelayTable() {
+        fetch('/api/status')
+            .then(response => response.json())
+            .then(data => {
+                populateRelayTable(data.relays);
+            })
+            .catch(err => {
+                document.querySelector('#relay-table tbody').innerHTML = '<tr><td colspan="4">Failed to load relay data</td></tr>';
+            });
+    }
+    refreshRelayTable();
+
+    function sendRelayCommand(relay, command) {
+        fetch('/api/relay', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ relay, command })
         })
-        .catch(err => {
-            document.querySelector('#relay-table tbody').innerHTML = '<tr><td colspan="4">Failed to load relay data</td></tr>';
+        .then(r => r.json())
+        .then(() => refreshRelayTable());
+    }
+
+    document.querySelectorAll('.relay-on').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const relay = parseInt(this.getAttribute('data-relay'));
+            sendRelayCommand(relay, 'on');
         });
+    });
+    document.querySelectorAll('.relay-off').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const relay = parseInt(this.getAttribute('data-relay'));
+            sendRelayCommand(relay, 'off');
+        });
+    });
+    document.querySelectorAll('.relay-toggle').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const relay = parseInt(this.getAttribute('data-relay'));
+            sendRelayCommand(relay, 'toggle');
+        });
+    });
 });
 
 function populateRelayTable(relays) {

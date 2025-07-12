@@ -10,6 +10,52 @@ WebServerManager::WebServerManager(DashboardManager* dashMgr, DiagnosticManager*
     : dashboardManager(dashMgr), diagnosticManager(diagMgr), server(nullptr) {}
 
 void WebServerManager::begin() {
+    // Create server before registering any routes
+    server = new AsyncWebServer(80);
+
+    // Relay control API
+    extern RelayController relayController;
+    RelayController* relayControllerPtr = &relayController;
+    server->on("/api/relay", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,
+        [relayControllerPtr](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
+            String body = String((char*)data).substring(0, len);
+            int relay = -1;
+            String command;
+            #if defined(ARDUINO_ARCH_ESP32)
+            cJSON* root = cJSON_Parse(body.c_str());
+            if (root) {
+                cJSON* relayIdx = cJSON_GetObjectItem(root, "relay");
+                if (relayIdx && cJSON_IsNumber(relayIdx)) {
+                    relay = relayIdx->valueint;
+                }
+                cJSON* cmd = cJSON_GetObjectItem(root, "command");
+                if (cmd && cJSON_IsString(cmd)) {
+                    command = cmd->valuestring;
+                }
+                cJSON_Delete(root);
+            }
+            #endif
+            int result = 0;
+            if (relay < 0 || relay > 3) {
+                result = -2;
+            } else if (command == "on") {
+                relayControllerPtr->setRelayMode(relay, Relay::ON);
+            } else if (command == "off") {
+                relayControllerPtr->setRelayMode(relay, Relay::OFF);
+            } else if (command == "toggle") {
+                relayControllerPtr->toggleRelay(relay);
+            } else {
+                result = -1;
+            }
+            cJSON* resp = cJSON_CreateObject();
+            cJSON_AddStringToObject(resp, "result", result == 0 ? "ok" : "error");
+            cJSON_AddNumberToObject(resp, "relay", relay);
+            cJSON_AddStringToObject(resp, "command", command.c_str());
+            char* respStr = cJSON_PrintUnformatted(resp);
+            request->send(200, "application/json", respStr);
+            cJSON_free(respStr);
+            cJSON_Delete(resp);
+        });
     // ...existing code...
     if (!dashboardManager) {
         if (diagnosticManager) {
@@ -20,8 +66,6 @@ void WebServerManager::begin() {
 
     // Initialize LittleFS
     initializeLittleFS();
-
-    server = new AsyncWebServer(80);
 
     // API routes
     server->on("/api/status", HTTP_GET, [this](AsyncWebServerRequest* request) {
