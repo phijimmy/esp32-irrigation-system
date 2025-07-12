@@ -24,6 +24,7 @@ private:
     void handleAPI(AsyncWebServerRequest* request);
     void handleNotFound(AsyncWebServerRequest* request);
     void handleStaticFile(AsyncWebServerRequest* request);
+    // LED control API handled inline in begin()
     
     // Helper methods
     void initializeLittleFS();

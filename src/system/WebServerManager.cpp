@@ -1,6 +1,10 @@
 #include "system/WebServerManager.h"
 #include <Arduino.h>
+
 #include <LittleFS.h>
+#include "devices/LedDevice.h"
+
+extern LedDevice led;
 
 WebServerManager::WebServerManager(DashboardManager* dashMgr, DiagnosticManager* diagMgr)
     : dashboardManager(dashMgr), diagnosticManager(diagMgr), server(nullptr) {}
@@ -23,6 +27,42 @@ void WebServerManager::begin() {
     server->on("/api/status", HTTP_GET, [this](AsyncWebServerRequest* request) {
         handleAPI(request);
     });
+
+    // LED control API
+    server->on("/api/led", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,
+        [](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
+            String body = String((char*)data).substring(0, len);
+            String command;
+            #if defined(ARDUINO_ARCH_ESP32)
+            cJSON* root = cJSON_Parse(body.c_str());
+            if (root) {
+                cJSON* cmd = cJSON_GetObjectItem(root, "command");
+                if (cmd && cJSON_IsString(cmd)) {
+                    command = cmd->valuestring;
+                }
+                cJSON_Delete(root);
+            }
+            #endif
+            int result = 0;
+            if (command == "on") {
+                led.setMode(LedDevice::ON);
+            } else if (command == "off") {
+                led.setMode(LedDevice::OFF);
+            } else if (command == "toggle") {
+                led.setMode(LedDevice::TOGGLE);
+            } else if (command == "blink") {
+                led.setMode(LedDevice::BLINK);
+            } else {
+                result = -1;
+            }
+            cJSON* resp = cJSON_CreateObject();
+            cJSON_AddStringToObject(resp, "result", result == 0 ? "ok" : "error");
+            cJSON_AddStringToObject(resp, "mode", command.c_str());
+            char* respStr = cJSON_PrintUnformatted(resp);
+            request->send(200, "application/json", respStr);
+            cJSON_free(respStr);
+            cJSON_Delete(resp);
+        });
 
     // Static file routes
     server->on("/", HTTP_GET, [this](AsyncWebServerRequest* request) {
