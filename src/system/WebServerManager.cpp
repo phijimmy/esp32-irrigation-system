@@ -6,6 +6,7 @@ WebServerManager::WebServerManager(DashboardManager* dashMgr, DiagnosticManager*
     : dashboardManager(dashMgr), diagnosticManager(diagMgr), server(nullptr) {}
 
 void WebServerManager::begin() {
+    // ...existing code...
     if (!dashboardManager) {
         if (diagnosticManager) {
             diagnosticManager->log(DiagnosticManager::LOG_ERROR, "WebServer", "DashboardManager not set");
@@ -17,25 +18,25 @@ void WebServerManager::begin() {
     initializeLittleFS();
 
     server = new AsyncWebServer(80);
-    
+
     // API routes
     server->on("/api/status", HTTP_GET, [this](AsyncWebServerRequest* request) {
         handleAPI(request);
     });
-    
+
     // Static file routes
     server->on("/", HTTP_GET, [this](AsyncWebServerRequest* request) {
         handleRoot(request);
     });
-    
+
     server->on("/style.css", HTTP_GET, [this](AsyncWebServerRequest* request) {
         handleStaticFile(request);
     });
-    
+
     server->on("/script.js", HTTP_GET, [this](AsyncWebServerRequest* request) {
         handleStaticFile(request);
     });
-    
+
     server->on("/index.html", HTTP_GET, [this](AsyncWebServerRequest* request) {
         handleStaticFile(request);
     });
@@ -54,8 +55,10 @@ void WebServerManager::begin() {
     server->on("/led.js", HTTP_GET, [this](AsyncWebServerRequest* request) {
         handleStaticFile(request);
     });
-
     server->on("/touch.html", HTTP_GET, [this](AsyncWebServerRequest* request) {
+        handleStaticFile(request);
+    });
+    server->on("/irrigation.html", HTTP_GET, [this](AsyncWebServerRequest* request) {
         handleStaticFile(request);
     });
     
