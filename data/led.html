@@ -7,25 +7,32 @@
     <link rel="stylesheet" href="style.css">
     <script defer src="led.js"></script>
 </head>
+
 <body>
-    <header>
-        <h1>LED Status</h1>
-        <nav>
-            <a href="index.html">Home</a>
-            <a href="sensors.html">Sensors</a>
-            <a href="relay.html">Relays</a>
-            <a href="led.html" class="active">LED</a>
-        </nav>
-    </header>
-    <main>
-        <section class="card">
-            <h2>Current LED State</h2>
-            <div id="led-status" class="led-status">Loading...</div>
-            <div id="led-meta" class="led-meta"></div>
-        </section>
-    </main>
-    <footer>
-        <p>&copy; 2025 ESP32 IoT Dashboard</p>
-    </footer>
+    <div class="container">
+        <div class="header">
+            <h1>LED Status</h1>
+            <nav>
+                <a href="index.html">Home</a>
+                <a href="sensors.html">Sensors</a>
+                <a href="led.html" class="active">LED</a>
+                <a href="relay.html">Relay</a>
+                <a href="touch.html">Touch</a>
+                <a href="irrigation.html">Irrigation</a>
+                <a href="config.html">Config</a>
+            </nav>
+        </div>
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Current LED State</div>
+                </div>
+                <div class="card-content">
+                    <div id="led-status" class="led-status">Loading...</div>
+                    <div id="led-meta" class="led-meta"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

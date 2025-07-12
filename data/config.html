@@ -7,28 +7,34 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <h1>Device Configuration</h1>
-        <nav>
-            <a href="index.html">Home</a>
-            <a href="sensors.html">Sensors</a>
-            <a href="led.html">LED</a>
-            <a href="relay.html">Relay</a>
-            <a href="touch.html">Touch</a>
-            <a href="irrigation.html">Irrigation</a>
-            <a href="config.html" class="active">Config</a>
-        </nav>
-    </header>
-    <main>
-        <section class="card">
-            <h2>Configuration</h2>
-            <form id="config-form">
-                <div id="config-fields">Loading...</div>
-                <button type="submit">Save</button>
-            </form>
-            <div id="config-status"></div>
-        </section>
-    </main>
+    <div class="container">
+        <div class="header">
+            <h1>Device Configuration</h1>
+            <nav>
+                <a href="index.html">Home</a>
+                <a href="sensors.html">Sensors</a>
+                <a href="led.html">LED</a>
+                <a href="relay.html">Relay</a>
+                <a href="touch.html">Touch</a>
+                <a href="irrigation.html">Irrigation</a>
+                <a href="config.html" class="active">Config</a>
+            </nav>
+        </div>
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Configuration</div>
+                </div>
+                <div class="card-content">
+                    <form id="config-form">
+                        <div id="config-fields">Loading...</div>
+                        <button type="submit">Save</button>
+                    </form>
+                    <div id="config-status"></div>
+                </div>
+            </div>
+        </div>
+    </div>
     <script src="script.js"></script>
     <script>
         function createInput(name, value, label, type = 'text') {
