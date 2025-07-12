@@ -41,7 +41,6 @@ function updateSystemTime(data) {
     systemTimeEl.innerHTML = `
         <div><strong>Date:</strong> <span class="value">${humanDate}</span></div>
         <div><strong>Time:</strong> <span class="value">${humanTime}</span></div>
-        <div><strong>ISO Format:</strong> <span class="value">${data.datetime_iso || 'N/A'}</span></div>
     `;
 }
 
@@ -91,10 +90,7 @@ function updateI2CInfo(data) {
     const el = document.getElementById('i2c-info');
     if (!el) return;
     let i2cHtml = '';
-    if (i2c.sda_pin !== undefined && i2c.scl_pin !== undefined) {
-        i2cHtml += `<div><strong>SDA Pin:</strong> <span class="value">${i2c.sda_pin}</span></div>`;
-        i2cHtml += `<div><strong>SCL Pin:</strong> <span class="value">${i2c.scl_pin}</span></div>`;
-    }
+    // Removed SDA/SCL pin display
     if (Array.isArray(i2c.devices) && i2c.devices.length > 0) {
         i2c.devices.forEach(dev => {
             i2cHtml += `<div><strong>Device:</strong> <span class="value">${dev.name || 'Unknown'} (${dev.address || 'N/A'})</span></div>`;

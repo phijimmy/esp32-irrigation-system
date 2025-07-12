@@ -264,13 +264,15 @@ void loop() {
             // If a reading is already in progress, defer the hourly reading
             if (sensorState != IDLE || soilReadingRequested || mq135ReadingRequested) {
                 deferredHourlyReading = true;
-                Serial.println("[SoilMoistureSensor] Hourly: Reading in progress, deferring hourly reading.");
+                Serial.printf("[SoilMoistureSensor] Hourly: Reading in progress, deferring hourly reading. State: %d, soilReadingRequested: %d, mq135ReadingRequested: %d\n", sensorState, soilReadingRequested, mq135ReadingRequested);
             } else {
                 soilMoistureSensor.beginStabilisation();
                 Serial.printf("[SoilMoistureSensor] Hourly: Starting non-blocking stabilisation (GPIO %d)...\n", soilMoistureSensor.getPowerGpio());
                 Serial.printf("[SoilMoistureSensor] Hourly: Stabilisation time: %d seconds...\n", soilMoistureSensor.getStabilisationTimeSec());
-                // Set flag to handle reading completion
+                // Set flags to handle reading via state machine
                 hourlyReadingRequested = true;
+                soilReadingRequested = true;
+                sensorState = SOIL_STABILISING;
                 lastSoilHour = now.hour();
             }
         }
@@ -330,6 +332,8 @@ void loop() {
                 soilMoistureSensor.takeReading();
                 soilMoistureSensor.printReading();
                 soilReadingTaken = true;
+                // Reset flags to allow next reading
+                soilReadingRequested = false;
                 sensorState = SOIL_DONE;
             }
             break;
@@ -342,9 +346,14 @@ void loop() {
                 mq135ReadingRequested = true;
                 mq135ReadingTaken = false;
                 mq135LastProgressPrint = millis();
+                // Reset soil reading flags before starting MQ135
+                soilReadingRequested = false;
                 sensorState = MQ135_WARMUP;
             } else {
                 // Manual soil reading: return to idle
+                // Ensure all flags are reset
+                soilReadingRequested = false;
+                hourlyReadingRequested = false;
                 sensorState = IDLE;
             }
             break;

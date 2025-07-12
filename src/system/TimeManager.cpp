@@ -943,21 +943,22 @@ void TimeManager::handleAlarmInterrupt() {
             }
         }
         
-        // Only trigger if current time is actually at or past the expected alarm time
-        if (currentTime.hour() > expectedHour || 
-            (currentTime.hour() == expectedHour && currentTime.minute() >= expectedMinute)) {
-            
+        // Only trigger if current time is within ±2 minutes of the expected alarm time
+        int currentTotal = currentTime.hour() * 60 + currentTime.minute();
+        int expectedTotal = expectedHour * 60 + expectedMinute;
+        int diff = abs(currentTotal - expectedTotal);
+        if (diff <= 2) {
             if (diagnosticManager) {
-                diagnosticManager->log(DiagnosticManager::LOG_INFO, "Time", "Alarm 1 triggered at %02d:%02d (expected %02d:%02d) - INT/SQW should go LOW", 
-                                       currentTime.hour(), currentTime.minute(), expectedHour, expectedMinute);
+                diagnosticManager->log(DiagnosticManager::LOG_INFO, "Time", "Alarm 1 triggered at %02d:%02d (expected %02d:%02d, diff=%d min) - INT/SQW should go LOW", 
+                                       currentTime.hour(), currentTime.minute(), expectedHour, expectedMinute, diff);
             }
             alarm1Active = true;
             // DON'T clear alarm1 yet - this keeps INT/SQW LOW
         } else {
             // False alarm - clear it without processing
             if (diagnosticManager) {
-                diagnosticManager->log(DiagnosticManager::LOG_DEBUG, "Time", "Alarm 1 flag set but time mismatch (%02d:%02d vs expected %02d:%02d) - clearing flag", 
-                                       currentTime.hour(), currentTime.minute(), expectedHour, expectedMinute);
+                diagnosticManager->log(DiagnosticManager::LOG_DEBUG, "Time", "Alarm 1 flag set but time mismatch (%02d:%02d vs expected %02d:%02d, diff=%d min) - clearing flag", 
+                                       currentTime.hour(), currentTime.minute(), expectedHour, expectedMinute, diff);
             }
             rtc.clearAlarm(1);
         }

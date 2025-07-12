@@ -19,10 +19,18 @@ void WebServerManager::begin() {
     server->on("/api/mq135/trigger", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,
         [](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
             extern MQ135Sensor mq135Sensor;
-            mq135Sensor.startReading();
-            // Set state machine so main loop will process the reading
             extern bool mq135ReadingRequested;
-            mq135ReadingRequested = true;
+            extern int sensorState;
+            // Only start if not already running
+            if (sensorState == 0 /* IDLE */) {
+                mq135Sensor.startReading();
+                mq135ReadingRequested = false;
+                // Set state machine to MQ135_WARMUP (3)
+                sensorState = 3;
+            } else {
+                // If busy, just set the request flag and it will be handled when idle
+                mq135ReadingRequested = true;
+            }
             cJSON* resp = cJSON_CreateObject();
             cJSON_AddStringToObject(resp, "result", "started");
             cJSON_AddStringToObject(resp, "message", "Air quality reading started. Poll /api/status for result.");
