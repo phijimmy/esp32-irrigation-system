@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Touch Sensor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Touch Sensor Status</h1>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="sensors.html">Sensors</a>
+            <a href="led.html">LED</a>
+            <a href="relay.html">Relay</a>
+            <a href="touch.html" class="active">Touch</a>
+        </nav>
+    </header>
+    <main>
+        <section class="card">
+            <h2>Current State</h2>
+            <div id="touch-state" class="sensor-value">Loading...</div>
+            <div id="touch-long-press" class="sensor-value"></div>
+        </section>
+    </main>
+    <script src="script.js"></script>
+    <script>
+        function updateTouchState() {
+            fetch('/api/status')
+                .then(response => response.json())
+                .then(data => {
+                    // Now checks for string values: 'touched' or 'released'
+                    let state = 'Unknown';
+                    let longPress = 'Unknown';
+                    if (data.touch && typeof data.touch.state === 'string') {
+                        if (data.touch.state.toLowerCase() === 'touched') {
+                            state = 'Touched';
+                        } else if (data.touch.state.toLowerCase() === 'released') {
+                            state = 'Not Touched';
+                        } else {
+                            state = data.touch.state;
+                        }
+                        if (typeof data.touch.long_press === 'string') {
+                            if (data.touch.long_press.toLowerCase() === 'true') {
+                                longPress = 'Long Press: Active';
+                            } else if (data.touch.long_press.toLowerCase() === 'false') {
+                                longPress = 'Long Press: Inactive';
+                            } else {
+                                longPress = 'Long Press: ' + data.touch.long_press;
+                            }
+                        } else {
+                            longPress = 'Long Press: Unknown';
+                        }
+                    } else {
+                        state = 'No touch state';
+                        longPress = 'Long Press: Unknown';
+                    }
+                    document.getElementById('touch-state').textContent = state;
+                    document.getElementById('touch-long-press').textContent = longPress;
+                })
+                .catch(() => {
+                    document.getElementById('touch-state').textContent = 'Error fetching state';
+                    document.getElementById('touch-long-press').textContent = '';
+                });
+        }
+        updateTouchState();
+        setInterval(updateTouchState, 2000);
+    </script>
+</body>
+</html>

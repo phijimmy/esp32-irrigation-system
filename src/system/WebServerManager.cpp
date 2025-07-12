@@ -54,6 +54,10 @@ void WebServerManager::begin() {
     server->on("/led.js", HTTP_GET, [this](AsyncWebServerRequest* request) {
         handleStaticFile(request);
     });
+
+    server->on("/touch.html", HTTP_GET, [this](AsyncWebServerRequest* request) {
+        handleStaticFile(request);
+    });
     
     server->onNotFound([this](AsyncWebServerRequest* request) {
         handleNotFound(request);
