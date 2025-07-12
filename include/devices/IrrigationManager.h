@@ -10,6 +10,9 @@
 
 class IrrigationManager {
 public:
+    // Control whether to skip air quality reading for this run
+    void setSkipAirQualityThisRun(bool skip);
+    bool getSkipAirQualityThisRun() const;
     IrrigationManager();
     void begin(BME280Device* bme, SoilMoistureSensor* soil, MQ135Sensor* mq135, TimeManager* timeMgr);
     void trigger(); // Start the irrigation reading sequence
@@ -20,6 +23,7 @@ public:
     void reset();
     void waterNow();
 private:
+    bool skipAirQualityThisRun = false;
     enum State { IDLE, START, BME_READING, SOIL_READING, MQ135_READING, WATER_NOW, COMPLETE };
     State state = IDLE;
     BME280Device* bme280 = nullptr;

@@ -2,6 +2,17 @@
 #include <Arduino.h>
 #include <time.h>
 
+void IrrigationManager::setSkipAirQualityThisRun(bool skip) {
+    this->skipAirQualityThisRun = skip;
+}
+
+bool IrrigationManager::getSkipAirQualityThisRun() const {
+    return this->skipAirQualityThisRun;
+}
+#include "devices/IrrigationManager.h"
+#include <Arduino.h>
+#include <time.h>
+
 IrrigationManager::IrrigationManager() {}
 
 void IrrigationManager::begin(BME280Device* bme, SoilMoistureSensor* soil, MQ135Sensor* mq135, TimeManager* timeMgr) {
@@ -45,6 +56,7 @@ void IrrigationManager::update() {
     static SoilMoistureSensor::Reading soilAvg{};
     static float airAvg = 0;
     static float wateringThreshold = 0;
+    // skipAirQualityThisRun is now a member variable
     switch (state) {
         case IDLE:
             break;
@@ -97,12 +109,66 @@ void IrrigationManager::update() {
             }
             break;
         case SOIL_READING:
-            if (mq135Sensor) {
+            if (!skipAirQualityThisRun && mq135Sensor) {
                 Serial.println("[IrrigationManager] Starting MQ135 air quality sensor warmup...");
                 mq135Sensor->startReading();
                 lastProgressPrint = millis();
+                startNextState(MQ135_READING);
+            } else {
+                // Skip air quality reading for this run
+                Serial.println("[IrrigationManager] Skipping MQ135 air quality reading for this run.");
+                // Run watering logic here using available data
+                float k = 0.5f;
+                float t0 = 25.0f;
+                lastAvgTemp = bmeAvg.avgTemperature;
+                lastAvgHumidity = bmeAvg.avgHumidity;
+                lastAvgPressure = bmeAvg.avgPressure;
+                lastAvgHeatIndex = bmeAvg.avgHeatIndex;
+                lastAvgDewPoint = bmeAvg.avgDewPoint;
+                lastAvgSoilRaw = soilAvg.avgRaw;
+                lastAvgSoilVoltage = soilAvg.avgVoltage;
+                lastAvgSoilPercent = soilAvg.avgPercent;
+                // Clamp avg soil percent to [0, 100]
+                if (lastAvgSoilPercent < 0) lastAvgSoilPercent = 0;
+                if (lastAvgSoilPercent > 100) lastAvgSoilPercent = 100;
+                lastAvgAir = 0; // No air quality reading
+                lastAvgSoilCorrected = soilAvg.avgPercent - k * (bmeAvg.avgTemperature - t0);
+                if (lastAvgSoilCorrected < 0) lastAvgSoilCorrected = 0;
+                if (lastAvgSoilCorrected > 100) lastAvgSoilCorrected = 100;
+                // Set lastReadingTimestamp for dashboard/status JSON
+                if (timeManager) {
+                    lastReadingTimestamp = timeManager->getLocalTime().unixtime();
+                } else {
+                    lastReadingTimestamp = time(nullptr);
+                }
+                Serial.println("[IrrigationManager] === FINAL IRRIGATION RESULTS (NO AIR QUALITY) ===");
+                Serial.printf("[IrrigationManager] Avg Temp: %.2f C\n", lastAvgTemp);
+                Serial.printf("[IrrigationManager] Avg Humidity: %.2f %%\n", lastAvgHumidity);
+                Serial.printf("[IrrigationManager] Avg Pressure: %.2f hPa\n", lastAvgPressure);
+                Serial.printf("[IrrigationManager] Avg Heat Index: %.2f C\n", lastAvgHeatIndex);
+                Serial.printf("[IrrigationManager] Avg Dew Point: %.2f C\n", lastAvgDewPoint);
+                Serial.printf("[IrrigationManager] Avg Soil Moisture Raw: %.1f\n", lastAvgSoilRaw);
+                Serial.printf("[IrrigationManager] Avg Soil Moisture Voltage: %.4f V\n", lastAvgSoilVoltage);
+                Serial.printf("[IrrigationManager] Avg Soil Moisture: %.2f %%\n", lastAvgSoilPercent);
+                Serial.printf("[IrrigationManager] Corrected Soil Moisture: %.2f %%\n", lastAvgSoilCorrected);
+                Serial.printf("[IrrigationManager] Avg Air Quality (V): n/a\n");
+                // Watering logic
+                wateringActive = false;
+                if (configManager) {
+                    wateringThreshold = static_cast<float>(configManager->getInt("watering_threshold", 50));
+                    wateringDuration = configManager->getInt("watering_duration_sec", 60);
+                } else {
+                    wateringThreshold = 50.0f;
+                    wateringDuration = 60;
+                }
+                if (lastAvgSoilCorrected <= wateringThreshold) {
+                    Serial.printf("[IrrigationManager] Soil moisture (%.2f%%) is below threshold (%.2f%%). Starting watering for %d seconds.\n", lastAvgSoilCorrected, wateringThreshold, wateringDuration);
+                    if (relayController) relayController->setRelayMode(1, Relay::ON);
+                    wateringActive = true;
+                    wateringStart = millis();
+                }
+                startNextState(COMPLETE);
             }
-            startNextState(MQ135_READING);
             break;
         case MQ135_READING:
             if (mq135Sensor) {

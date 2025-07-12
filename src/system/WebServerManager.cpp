@@ -82,6 +82,7 @@ void WebServerManager::begin() {
     server->on("/api/irrigation/trigger", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,
         [](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
             int result = 0;
+            irrigationManager.setSkipAirQualityThisRun(true);
             irrigationManager.trigger();
             cJSON* resp = cJSON_CreateObject();
             cJSON_AddStringToObject(resp, "result", "ok");
