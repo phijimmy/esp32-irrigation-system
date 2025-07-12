@@ -26,16 +26,6 @@
         <div class="cards-grid">
             <div class="card">
                 <div class="card-header">
-                    <div class="card-icon info-icon">ℹ️</div>
-                    <div class="card-title">Device Information</div>
-                </div>
-                <div class="card-content">
-                    <div id="device-info" class="loading">Loading device information...</div>
-                </div>
-            </div>
-            
-            <div class="card">
-                <div class="card-header">
                     <div class="card-icon time-icon">🕐</div>
                     <div class="card-title">System Time</div>
                 </div>
@@ -43,11 +33,55 @@
                     <div id="system-time" class="loading">Loading system time...</div>
                 </div>
             </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">🌐</div>
+                    <div class="card-title">Network Info</div>
+                </div>
+                <div class="card-content">
+                    <div id="network-info" class="loading">Loading network info...</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">ℹ️</div>
+                    <div class="card-title">Device Information</div>
+                </div>
+                <div class="card-content">
+                    <div id="device-info" class="loading">Loading device information...</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">💾</div>
+                    <div class="card-title">Filesystem</div>
+                </div>
+                <div class="card-content">
+                    <div id="filesystem-info" class="loading">Loading filesystem info...</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">🔌</div>
+                    <div class="card-title">I2C Devices</div>
+                </div>
+                <div class="card-content">
+                    <div id="i2c-info" class="loading">Loading I2C info...</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">❤️</div>
+                    <div class="card-title">Health</div>
+                </div>
+                <div class="card-content">
+                    <div id="health-info" class="loading">Loading health info...</div>
+                </div>
+            </div>
         </div>
-        
         <button class="refresh-btn" onclick="loadSystemInfo()">🔄 Refresh Data</button>
     </div>
 
-    <script src="/script.js"></script>
+    <script src="index.js"></script>
 </body>
 </html>

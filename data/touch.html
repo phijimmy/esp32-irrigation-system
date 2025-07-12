@@ -32,47 +32,6 @@
             </div>
         </div>
     </div>
-    <script src="script.js"></script>
-    <script>
-        function updateTouchState() {
-            fetch('/api/status')
-                .then(response => response.json())
-                .then(data => {
-                    let state = 'Unknown';
-                    let longPress = 'Unknown';
-                    if (data.touch && typeof data.touch.state === 'string') {
-                        if (data.touch.state.toLowerCase() === 'touched') {
-                            state = 'Touched';
-                        } else if (data.touch.state.toLowerCase() === 'released') {
-                            state = 'Not Touched';
-                        } else {
-                            state = data.touch.state;
-                        }
-                        if (typeof data.touch.long_press === 'string') {
-                            if (data.touch.long_press.toLowerCase() === 'true') {
-                                longPress = 'Long Press: Active';
-                            } else if (data.touch.long_press.toLowerCase() === 'false') {
-                                longPress = 'Long Press: Inactive';
-                            } else {
-                                longPress = 'Long Press: ' + data.touch.long_press;
-                            }
-                        } else {
-                            longPress = 'Long Press: Unknown';
-                        }
-                    } else {
-                        state = 'No touch state';
-                        longPress = 'Long Press: Unknown';
-                    }
-                    document.getElementById('touch-state').textContent = state;
-                    document.getElementById('touch-long-press').textContent = longPress;
-                })
-                .catch(() => {
-                    document.getElementById('touch-state').textContent = 'Error fetching state';
-                    document.getElementById('touch-long-press').textContent = '';
-                });
-        }
-        updateTouchState();
-        setInterval(updateTouchState, 2000);
-    </script>
+    <script src="touch.js"></script>
 </body>
 </html>
