@@ -168,15 +168,11 @@ void ConfigManager::loadDefaults() {
     cJSON_AddNumberToObject(configRoot, "dst_end_dow", 0); // Sunday
     cJSON_AddNumberToObject(configRoot, "dst_end_hour", 3); // 3:00 AM (CEST time)
     
-    // Environment Manager configuration defaults
-    cJSON_AddBoolToObject(configRoot, "environment_enabled", false); // Enable environment readings
-    cJSON_AddNumberToObject(configRoot, "environment_scheduled_hour", 13); // Schedule at 13:05
-    cJSON_AddNumberToObject(configRoot, "environment_scheduled_minute", 5);
     
     // Soil moisture calibration values
     cJSON* soilMoisture = cJSON_CreateObject();
-    cJSON_AddNumberToObject(soilMoisture, "wet", 0); // 0 = fully wet
-    cJSON_AddNumberToObject(soilMoisture, "dry", 11300); // 11300 = fully dry (calibrated)
+    cJSON_AddNumberToObject(soilMoisture, "wet", 4400); // 4400 = fully wet (glass of water)
+    cJSON_AddNumberToObject(soilMoisture, "dry", 10700); // 10700 = fully dry
     cJSON_AddItemToObject(configRoot, "soil_moisture", soilMoisture);
 
     // Soil moisture power control GPIO (default 16)
@@ -231,8 +227,8 @@ void ConfigManager::mergeDefaults() {
         cJSON_AddNumberToObject(soilMoisture, "ads_channel", 0);
         cJSON_AddNumberToObject(soilMoisture, "gain", 0); // GAIN_TWOTHIRDS = ±6.144V range (won't saturate at 2.1V)
         cJSON_AddNumberToObject(soilMoisture, "stabilisation_time", 10); // 10 seconds
-        cJSON_AddNumberToObject(soilMoisture, "wet", 2100); // Lower ADC value = wet soil (100% moisture)
-        cJSON_AddNumberToObject(soilMoisture, "dry", 8700);  // Higher ADC value = dry soil (0% moisture)
+        cJSON_AddNumberToObject(soilMoisture, "wet", 4400); // 4400 = fully wet (glass of water)
+        cJSON_AddNumberToObject(soilMoisture, "dry", 10700); // 10700 = fully dry
         cJSON_AddItemToObject(configRoot, "soil_moisture", soilMoisture);
         if (diagnosticManager) {
             diagnosticManager->log(DiagnosticManager::LOG_INFO, "Config", 
