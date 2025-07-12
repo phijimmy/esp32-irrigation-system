@@ -3,10 +3,14 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch('/api/status')
             .then(response => response.json())
             .then(data => {
-                updateLedStatus(data.led);
+                updateLedIndicator(data.led);
             })
             .catch(err => {
-                document.getElementById('led-status').textContent = 'Failed to load LED data';
+                const indicator = document.getElementById('led-indicator');
+                if (indicator) {
+                    indicator.textContent = 'Failed to load LED data';
+                    indicator.style.background = '#ccc';
+                }
             });
     }
     refreshLedStatus();
@@ -27,14 +31,26 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('led-blink').addEventListener('click', function() { sendLedCommand('blink'); });
 });
 
-function updateLedStatus(led) {
-    const statusDiv = document.getElementById('led-status');
-    const metaDiv = document.getElementById('led-meta');
+function updateLedIndicator(led) {
+    const indicator = document.getElementById('led-indicator');
+    if (!indicator) return;
+    indicator.textContent = '';
+    indicator.className = 'led-indicator';
     if (!led) {
-        statusDiv.textContent = 'No LED data available';
-        metaDiv.textContent = '';
+        indicator.style.background = '#ccc';
+        indicator.title = 'No LED data available';
         return;
     }
-    statusDiv.textContent = `GPIO: ${led.gpio} | State: ${led.state} | Mode: ${led.mode} | Blink Rate: ${led.blink_rate} ms`;
-    metaDiv.textContent = led.last_updated ? `Last updated: ${led.last_updated}` : '';
+    // Set color and animation based on state/mode
+    if (led.mode === 'blink') {
+        indicator.classList.add('led-blink');
+        indicator.style.background = '#ffd700'; // yellow for blinking
+        indicator.title = 'Blinking';
+    } else if (led.state === 'on') {
+        indicator.style.background = '#4caf50'; // green for on
+        indicator.title = 'On';
+    } else {
+        indicator.style.background = '#b0b0b0'; // gray for off
+        indicator.title = 'Off';
+    }
 }

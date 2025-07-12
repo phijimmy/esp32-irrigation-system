@@ -136,3 +136,22 @@ body {
     font-weight: 600;
     color: #333;
 }
+
+/* LED indicator styles */
+.led-indicator {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  margin: 0 auto 1rem auto;
+  background: #b0b0b0;
+  box-shadow: 0 0 8px #888;
+  transition: background 0.2s, box-shadow 0.2s;
+  display: block;
+}
+.led-indicator.led-blink {
+  animation: led-blink 1s infinite;
+}
+@keyframes led-blink {
+  0%, 100% { background: #ffd700; box-shadow: 0 0 16px #ffd700; }
+  50% { background: #b0b0b0; box-shadow: 0 0 8px #888; }
+}
