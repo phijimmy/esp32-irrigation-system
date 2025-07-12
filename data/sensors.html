@@ -6,49 +6,6 @@
     <title>Sensor Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <script src="sensors.js" defer></script>
-    <style>
-        /* Use the same card style as index.html */
-        .card {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            padding: 1.5rem 2rem;
-            margin: 1.5rem auto;
-            max-width: 400px;
-            text-align: center;
-        }
-        .card-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-        }
-        .sensor-value {
-            font-size: 2.2rem;
-            font-weight: 700;
-            margin: 0.5rem 0;
-        }
-        .sensor-label {
-            color: #888;
-            font-size: 1rem;
-        }
-        .sensor-meta {
-            font-size: 0.95rem;
-            color: #666;
-            margin-top: 0.5rem;
-        }
-        .cards-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 2rem;
-        }
-        @media (max-width: 900px) {
-            .cards-container {
-                flex-direction: column;
-                align-items: center;
-            }
-        }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -66,37 +23,21 @@
         </div>
         <div class="cards-grid">
             <div class="card" id="bme280-card">
-                <div class="card-header"><div class="card-title">BME280</div></div>
+                <div class="card-header"><div class="card-title">BME280 Sensor Data</div></div>
                 <div class="card-content">
-                    <div class="sensor-value" id="bme280-temp">-- &deg;C</div>
-                    <div class="sensor-label">Temperature</div>
-                    <div class="sensor-value" id="bme280-hum">-- %</div>
-                    <div class="sensor-label">Humidity</div>
-                    <div class="sensor-value" id="bme280-press">-- hPa</div>
-                    <div class="sensor-label">Pressure</div>
-                    <div class="sensor-value" id="bme280-heat-index">-- &deg;C</div>
-                    <div class="sensor-label">Heat Index</div>
-                    <div class="sensor-value" id="bme280-dew-point">-- &deg;C</div>
-                    <div class="sensor-label">Dew Point</div>
-                    <div class="sensor-meta" id="bme280-meta"></div>
+                    <div id="bme280-data" class="sensor-value">--</div>
                 </div>
             </div>
             <div class="card" id="soilmoisture-card">
-                <div class="card-header"><div class="card-title">Soil Moisture</div></div>
+                <div class="card-header"><div class="card-title">Soil Moisture Sensor Data</div></div>
                 <div class="card-content">
-                    <div class="sensor-value" id="soilmoisture-value">-- %</div>
-                    <div class="sensor-label">Percent</div>
-                    <div class="sensor-value" id="soilmoisture-raw">--</div>
-                    <div class="sensor-label">Raw Value</div>
-                    <div class="sensor-meta" id="soilmoisture-meta"></div>
+                    <div id="soilmoisture-data" class="sensor-value">--</div>
                 </div>
             </div>
             <div class="card" id="mq135-card">
                 <div class="card-header"><div class="card-title">MQ135 Air Quality</div></div>
                 <div class="card-content">
-                    <div class="sensor-value" id="mq135-value">--</div>
-                    <div class="sensor-label">AQI</div>
-                    <div class="sensor-meta" id="mq135-meta"></div>
+                    <div id="mq135-data" class="sensor-value">--</div>
                 </div>
             </div>
         </div>
