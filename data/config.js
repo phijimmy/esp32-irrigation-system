@@ -39,6 +39,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
 
+            // Populate LED card fields (must be after config is loaded)
+            if (config.led_gpio !== undefined) {
+                document.getElementById('led-gpio').value = config.led_gpio;
+            }
+            if (config.led_blink_rate !== undefined) {
+                document.getElementById('led-blink-rate').value = config.led_blink_rate;
+            }
             // Render relay config fields
             const relaysContainer = document.getElementById('relays-config-fields');
             if (relaysContainer && typeof config.relay_count === 'number') {
