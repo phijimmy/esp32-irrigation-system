@@ -66,20 +66,6 @@ void ConfigManager::loadDefaults() {
     cJSON_AddNumberToObject(configRoot, "touch_long_press", 5000);
     cJSON_AddNumberToObject(configRoot, "int_sqw_gpio", 27); // DS3231 INT/SQW pin GPIO for interrupt polling
     
-    // Alarm1 config - legacy single alarm (kept for compatibility)
-    cJSON* alarm1 = cJSON_CreateObject();
-    cJSON_AddNumberToObject(alarm1, "hour", 10);
-    cJSON_AddNumberToObject(alarm1, "minute", 30);
-    cJSON_AddNumberToObject(alarm1, "second", 0);
-    cJSON_AddBoolToObject(alarm1, "enabled", true);
-    cJSON_AddItemToObject(configRoot, "alarm1", alarm1);
-    
-    // Alarm2 config - legacy single alarm (kept for compatibility)
-    cJSON* alarm2 = cJSON_CreateObject();
-    cJSON_AddNumberToObject(alarm2, "hour", 10);
-    cJSON_AddNumberToObject(alarm2, "minute", 35);
-    cJSON_AddBoolToObject(alarm2, "enabled", true);
-    cJSON_AddItemToObject(configRoot, "alarm2", alarm2);
     
     // 7-day alarm schedule
     cJSON* weeklySchedule = cJSON_CreateObject();
@@ -186,8 +172,8 @@ void ConfigManager::loadDefaults() {
     cJSON_AddNumberToObject(configRoot, "watering_threshold", 50.0); // percent
     cJSON_AddNumberToObject(configRoot, "watering_duration_sec", 60); // 1 minute for fast testing
     // Irrigation schedule config
-    cJSON_AddNumberToObject(configRoot, "irrigation_scheduled_hour", 11); // Set to 13:00
-    cJSON_AddNumberToObject(configRoot, "irrigation_scheduled_minute", 30); // Set to 13:15
+    cJSON_AddNumberToObject(configRoot, "irrigation_scheduled_hour", 9); // Set to 13:00
+    cJSON_AddNumberToObject(configRoot, "irrigation_scheduled_minute", 5); // Set to 13:15
 }
 
 void ConfigManager::mergeDefaults() {
