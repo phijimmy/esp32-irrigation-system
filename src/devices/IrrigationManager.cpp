@@ -307,6 +307,7 @@ void IrrigationManager::checkAndRunScheduled() {
     static int lastRunDay = -1;
     if (tm_info->tm_hour == schedHour && tm_info->tm_min == schedMin && lastRunDay != tm_info->tm_yday) {
         Serial.println("[IrrigationManager] Scheduled time reached, triggering irrigation.");
+        setSkipAirQualityThisRun(false); // Always include air quality for scheduled runs
         trigger();
         lastRunDay = tm_info->tm_yday;
     }

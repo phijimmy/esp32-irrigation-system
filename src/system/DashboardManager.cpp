@@ -164,11 +164,25 @@ cJSON* DashboardManager::getStatusJson() {
     // Add relay states if available
     if (relayController) {
         cJSON* relaysJson = cJSON_CreateArray();
+        cJSON* configRoot = configManager ? configManager->getRoot() : nullptr;
+        cJSON* relayNames = configRoot ? cJSON_GetObjectItem(configRoot, "relay_names") : nullptr;
         for (int i = 0; i < 4; ++i) {
             cJSON* relayJson = cJSON_CreateObject();
             cJSON_AddNumberToObject(relayJson, "index", i);
             cJSON_AddNumberToObject(relayJson, "gpio", relayController->getRelayGpio(i));
             cJSON_AddStringToObject(relayJson, "state", relayController->getRelayState(i) ? "on" : "off");
+            // Add relay name from config, fallback to Zone N
+            const char* relayName = nullptr;
+            if (relayNames && cJSON_IsArray(relayNames) && cJSON_GetArraySize(relayNames) > i) {
+                cJSON* nameItem = cJSON_GetArrayItem(relayNames, i);
+                if (cJSON_IsString(nameItem)) relayName = nameItem->valuestring;
+            }
+            char defaultName[16];
+            if (!relayName) {
+                snprintf(defaultName, sizeof(defaultName), "Zone %d", i+1);
+                relayName = defaultName;
+            }
+            cJSON_AddStringToObject(relayJson, "name", relayName);
             Relay* relay = relayController->getRelay(i);
             if (relay) {
                 cJSON_AddStringToObject(relayJson, "mode", 

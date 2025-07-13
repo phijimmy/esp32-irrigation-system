@@ -131,6 +131,10 @@ void ConfigManager::loadDefaults() {
     cJSON_AddBoolToObject(configRoot, "relay_active_high_1", true);
     cJSON_AddBoolToObject(configRoot, "relay_active_high_2", true);
     cJSON_AddBoolToObject(configRoot, "relay_active_high_3", true);
+    // Relay names (default: Zone 1-4)
+    static const char* defaultRelayNames[4] = {"Zone 1", "Zone 2", "Zone 3", "Zone 4"};
+    cJSON* relayNames = cJSON_CreateStringArray(defaultRelayNames, 4);
+    cJSON_AddItemToObject(configRoot, "relay_names", relayNames);
     // GPIO for manual/interrupt control of relay 2
     cJSON_AddNumberToObject(configRoot, "relay2_control_gpio", 18); // GPIO 18 for relay 2 manual control
     // Power/brownout defaults
