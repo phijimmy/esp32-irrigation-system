@@ -46,6 +46,57 @@ document.addEventListener('DOMContentLoaded', function() {
             if (config.led_blink_rate !== undefined) {
                 document.getElementById('led-blink-rate').value = config.led_blink_rate;
             }
+
+            // Populate Touch card fields
+            if (config.touch_gpio !== undefined) {
+                document.getElementById('touch-gpio').value = config.touch_gpio;
+            }
+            if (config.touch_long_press !== undefined) {
+                document.getElementById('touch-long-press').value = config.touch_long_press;
+            }
+            if (config.touch_threshold !== undefined) {
+                document.getElementById('touch-threshold').value = config.touch_threshold;
+            }
+
+            // Populate Soil Moisture card fields
+            if (config.soil_moisture) {
+                if (config.soil_moisture.wet !== undefined) {
+                    document.getElementById('soil-moisture-wet').value = config.soil_moisture.wet;
+                }
+                if (config.soil_moisture.dry !== undefined) {
+                    document.getElementById('soil-moisture-dry').value = config.soil_moisture.dry;
+                }
+            }
+            if (config.soil_power_gpio !== undefined) {
+                document.getElementById('soil-power-gpio').value = config.soil_power_gpio;
+            }
+
+            // Populate Irrigation card fields
+            if (config.watering_threshold !== undefined) {
+                document.getElementById('watering-threshold').value = config.watering_threshold;
+            }
+            if (config.watering_duration_sec !== undefined) {
+                document.getElementById('watering-duration').value = config.watering_duration_sec;
+            }
+
+            // Populate I2C card fields
+            if (config.i2c_sda !== undefined) {
+                document.getElementById('i2c-sda').value = config.i2c_sda;
+            }
+            if (config.i2c_scl !== undefined) {
+                document.getElementById('i2c-scl').value = config.i2c_scl;
+            }
+
+            // Populate System card fields
+            if (config.device_name !== undefined) {
+                document.getElementById('device-name').value = config.device_name;
+            }
+            if (config.cpu_speed !== undefined) {
+                document.getElementById('cpu-speed').value = config.cpu_speed;
+            }
+            if (config.brownout_threshold !== undefined) {
+                document.getElementById('brownout-threshold').value = config.brownout_threshold;
+            }
             // Render relay config fields
             const relaysContainer = document.getElementById('relays-config-fields');
             if (relaysContainer && typeof config.relay_count === 'number') {

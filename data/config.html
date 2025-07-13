@@ -63,6 +63,77 @@
                     <input type="number" id="led-blink-rate" name="led-blink-rate" min="10" max="10000"><br>
                 </div>
             </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">🖲️</div>
+                    <div class="card-title">Touch</div>
+                </div>
+                <div class="card-content">
+                    <label for="touch-gpio">Touch GPIO:</label>
+                    <input type="number" id="touch-gpio" name="touch-gpio" min="0" max="39"><br>
+                    <label for="touch-long-press">Long Press (ms):</label>
+                    <input type="number" id="touch-long-press" name="touch-long-press" min="100" max="20000"><br>
+                    <label for="touch-threshold">Touch Threshold:</label>
+                    <input type="number" id="touch-threshold" name="touch-threshold" min="0" max="100"><br>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">💧</div>
+                    <div class="card-title">Soil Moisture</div>
+                </div>
+                <div class="card-content">
+                    <label for="soil-moisture-wet">Wet Value:</label>
+                    <input type="number" id="soil-moisture-wet" name="soil-moisture-wet"><br>
+                    <label for="soil-moisture-dry">Dry Value:</label>
+                    <input type="number" id="soil-moisture-dry" name="soil-moisture-dry"><br>
+                    <label for="soil-power-gpio">Power GPIO:</label>
+                    <input type="number" id="soil-power-gpio" name="soil-power-gpio" min="0" max="39"><br>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">🚿</div>
+                    <div class="card-title">Irrigation</div>
+                </div>
+                <div class="card-content">
+                    <label for="watering-threshold">Watering Threshold (%):</label>
+                    <input type="number" id="watering-threshold" name="watering-threshold" min="0" max="100"><br>
+                    <label for="watering-duration">Watering Duration (sec):</label>
+                    <input type="number" id="watering-duration" name="watering-duration" min="1" max="3600"><br>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">🧩</div>
+                    <div class="card-title">I2C</div>
+                </div>
+                <div class="card-content">
+                    <label for="i2c-sda">I2C SDA:</label>
+                    <input type="number" id="i2c-sda" name="i2c-sda" min="0" max="39"><br>
+                    <label for="i2c-scl">I2C SCL:</label>
+                    <input type="number" id="i2c-scl" name="i2c-scl" min="0" max="39"><br>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">⚙️</div>
+                    <div class="card-title">System</div>
+                </div>
+                <div class="card-content">
+                    <label for="device-name">Device Name:</label>
+                    <input type="text" id="device-name" name="device-name"><br>
+                    <label for="cpu-speed">CPU Speed (MHz):</label>
+                    <input type="number" id="cpu-speed" name="cpu-speed" min="80" max="240"><br>
+                    <label for="brownout-threshold">Brownout Threshold (V):</label>
+                    <input type="number" id="brownout-threshold" name="brownout-threshold" min="1.5" max="3.5" step="0.1"><br>
+                </div>
+            </div>
             <div class="card">
                 <div class="card-header">
                     <div class="card-icon info-icon">🔌</div>
