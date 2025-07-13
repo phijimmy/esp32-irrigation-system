@@ -134,6 +134,25 @@
                     <input type="number" id="brownout-threshold" name="brownout-threshold" min="1.5" max="3.5" step="0.1"><br>
                 </div>
             </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">⏰</div>
+                    <div class="card-title">Time / NTP</div>
+                </div>
+                <div class="card-content">
+                    <label for="ntp-server-1">NTP Server 1:</label>
+                    <input type="text" id="ntp-server-1" name="ntp-server-1"><br>
+                    <label for="ntp-server-2">NTP Server 2:</label>
+                    <input type="text" id="ntp-server-2" name="ntp-server-2"><br>
+                    <label for="ntp-enabled">NTP Enabled:</label>
+                    <input type="checkbox" id="ntp-enabled" name="ntp-enabled"><br>
+                    <label for="ntp-sync-interval">NTP Sync Interval (s):</label>
+                    <input type="number" id="ntp-sync-interval" name="ntp-sync-interval" min="60" max="86400"><br>
+                    <label for="ntp-timeout">NTP Timeout (ms):</label>
+                    <input type="number" id="ntp-timeout" name="ntp-timeout" min="100" max="60000"><br>
+                </div>
+            </div>
             <div class="card">
                 <div class="card-header">
                     <div class="card-icon info-icon">🔌</div>

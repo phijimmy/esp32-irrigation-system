@@ -97,6 +97,23 @@ document.addEventListener('DOMContentLoaded', function() {
             if (config.brownout_threshold !== undefined) {
                 document.getElementById('brownout-threshold').value = config.brownout_threshold;
             }
+
+            // Populate Time/NTP card fields
+            if (config.ntp_server_1 !== undefined) {
+                document.getElementById('ntp-server-1').value = config.ntp_server_1;
+            }
+            if (config.ntp_server_2 !== undefined) {
+                document.getElementById('ntp-server-2').value = config.ntp_server_2;
+            }
+            if (config.ntp_enabled !== undefined) {
+                document.getElementById('ntp-enabled').checked = !!config.ntp_enabled;
+            }
+            if (config.ntp_sync_interval !== undefined) {
+                document.getElementById('ntp-sync-interval').value = config.ntp_sync_interval;
+            }
+            if (config.ntp_timeout !== undefined) {
+                document.getElementById('ntp-timeout').value = config.ntp_timeout;
+            }
             // Render relay config fields
             const relaysContainer = document.getElementById('relays-config-fields');
             if (relaysContainer && typeof config.relay_count === 'number') {
