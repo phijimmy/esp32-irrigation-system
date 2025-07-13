@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Device Configuration</title>
+    <title>Config</title>
     <link rel="stylesheet" href="style.css">
+    <script defer src="config.js"></script>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Device Configuration</h1>
+            <h1>Configuration</h1>
             <nav>
                 <a href="index.html">Home</a>
                 <a href="sensors.html">Sensors</a>
@@ -19,22 +20,37 @@
                 <a href="irrigation.html">Irrigation</a>
                 <a href="config.html" class="active">Config</a>
             </nav>
+            <p>System Configuration</p>
         </div>
         <div class="cards-grid">
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title">Configuration</div>
+                    <div class="card-icon info-icon">🌐</div>
+                    <div class="card-title">Network</div>
                 </div>
                 <div class="card-content">
-                    <form id="config-form">
-                        <div id="config-fields">Loading...</div>
-                        <button type="submit">Save</button>
-                    </form>
-                    <div id="config-status"></div>
+                    <label for="network-mode">WiFi Mode:</label>
+                    <select id="network-mode">
+                        <option value="ap">Access Point</option>
+                        <option value="client">Client</option>
+                    </select>
+                    <div id="wifi-client-fields" style="display:none; margin-top:1em;">
+                        <label for="wifi-ssid">WiFi SSID:</label>
+                        <input type="text" id="wifi-ssid" name="wifi-ssid" autocomplete="off"><br>
+                        <label for="wifi-pass">WiFi Password:</label>
+                        <input type="password" id="wifi-pass" name="wifi-pass" autocomplete="off"><br>
+                    </div>
+                    <div id="wifi-ap-fields" style="display:none; margin-top:1em;">
+                        <label for="ap-ssid">AP SSID:</label>
+                        <input type="text" id="ap-ssid" name="ap-ssid" autocomplete="off"><br>
+                        <label for="ap-password">AP Password:</label>
+                        <input type="password" id="ap-password" name="ap-password" autocomplete="off"><br>
+                        <label for="ap-timeout">AP Timeout (seconds):</label>
+                        <input type="number" id="ap-timeout" name="ap-timeout" min="0"><br>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    <script src="config.js"></script>
 </body>
 </html>

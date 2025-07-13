@@ -1,43 +1,43 @@
-// config.js - placeholder for config page logic
-// Add your config page JavaScript here.
-
-function createInput(name, value, label, type = 'text') {
-    return `<label>${label}: <input name="${name}" value="${value}" type="${type}"></label><br>`;
-}
-function populateConfigForm(config) {
-    let html = '';
-    for (const [key, value] of Object.entries(config)) {
-        if (typeof value === 'object' && value !== null) continue; // skip nested objects for now
-        let label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        let type = typeof value === 'number' ? 'number' : 'text';
-        html += createInput(key, value, label, type);
-    }
-    document.getElementById('config-fields').innerHTML = html;
-}
-function loadConfig() {
-    fetch('/api/status')
-        .then(r => r.json())
-        .then(data => {
-            if (data.config) {
-                populateConfigForm(data.config);
-            } else {
-                document.getElementById('config-fields').textContent = 'No config data.';
-            }
-        })
-        .catch(() => {
-            document.getElementById('config-fields').textContent = 'Error loading config.';
-        });
-}
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('config-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const config = {};
-        for (const [key, value] of formData.entries()) {
-            config[key] = value;
-        }
-        // TODO: Send config to backend (API endpoint for config update needed)
-        document.getElementById('config-status').textContent = 'Config would be sent: ' + JSON.stringify(config, null, 2);
-    });
-    loadConfig();
+    fetch('/api/status')
+        .then(response => response.json())
+        .then(data => {
+            const config = data.config || {};
+            const select = document.getElementById('network-mode');
+            const wifiClientFields = document.getElementById('wifi-client-fields');
+            const wifiAPFields = document.getElementById('wifi-ap-fields');
+            // Helper to show/hide fields
+            function updateFields(mode) {
+                if (mode === 'client') {
+                    wifiClientFields.style.display = '';
+                    wifiAPFields.style.display = 'none';
+                } else if (mode === 'ap') {
+                    wifiClientFields.style.display = 'none';
+                    wifiAPFields.style.display = '';
+                } else {
+                    wifiClientFields.style.display = 'none';
+                    wifiAPFields.style.display = 'none';
+                }
+            }
+            // Set selector and fields
+            let mode = 'client';
+            if (config.wifi_mode) {
+                mode = config.wifi_mode.toLowerCase();
+                if (select) select.value = mode;
+            }
+            // Populate fields
+            if (config.wifi_ssid) document.getElementById('wifi-ssid').value = config.wifi_ssid;
+            if (config.wifi_pass) document.getElementById('wifi-pass').value = config.wifi_pass;
+            if (config.ap_ssid) document.getElementById('ap-ssid').value = config.ap_ssid;
+            if (config.ap_password) document.getElementById('ap-password').value = config.ap_password;
+            if (config.ap_timeout) document.getElementById('ap-timeout').value = config.ap_timeout;
+            updateFields(mode);
+            // Change event for selector
+            if (select) {
+                select.addEventListener('change', function() {
+                    updateFields(this.value);
+                });
+            }
+        });
+    // You can add event listeners here for saving changes later
 });
