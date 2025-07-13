@@ -113,6 +113,72 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('i2c-scl').value = config.i2c_scl;
             }
 
+            // Save config handler
+            const form = document.getElementById('config-form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    // Gather all config values from the form
+                    const formData = new FormData(form);
+                    // Build config object (add all fields you want to save)
+                    let newConfig = {};
+                    // Network
+                    newConfig.wifi_mode = document.getElementById('network-mode').value;
+                    newConfig.wifi_ssid = document.getElementById('wifi-ssid').value;
+                    newConfig.wifi_pass = document.getElementById('wifi-pass').value;
+                    newConfig.ap_ssid = document.getElementById('ap-ssid').value;
+                    newConfig.ap_password = document.getElementById('ap-password').value;
+                    newConfig.ap_timeout = parseInt(document.getElementById('ap-timeout').value);
+                    // LED
+                    newConfig.led_gpio = parseInt(document.getElementById('led-gpio').value);
+                    newConfig.led_blink_rate = parseInt(document.getElementById('led-blink-rate').value);
+                    // Touch
+                    newConfig.touch_gpio = parseInt(document.getElementById('touch-gpio').value);
+                    newConfig.touch_long_press = parseInt(document.getElementById('touch-long-press').value);
+                    newConfig.touch_threshold = document.getElementById('touch-threshold').value;
+                    // Relays
+                    newConfig.relay_count = parseInt(document.getElementById('relay-count').value);
+                    for (let i = 0; i < newConfig.relay_count; i++) {
+                        newConfig['relay_gpio_' + i] = parseInt(document.getElementById('relay-gpio-' + i).value);
+                        newConfig['relay_active_high_' + i] = document.getElementById('relay-active-high-' + i).checked;
+                    }
+                    // Relay names
+                    let relayNames = [];
+                    for (let i = 0; i < newConfig.relay_count; i++) {
+                        relayNames.push(document.getElementById('relay-name-' + i).value);
+                    }
+                    newConfig.relay_names = relayNames;
+                    // Irrigation
+                    newConfig.watering_threshold = parseFloat(document.getElementById('watering-threshold').value);
+                    newConfig.watering_duration_sec = parseInt(document.getElementById('watering-duration').value);
+                    newConfig.irrigation_scheduled_hour = parseInt(document.getElementById('irrigation-scheduled-hour').value);
+                    newConfig.irrigation_scheduled_minute = parseInt(document.getElementById('irrigation-scheduled-minute').value);
+                    // I2C
+                    newConfig.i2c_sda = document.getElementById('i2c-sda').value;
+                    newConfig.i2c_scl = document.getElementById('i2c-scl').value;
+                    // Add more fields as needed for your config
+
+                    fetch('/api/config', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(newConfig)
+                    }).then(r => r.json()).then(resp => {
+                        alert('Config saved!');
+                    });
+                });
+            }
+
+            // Reset to defaults handler
+            const resetBtn = document.getElementById('reset-defaults-btn');
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function() {
+                    if (confirm('Are you sure you want to reset to defaults?')) {
+                        fetch('/api/config', { method: 'DELETE' })
+                            .then(() => { alert('Config reset to defaults. Rebooting...'); location.reload(); });
+                    }
+                });
+            }
+
             // Populate System card fields
             if (config.device_name !== undefined) {
                 document.getElementById('device-name').value = config.device_name;

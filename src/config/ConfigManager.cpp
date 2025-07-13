@@ -172,8 +172,8 @@ void ConfigManager::loadDefaults() {
     cJSON_AddNumberToObject(configRoot, "watering_threshold", 50.0); // percent
     cJSON_AddNumberToObject(configRoot, "watering_duration_sec", 60); // 1 minute for fast testing
     // Irrigation schedule config
-    cJSON_AddNumberToObject(configRoot, "irrigation_scheduled_hour", 10); // Set to 13:00
-    cJSON_AddNumberToObject(configRoot, "irrigation_scheduled_minute", 45); // Set to 13:15
+    cJSON_AddNumberToObject(configRoot, "irrigation_scheduled_hour", 11); // Set to 13:00
+    cJSON_AddNumberToObject(configRoot, "irrigation_scheduled_minute", 30); // Set to 13:15
 }
 
 void ConfigManager::mergeDefaults() {

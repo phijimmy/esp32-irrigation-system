@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Schedule</title>
+    <link rel="stylesheet" href="style.css">
+    <script defer src="schedule.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Weekly Schedule</h1>
+            <nav>
+                <a href="index.html">Home</a>
+                <a href="sensors.html">Sensors</a>
+                <a href="led.html">LED</a>
+                <a href="relay.html">Relay</a>
+                <a href="touch.html">Touch</a>
+                <a href="irrigation.html">Irrigation</a>
+                <a href="config.html">Config</a>
+                <a href="schedule.html" class="active">Schedule</a>
+            </nav>
+            <p>Configure the 7-day alarm schedule and related settings.</p>
+        </div>
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">📅</div>
+                    <div class="card-title">Weekly Schedule</div>
+                </div>
+                <div class="card-content" id="weekly-schedule-content">
+                    <!-- Populated by JS -->
+                    <form id="weekly-schedule-form">
+                        <!-- Dynamic schedule table will be inserted here by JS -->
+                        <button type="button" id="save-schedule-btn">Save Schedule</button>
+                    </form>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">🔌</div>
+                    <div class="card-title">INT/SQW GPIO</div>
+                </div>
+                <div class="card-content">
+                    <label for="int-sqw-gpio">INT/SQW GPIO:</label>
+                    <input type="number" id="int-sqw-gpio" name="int-sqw-gpio" min="0" max="39"><br>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">⚙️</div>
+                    <div class="card-title">Schedule Settings</div>
+                </div>
+                <div class="card-content">
+                    <label for="use-weekly-schedule">Use Weekly Schedule:</label>
+                    <input type="checkbox" id="use-weekly-schedule" name="use-weekly-schedule"><br>
+                    <label for="auto-update-daily">Auto Update Daily:</label>
+                    <input type="checkbox" id="auto-update-daily" name="auto-update-daily"><br>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
