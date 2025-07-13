@@ -135,19 +135,47 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Touch
                     newConfig.touch_gpio = parseInt(document.getElementById('touch-gpio').value);
                     newConfig.touch_long_press = parseInt(document.getElementById('touch-long-press').value);
-                    newConfig.touch_threshold = document.getElementById('touch-threshold').value;
+                    newConfig.touch_threshold = parseInt(document.getElementById('touch-threshold').value);
+                    // System
+                    newConfig.device_name = document.getElementById('device-name').value;
+                    newConfig.cpu_speed = parseInt(document.getElementById('cpu-speed').value);
+                    newConfig.brownout_threshold = parseFloat(document.getElementById('brownout-threshold').value);
+                    // NTP/Time
+                    newConfig.ntp_server_1 = document.getElementById('ntp-server-1').value;
+                    newConfig.ntp_server_2 = document.getElementById('ntp-server-2').value;
+                    newConfig.ntp_enabled = document.getElementById('ntp-enabled').checked;
+                    newConfig.ntp_sync_interval = parseInt(document.getElementById('ntp-sync-interval').value);
+                    newConfig.ntp_timeout = parseInt(document.getElementById('ntp-timeout').value);
+                    // Soil Moisture
+                    newConfig.soil_moisture = {
+                        wet: parseInt(document.getElementById('soil-moisture-wet').value),
+                        dry: parseInt(document.getElementById('soil-moisture-dry').value)
+                    };
+                    newConfig.soil_power_gpio = parseInt(document.getElementById('soil-power-gpio').value);
                     // Relays
-                    newConfig.relay_count = parseInt(document.getElementById('relay-count').value);
-                    for (let i = 0; i < newConfig.relay_count; i++) {
+                    let relayCount = (typeof config.relay_count === 'number') ? config.relay_count : 0;
+                    newConfig.relay_count = relayCount;
+                    for (let i = 0; i < relayCount; i++) {
                         newConfig['relay_gpio_' + i] = parseInt(document.getElementById('relay-gpio-' + i).value);
-                        newConfig['relay_active_high_' + i] = document.getElementById('relay-active-high-' + i).checked;
+                        // Find checked radio for active high/low
+                        let radios = document.getElementsByName('relay-active-high-' + i);
+                        let activeHigh = true;
+                        for (let r = 0; r < radios.length; r++) {
+                            if (radios[r].checked && radios[r].value === 'low') activeHigh = false;
+                        }
+                        newConfig['relay_active_high_' + i] = activeHigh;
                     }
                     // Relay names
                     let relayNames = [];
-                    for (let i = 0; i < newConfig.relay_count; i++) {
+                    for (let i = 0; i < relayCount; i++) {
                         relayNames.push(document.getElementById('relay-name-' + i).value);
                     }
                     newConfig.relay_names = relayNames;
+                    // Relay 2 interrupt GPIO (if present)
+                    if (relayCount > 2) {
+                        const relay2GpioElem = document.getElementById('relay2-control-gpio');
+                        if (relay2GpioElem) newConfig.relay2_control_gpio = parseInt(relay2GpioElem.value);
+                    }
                     // Irrigation
                     newConfig.watering_threshold = parseFloat(document.getElementById('watering-threshold').value);
                     newConfig.watering_duration_sec = parseInt(document.getElementById('watering-duration').value);
@@ -156,7 +184,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     // I2C
                     newConfig.i2c_sda = document.getElementById('i2c-sda').value;
                     newConfig.i2c_scl = document.getElementById('i2c-scl').value;
-                    // Add more fields as needed for your config
 
                     fetch('/api/config', {
                         method: 'POST',

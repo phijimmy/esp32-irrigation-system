@@ -10,10 +10,31 @@ LedDevice::LedDevice() : Device(DeviceType::LED) {
 void LedDevice::begin() {
     // Use config or default to GPIO 23, active-high logic
     if (configManager) {
-        const char* gpioStr = configManager->get("led_gpio");
-        const char* blinkStr = configManager->get("led_blink_rate");
-        gpio = gpioStr && *gpioStr ? atoi(gpioStr) : 23;
-        blinkRate = blinkStr && *blinkStr ? atoi(blinkStr) : 500;
+        cJSON* root = configManager->getRoot();
+        cJSON* gpioItem = cJSON_GetObjectItem(root, "led_gpio");
+        cJSON* blinkItem = cJSON_GetObjectItem(root, "led_blink_rate");
+        if (gpioItem) {
+            if (cJSON_IsNumber(gpioItem)) {
+                gpio = gpioItem->valueint;
+            } else if (cJSON_IsString(gpioItem) && strlen(gpioItem->valuestring) > 0) {
+                gpio = atoi(gpioItem->valuestring);
+            } else {
+                gpio = 23;
+            }
+        } else {
+            gpio = 23;
+        }
+        if (blinkItem) {
+            if (cJSON_IsNumber(blinkItem)) {
+                blinkRate = blinkItem->valueint;
+            } else if (cJSON_IsString(blinkItem) && strlen(blinkItem->valuestring) > 0) {
+                blinkRate = atoi(blinkItem->valuestring);
+            } else {
+                blinkRate = 500;
+            }
+        } else {
+            blinkRate = 500;
+        }
     } else {
         gpio = 23;
         blinkRate = 500;

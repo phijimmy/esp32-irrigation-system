@@ -14,9 +14,19 @@ void PowerManager::begin(ConfigManager* config, DiagnosticManager* diag) {
         if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_WARN, "Power", "No brownout_threshold in config, using fallback: %.2f V", brownoutThreshold);
     }
     if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_INFO, "Power", "Brownout threshold in use: %.2f V", brownoutThreshold);
-    // Load max CPU speed from config
-    const char* cpuStr = configManager ? configManager->get("cpu_speed") : nullptr;
-    int cpuCfg = cpuStr && strlen(cpuStr) > 0 ? atoi(cpuStr) : 160;
+    // Load max CPU speed from config (handle both string and number types)
+    int cpuCfg = 160;
+    if (configManager) {
+        cJSON* root = configManager->getRoot();
+        cJSON* cpuItem = cJSON_GetObjectItem(root, "cpu_speed");
+        if (cpuItem) {
+            if (cJSON_IsNumber(cpuItem)) {
+                cpuCfg = cpuItem->valueint;
+            } else if (cJSON_IsString(cpuItem) && strlen(cpuItem->valuestring) > 0) {
+                cpuCfg = atoi(cpuItem->valuestring);
+            }
+        }
+    }
     if (cpuCfg == 80 || cpuCfg == 160 || cpuCfg == 240) {
         maxCpuSpeedMhz = cpuCfg;
     } else {

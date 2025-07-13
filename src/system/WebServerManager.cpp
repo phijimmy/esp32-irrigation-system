@@ -14,6 +14,63 @@ WebServerManager::WebServerManager(DashboardManager* dashMgr, DiagnosticManager*
 void WebServerManager::begin() {
     // Create server before registering any routes
     server = new AsyncWebServer(80);
+    // Config save API
+    server->on("/api/config", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,
+        [this](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
+            String body = String((char*)data).substring(0, len);
+            cJSON* incoming = cJSON_Parse(body.c_str());
+            if (!incoming) {
+                request->send(400, "application/json", "{\"error\":\"Invalid JSON\"}");
+                return;
+            }
+            // Try to load config from filesystem
+            ConfigManager& cfgMgr = systemManager.getConfigManager();
+            bool loaded = cfgMgr.load();
+            cJSON* current = nullptr;
+            if (loaded) {
+                current = cfgMgr.getRoot();
+            } else if (dashboardManager) {
+                // Fallback: get config from status API
+                String statusStr = dashboardManager->getStatusString();
+                cJSON* status = cJSON_Parse(statusStr.c_str());
+                if (status) {
+                    cJSON* conf = cJSON_GetObjectItem(status, "config");
+                    if (conf) {
+                        current = cJSON_Duplicate(conf, 1);
+                    }
+                    cJSON_Delete(status);
+                }
+            }
+            if (!current) {
+                cJSON_Delete(incoming);
+                request->send(500, "application/json", "{\"error\":\"Unable to load current config\"}");
+                return;
+            }
+            // Merge incoming into current (overwrite only provided keys)
+            cJSON* item = nullptr;
+            cJSON_ArrayForEach(item, incoming) {
+                const char* key = item->string;
+                cJSON* existing = cJSON_GetObjectItem(current, key);
+                if (existing) {
+                    cJSON_ReplaceItemInObject(current, key, cJSON_Duplicate(item, 1));
+                } else {
+                    cJSON_AddItemToObject(current, key, cJSON_Duplicate(item, 1));
+                }
+            }
+            // Save merged config
+            if (cfgMgr.getRoot() != current) {
+                if (cfgMgr.getRoot()) cJSON_Delete(cfgMgr.getRoot());
+                // Set new root
+                *(cJSON**)(&cfgMgr) = current; // HACK: set private member, or add setter if needed
+            }
+            bool ok = cfgMgr.save();
+            cJSON_Delete(incoming);
+            if (ok) {
+                request->send(200, "application/json", "{\"result\":\"ok\"}");
+            } else {
+                request->send(500, "application/json", "{\"error\":\"Failed to save config\"}");
+            }
+        });
     // MQ135 Air Quality trigger API
     extern MQ135Sensor mq135Sensor;
     server->on("/api/mq135/trigger", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,

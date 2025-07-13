@@ -4,16 +4,9 @@
 bool ConfigManager::begin(FileSystemManager& fsMgr, DiagnosticManager* diag) {
     fsManager = &fsMgr;
     diagnosticManager = diag;
-    
-    // For development: Always use fresh defaults, don't load saved config
+    // Load defaults, then try to load config file if it exists
     loadDefaults();
-    // TODO: Enable config loading/saving when we have an interface
-    // if (!fsManager->exists(configPath)) {
-    //     loadDefaults();
-    //     save();
-    //     return true;
-    // }
-    // return load();
+    load();
     return true;
 }
 
