@@ -79,6 +79,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('watering-duration').value = config.watering_duration_sec;
             }
 
+            // Populate scheduled hour and minute dropdowns
+            const hourSelect = document.getElementById('irrigation-scheduled-hour');
+            const minuteSelect = document.getElementById('irrigation-scheduled-minute');
+            if (hourSelect && hourSelect.options.length === 0) {
+                for (let h = 0; h < 24; h++) {
+                    let opt = document.createElement('option');
+                    opt.value = h;
+                    opt.text = h.toString().padStart(2, '0');
+                    hourSelect.appendChild(opt);
+                }
+            }
+            if (minuteSelect && minuteSelect.options.length === 0) {
+                for (let m = 0; m < 60; m++) {
+                    let opt = document.createElement('option');
+                    opt.value = m;
+                    opt.text = m.toString().padStart(2, '0');
+                    minuteSelect.appendChild(opt);
+                }
+            }
+            if (config.irrigation_scheduled_hour !== undefined) {
+                hourSelect.value = config.irrigation_scheduled_hour;
+            }
+            if (config.irrigation_scheduled_minute !== undefined) {
+                minuteSelect.value = config.irrigation_scheduled_minute;
+            }
+
             // Populate I2C card fields
             if (config.i2c_sda !== undefined) {
                 document.getElementById('i2c-sda').value = config.i2c_sda;
