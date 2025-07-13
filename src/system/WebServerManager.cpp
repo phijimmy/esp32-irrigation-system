@@ -71,6 +71,20 @@ void WebServerManager::begin() {
                 request->send(500, "application/json", "{\"error\":\"Failed to save config\"}");
             }
         });
+    // Config reset to defaults API
+    server->on("/api/config/reset", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,
+        [this](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
+            ConfigManager& cfgMgr = systemManager.getConfigManager();
+            const char* configPath = cfgMgr.getConfigPath();
+            FileSystemManager* fs = cfgMgr.getFileSystemManager();
+            bool ok = fs ? fs->removeFile(configPath) : false;
+            Serial.printf("[Config Reset] Attempted to delete: %s, result: %s\n", configPath, ok ? "success" : "fail");
+            if (ok) {
+                request->send(200, "application/json", "{\"result\":\"ok\"}");
+            } else {
+                request->send(500, "application/json", "{\"error\":\"Failed to delete config file\"}");
+            }
+        });
     // MQ135 Air Quality trigger API
     extern MQ135Sensor mq135Sensor;
     server->on("/api/mq135/trigger", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,

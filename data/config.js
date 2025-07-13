@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (resetBtn) {
                 resetBtn.addEventListener('click', function() {
                     if (confirm('Are you sure you want to reset to defaults?')) {
-                        fetch('/api/config', { method: 'DELETE' })
+                        fetch('/api/config/reset', { method: 'POST' })
                             .then(() => { alert('Config reset to defaults. Rebooting...'); location.reload(); });
                     }
                 });

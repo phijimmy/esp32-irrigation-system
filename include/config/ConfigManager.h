@@ -10,6 +10,9 @@ class DiagnosticManager; // Forward declaration
 class ConfigManager {
 public:
     bool begin(FileSystemManager& fsManager, DiagnosticManager* diag = nullptr);
+    // Accessors for config reset endpoint
+    const char* getConfigPath() const { return configPath; }
+    FileSystemManager* getFileSystemManager() const { return fsManager; }
     void setDiagnosticManager(DiagnosticManager* diag);
     bool load();
     bool save();
