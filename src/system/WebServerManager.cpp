@@ -90,6 +90,8 @@ void WebServerManager::begin() {
             if (cfgMgr.getRoot() != current) {
                 cfgMgr.setRoot(current);
             }
+            // Always set force_build_time to false when saving config
+            cfgMgr.setBool("force_build_time", false);
             bool ok = cfgMgr.save();
             cJSON_Delete(incoming);
             if (ok) {
@@ -273,6 +275,56 @@ void WebServerManager::begin() {
             request->send(200, "application/json", respStr);
             cJSON_free(respStr);
             cJSON_Delete(resp);
+        });
+
+    // Manual RTC time set API
+    server->on("/api/settime", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,
+        [](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
+            String body = String((char*)data).substring(0, len);
+            cJSON* json = cJSON_Parse(body.c_str());
+            cJSON* resp = cJSON_CreateObject();
+            if (!json) {
+                cJSON_AddStringToObject(resp, "result", "error");
+                cJSON_AddStringToObject(resp, "error", "Invalid JSON");
+                char* respStr = cJSON_PrintUnformatted(resp);
+                request->send(400, "application/json", respStr);
+                cJSON_free(respStr);
+                cJSON_Delete(resp);
+                return;
+            }
+            int year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0;
+            cJSON* y = cJSON_GetObjectItem(json, "year");
+            cJSON* mo = cJSON_GetObjectItem(json, "month");
+            cJSON* d = cJSON_GetObjectItem(json, "day");
+            cJSON* h = cJSON_GetObjectItem(json, "hour");
+            cJSON* mi = cJSON_GetObjectItem(json, "minute");
+            cJSON* s = cJSON_GetObjectItem(json, "second");
+            if (y && cJSON_IsNumber(y)) year = y->valueint;
+            if (mo && cJSON_IsNumber(mo)) month = mo->valueint;
+            if (d && cJSON_IsNumber(d)) day = d->valueint;
+            if (h && cJSON_IsNumber(h)) hour = h->valueint;
+            if (mi && cJSON_IsNumber(mi)) minute = mi->valueint;
+            if (s && cJSON_IsNumber(s)) second = s->valueint;
+            bool valid = (year >= 2000 && year < 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31 && hour >= 0 && hour < 24 && minute >= 0 && minute < 60 && second >= 0 && second < 60);
+            if (!valid) {
+                cJSON_AddStringToObject(resp, "result", "error");
+                cJSON_AddStringToObject(resp, "error", "Invalid date/time values");
+                char* respStr = cJSON_PrintUnformatted(resp);
+                request->send(400, "application/json", respStr);
+                cJSON_free(respStr);
+                cJSON_Delete(resp);
+                cJSON_Delete(json);
+                return;
+            }
+            DateTime dt(year, month, day, hour, minute, second);
+            systemManager.getTimeManager().setTime(dt);
+            cJSON_AddStringToObject(resp, "result", "ok");
+            cJSON_AddStringToObject(resp, "message", "RTC time set");
+            char* respStr = cJSON_PrintUnformatted(resp);
+            request->send(200, "application/json", respStr);
+            cJSON_free(respStr);
+            cJSON_Delete(resp);
+            cJSON_Delete(json);
         });
 
     // Static file routes

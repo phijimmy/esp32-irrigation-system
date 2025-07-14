@@ -53,6 +53,125 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 document.addEventListener('DOMContentLoaded', function() {
+
+    // --- Device Time Dropdowns Logic ---
+    // Helper to populate dropdowns
+    function populateDropdown(id, min, max, pad, selected) {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        sel.innerHTML = '';
+        for (let v = min; v <= max; v++) {
+            let opt = document.createElement('option');
+            opt.value = v;
+            opt.text = pad ? v.toString().padStart(2, '0') : v;
+            if (v === selected) opt.selected = true;
+            sel.appendChild(opt);
+        }
+    }
+    // Set dropdowns to a JS Date object
+    function setDropdownsToDate(dt) {
+        populateDropdown('manual-year', 2000, 2099, false, dt.getFullYear());
+        populateDropdown('manual-month', 1, 12, true, dt.getMonth() + 1);
+        // Days in month
+        let daysInMonth = new Date(dt.getFullYear(), dt.getMonth() + 1, 0).getDate();
+        populateDropdown('manual-day', 1, daysInMonth, true, dt.getDate());
+        populateDropdown('manual-hour', 0, 23, true, dt.getHours());
+        populateDropdown('manual-minute', 0, 59, true, dt.getMinutes());
+        populateDropdown('manual-second', 0, 59, true, dt.getSeconds());
+    }
+    // Update days if year/month changes
+    function addDayDropdownUpdater() {
+        const yearSel = document.getElementById('manual-year');
+        const monthSel = document.getElementById('manual-month');
+        const daySel = document.getElementById('manual-day');
+        if (yearSel && monthSel && daySel) {
+            function updateDays() {
+                let y = parseInt(yearSel.value);
+                let m = parseInt(monthSel.value);
+                let d = parseInt(daySel.value);
+                let daysInMonth = new Date(y, m, 0).getDate();
+                let prev = d;
+                populateDropdown('manual-day', 1, daysInMonth, true, Math.min(prev, daysInMonth));
+            }
+            yearSel.addEventListener('change', updateDays);
+            monthSel.addEventListener('change', updateDays);
+        }
+    }
+    // On load, set dropdowns to device time
+    fetch('/api/status')
+        .then(r => r.json())
+        .then(data => {
+            let dt = new Date();
+            // Try to parse device time from API
+            let tstr = null;
+            if (data && data.status && data.status.time) tstr = data.status.time;
+            else if (data && data.time) tstr = data.time;
+            if (tstr) {
+                // Accepts ISO or 'YYYY-MM-DD HH:MM:SS'
+                let m = tstr.match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
+                if (m) {
+                    dt = new Date(
+                        parseInt(m[1]),
+                        parseInt(m[2]) - 1,
+                        parseInt(m[3]),
+                        parseInt(m[4]),
+                        parseInt(m[5]),
+                        parseInt(m[6])
+                    );
+                }
+            }
+            setDropdownsToDate(dt);
+            addDayDropdownUpdater();
+        });
+
+    // Sync to Browser button
+    const syncBtn = document.getElementById('sync-browser-time-btn');
+    if (syncBtn) {
+        syncBtn.addEventListener('click', function() {
+            setDropdownsToDate(new Date());
+        });
+    }
+
+    // Set Device Time button
+    const setTimeBtn = document.getElementById('set-device-time-btn');
+    if (setTimeBtn) {
+        setTimeBtn.addEventListener('click', function() {
+            const year = parseInt(document.getElementById('manual-year').value);
+            const month = parseInt(document.getElementById('manual-month').value);
+            const day = parseInt(document.getElementById('manual-day').value);
+            const hour = parseInt(document.getElementById('manual-hour').value);
+            const minute = parseInt(document.getElementById('manual-minute').value);
+            const second = parseInt(document.getElementById('manual-second').value);
+            const statusDiv = document.getElementById('set-time-status');
+            statusDiv.textContent = '';
+            if (!(year && month && day && hour >= 0 && minute >= 0 && second >= 0)) {
+                statusDiv.textContent = 'Please fill all date/time fields.';
+                return;
+            }
+            setTimeBtn.disabled = true;
+            fetch('/api/settime', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ year, month, day, hour, minute, second })
+            })
+            .then(r => r.json())
+            .then(resp => {
+                if (resp && resp.result === 'ok') {
+                    statusDiv.textContent = 'Device time set!';
+                } else {
+                    statusDiv.textContent = resp && resp.error ? resp.error : 'Failed to set time.';
+                }
+            })
+            .catch(() => {
+                statusDiv.textContent = 'Failed to set time (network error).';
+            })
+            .finally(() => {
+                setTimeBtn.disabled = false;
+            });
+        });
+    }
+    // --- End Device Time Dropdowns Logic ---
+
     fetch('/api/status')
         .then(response => response.json())
         .then(data => {

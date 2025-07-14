@@ -148,6 +148,28 @@
                     <input type="number" id="ntp-sync-interval" name="ntp-sync-interval" min="60" max="86400"><br>
                     <label for="ntp-timeout">NTP Timeout (ms):</label>
                     <input type="number" id="ntp-timeout" name="ntp-timeout" min="100" max="60000"><br>
+
+                    <hr style="margin:1em 0;">
+                    <div id="device-time-section">
+                        <div style="margin-bottom:0.5em; font-weight:bold;">Set Device Time:</div>
+                        <div style="margin-bottom:0.5em; white-space:nowrap;">
+                            <select id="manual-year" style="width:5em; font-size:1em;"></select>
+                            -
+                            <select id="manual-month" style="width:3.5em; font-size:1em;"></select>
+                            -
+                            <select id="manual-day" style="width:3.5em; font-size:1em;"></select>
+                        </div>
+                        <div style="margin-bottom:0.5em; white-space:nowrap;">
+                            <select id="manual-hour" style="width:3.5em; font-size:1em;"></select>
+                            :
+                            <select id="manual-minute" style="width:3.5em; font-size:1em;"></select>
+                            :
+                            <select id="manual-second" style="width:3.5em; font-size:1em;"></select>
+                        </div>
+                        <button type="button" id="sync-browser-time-btn">Sync to Browser</button>
+                        <button type="button" id="set-device-time-btn" style="margin-left:1em;">Set Time</button>
+                        <div id="set-time-status" style="margin-top:0.5em; color:#2980b9;"></div>
+                    </div>
                 </div>
             </div>
             <div class="card">
