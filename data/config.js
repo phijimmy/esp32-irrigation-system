@@ -162,13 +162,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 minuteSelect.value = config.irrigation_scheduled_minute;
             }
 
-            // Populate I2C card fields
-            if (config.i2c_sda !== undefined) {
-                document.getElementById('i2c-sda').value = config.i2c_sda;
-            }
-            if (config.i2c_scl !== undefined) {
-                document.getElementById('i2c-scl').value = config.i2c_scl;
-            }
+
 
             // Save config handler
             const form = document.getElementById('config-form');
@@ -239,9 +233,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     newConfig.watering_duration_sec = parseInt(document.getElementById('watering-duration').value);
                     newConfig.irrigation_scheduled_hour = parseInt(document.getElementById('irrigation-scheduled-hour').value);
                     newConfig.irrigation_scheduled_minute = parseInt(document.getElementById('irrigation-scheduled-minute').value);
-                    // I2C
-                    newConfig.i2c_sda = document.getElementById('i2c-sda').value;
-                    newConfig.i2c_scl = document.getElementById('i2c-scl').value;
+
 
                     fetch('/api/config', {
                         method: 'POST',
