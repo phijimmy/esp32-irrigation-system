@@ -195,16 +195,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
 
-            // Reset to defaults handler
-            const resetBtn = document.getElementById('reset-defaults-btn');
-            if (resetBtn) {
-                resetBtn.addEventListener('click', function() {
-                    if (confirm('Are you sure you want to reset to defaults?')) {
-                        fetch('/api/config/reset', { method: 'POST' })
-                            .then(() => { alert('Config reset to defaults. Rebooting...'); location.reload(); });
-                    }
-                });
-            }
 
             // Populate System card fields
             if (config.device_name !== undefined) {

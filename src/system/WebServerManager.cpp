@@ -59,9 +59,7 @@ void WebServerManager::begin() {
             }
             // Save merged config
             if (cfgMgr.getRoot() != current) {
-                if (cfgMgr.getRoot()) cJSON_Delete(cfgMgr.getRoot());
-                // Set new root
-                *(cJSON**)(&cfgMgr) = current; // HACK: set private member, or add setter if needed
+                cfgMgr.setRoot(current);
             }
             bool ok = cfgMgr.save();
             cJSON_Delete(incoming);
@@ -69,20 +67,6 @@ void WebServerManager::begin() {
                 request->send(200, "application/json", "{\"result\":\"ok\"}");
             } else {
                 request->send(500, "application/json", "{\"error\":\"Failed to save config\"}");
-            }
-        });
-    // Config reset to defaults API
-    server->on("/api/config/reset", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,
-        [this](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
-            ConfigManager& cfgMgr = systemManager.getConfigManager();
-            const char* configPath = cfgMgr.getConfigPath();
-            FileSystemManager* fs = cfgMgr.getFileSystemManager();
-            bool ok = fs ? fs->removeFile(configPath) : false;
-            Serial.printf("[Config Reset] Attempted to delete: %s, result: %s\n", configPath, ok ? "success" : "fail");
-            if (ok) {
-                request->send(200, "application/json", "{\"result\":\"ok\"}");
-            } else {
-                request->send(500, "application/json", "{\"error\":\"Failed to delete config file\"}");
             }
         });
     // MQ135 Air Quality trigger API

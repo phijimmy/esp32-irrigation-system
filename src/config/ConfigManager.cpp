@@ -1,5 +1,11 @@
+
 #include "config/ConfigManager.h"
 #include "diagnostics/DiagnosticManager.h"
+
+void ConfigManager::setRoot(cJSON* newRoot) {
+    if (configRoot) cJSON_Delete(configRoot);
+    configRoot = newRoot;
+}
 
 bool ConfigManager::begin(FileSystemManager& fsMgr, DiagnosticManager* diag) {
     fsManager = &fsMgr;
@@ -7,6 +13,7 @@ bool ConfigManager::begin(FileSystemManager& fsMgr, DiagnosticManager* diag) {
     // Load defaults, then try to load config file if it exists
     loadDefaults();
     load();
+    // ...removed automatic config.json deletion...
     return true;
 }
 
@@ -15,31 +22,43 @@ bool ConfigManager::load() {
         cJSON_Delete(configRoot);
         configRoot = nullptr;
     }
-    String content = fsManager->readFile(configPath);
-    if (content.length() == 0) {
-        loadDefaults();
-        return false;
+    if (fsManager && fsManager->exists(configPath)) {
+        String content = fsManager->readFile(configPath);
+        if (content.length() > 0) {
+            if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_DEBUG, "Config", "Loaded config: %s", content.c_str());
+            configRoot = cJSON_Parse(content.c_str());
+            if (configRoot) {
+                // Merge missing keys from defaults
+                mergeDefaults();
+                return true;
+            } else {
+                if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_WARN, "Config", "Failed to parse config, loading defaults");
+            }
+        }
+    } else {
+        if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_INFO, "Config", "Config file does not exist, loading defaults");
     }
-    if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_DEBUG, "Config", "Loaded config: %s", content.c_str());
-    configRoot = cJSON_Parse(content.c_str());
-    if (!configRoot) {
-        if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_WARN, "Config", "Failed to parse config, loading defaults");
-        loadDefaults();
-        return false;
-    }
-    
-    // Merge missing keys from defaults
-    mergeDefaults();
-    
-    return true;
+    // If file does not exist or failed to parse, use hardcoded defaults
+    loadDefaults();
+    return false;
 }
 
 bool ConfigManager::save() {
     if (!configRoot) return false;
     char* content = cJSON_PrintUnformatted(configRoot);
+    if (!content) {
+        if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_ERROR, "Config", "Failed to serialize configRoot to JSON");
+        return false;
+    }
     bool result = fsManager->writeFile(configPath, content);
     cJSON_free(content);
-    if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_INFO, "Config", "Saved config to %s", configPath);
+    if (diagnosticManager) {
+        if (result) {
+            diagnosticManager->log(DiagnosticManager::LOG_INFO, "Config", "Saved config to %s", configPath);
+        } else {
+            diagnosticManager->log(DiagnosticManager::LOG_ERROR, "Config", "Failed to write config to %s", configPath);
+        }
+    }
     return result;
 }
 

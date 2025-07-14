@@ -18,6 +18,8 @@ public:
     bool writeFile(const char* path, const String& data);
     bool removeFile(const char* path);
     cJSON* getFileSystemInfoJson(); // Returns file system info as a cJSON object
+    // Deletes config.json from the filesystem. Returns true if deleted, false otherwise.
+    bool deleteConfigJson();
 private:
     DiagnosticManager* diagnosticManager = nullptr;
 };

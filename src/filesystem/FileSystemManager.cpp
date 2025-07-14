@@ -1,6 +1,16 @@
 #include "diagnostics/DiagnosticManager.h"
 #include "filesystem/FileSystemManager.h"
 
+bool FileSystemManager::deleteConfigJson() {
+    const char* configPath = "/config.json";
+    if (exists(configPath)) {
+        return removeFile(configPath);
+    }
+    return false;
+}
+#include "diagnostics/DiagnosticManager.h"
+#include "filesystem/FileSystemManager.h"
+
 bool FileSystemManager::begin(DiagnosticManager* diag) {
     diagnosticManager = diag;
     if (!LittleFS.begin(false)) {
@@ -43,6 +53,11 @@ bool FileSystemManager::writeFile(const char* path, const String& data) {
     File file = LittleFS.open(path, FILE_WRITE);
     if (!file) {
         if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_ERROR, "FS", "Failed to open file for writing: %s", path);
+        return false;
+    }
+    if (data.length() == 0) {
+        if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_ERROR, "FS", "No data provided to write to file: %s", path);
+        file.close();
         return false;
     }
     file.print(data);

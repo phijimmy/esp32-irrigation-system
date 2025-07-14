@@ -1,3 +1,4 @@
+
 #ifndef CONFIG_MANAGER_H
 #define CONFIG_MANAGER_H
 
@@ -9,6 +10,10 @@ class DiagnosticManager; // Forward declaration
 
 class ConfigManager {
 public:
+    void setRoot(cJSON* newRoot);
+    // Setting: remove config file (default false)
+    bool getRemoveConfigFile() const { return removeConfigFile; }
+    void setRemoveConfigFile(bool value) { removeConfigFile = value; }
     bool begin(FileSystemManager& fsManager, DiagnosticManager* diag = nullptr);
     // Accessors for config reset endpoint
     const char* getConfigPath() const { return configPath; }
@@ -26,6 +31,7 @@ public:
     cJSON* getRoot() { return configRoot; } // Returns the root cJSON object for direct access
 
 private:
+    bool removeConfigFile = false;
     void loadDefaults();
     void mergeDefaults(); // Merge missing keys from defaults into existing config
     cJSON* configRoot = nullptr;
@@ -33,5 +39,6 @@ private:
     DiagnosticManager* diagnosticManager = nullptr;
     const char* configPath = "/config.json";
 };
+
 
 #endif // CONFIG_MANAGER_H
