@@ -251,7 +251,7 @@ void loop() {
     BME280Device* bme = systemManager.getDeviceManager().getBME280Device();
     TimeManager& timeMgr = systemManager.getTimeManager();
     DateTime now = timeMgr.getTime();
-    if (bme && now.isValid() && now.minute() == 0 && now.second() == 0 && now.hour() != lastBmeHour) {
+    if (bme && now.isValid() && now.minute() == 0 && now.hour() != lastBmeHour) {
         BME280Reading r = bme->readData();
         lastBmeHour = now.hour();
         if (r.valid) {
@@ -295,6 +295,7 @@ void loop() {
         Serial.println("[SoilMoistureSensor] Hourly reading after stabilisation:");
         soilMoistureSensor.printReading();
         hourlyReadingRequested = false;
+        sensorState = IDLE; // Prevent duplicate reading from state machine
         // After soil reading, trigger MQ135 hourly reading if needed
         if (deferredHourlyReading) {
             deferredHourlyReading = false;
@@ -306,7 +307,7 @@ void loop() {
     }
     
     // If a deferred hourly reading is pending and the system is now idle, trigger it
-    if (deferredHourlyReading && sensorState == IDLE && !soilReadingRequested && !mq135ReadingRequested) {
+    if (deferredHourlyReading && sensorState == IDLE && !soilReadingRequested && !mq135ReadingRequested && lastSoilHour != now.hour()) {
         deferredHourlyReading = false;
         Serial.println("[SoilMoistureSensor] System idle, running deferred hourly reading now.");
         soilMoistureSensor.beginStabilisation();
