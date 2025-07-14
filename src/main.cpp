@@ -401,6 +401,7 @@ void loop() {
             //     irrigationManager.trigger();
             //     irrigationTriggered = true;
             // }
+            sensorState = IDLE; // Always return to IDLE so deferred readings can trigger
             break;
     }
     // Poll INT/SQW GPIO for hardware interrupt detection
