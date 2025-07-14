@@ -176,6 +176,20 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             const config = data.config || {};
+            // --- Air Quality (MQ135) Card ---
+            const mq135Input = document.getElementById('mq135-warmup-time');
+            let warmup = undefined;
+            if (config.mq135 && typeof config.mq135.warmup_time !== 'undefined') {
+                warmup = config.mq135.warmup_time;
+            } else if (data.mq135 && typeof data.mq135.warmup_time_sec !== 'undefined') {
+                // fallback: use live status if config missing
+                warmup = data.mq135.warmup_time_sec;
+            }
+            if (mq135Input && typeof warmup !== 'undefined') {
+                mq135Input.value = warmup;
+            }
+            // Debug log for troubleshooting
+            // console.log('Populating MQ135 warmup:', {config, warmup});
             const select = document.getElementById('network-mode');
             const wifiClientFields = document.getElementById('wifi-client-fields');
             const wifiAPFields = document.getElementById('wifi-ap-fields');
@@ -323,6 +337,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         stabilisation_time: parseInt(document.getElementById('soil-stabilisation-time').value)
                     };
                     newConfig.soil_power_gpio = parseInt(document.getElementById('soil-power-gpio').value);
+                    // Air Quality (MQ135)
+                    newConfig.mq135 = {
+                        warmup_time: parseInt(document.getElementById('mq135-warmup-time').value)
+                    };
                     // Relays
                     let relayCount = (typeof config.relay_count === 'number') ? config.relay_count : 0;
                     newConfig.relay_count = relayCount;

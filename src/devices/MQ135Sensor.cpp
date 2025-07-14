@@ -9,8 +9,13 @@ void MQ135Sensor::begin(ADS1115Manager* adsMgr, ConfigManager* configMgr, RelayC
     relay = relayCtrl;
     diagnosticManager = diagMgr;
     if (config) {
-        int t = config->getInt("mq135_warmup_time", 60);
-        if (t > 0) warmupTimeSec = t;
+        cJSON* mq135Section = config->getSection("mq135");
+        if (mq135Section) {
+            cJSON* warmup = cJSON_GetObjectItem(mq135Section, "warmup_time");
+            if (cJSON_IsNumber(warmup)) {
+                warmupTimeSec = warmup->valueint;
+            }
+        }
     }
     warmingUp = false;
     state = IDLE;
