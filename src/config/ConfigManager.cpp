@@ -1,4 +1,3 @@
-
 #include "config/ConfigManager.h"
 #include "diagnostics/DiagnosticManager.h"
 
@@ -28,6 +27,33 @@ bool ConfigManager::load() {
             if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_DEBUG, "Config", "Loaded config: %s", content.c_str());
             configRoot = cJSON_Parse(content.c_str());
             if (configRoot) {
+                // Remove all duplicate ap_timeout and brownout_threshold keys (string or number)
+                // Always keep only the last occurrence as a number
+                double apTimeoutVal = 1800;
+                double brownoutVal = 2.5;
+                cJSON* apTimeout = NULL;
+                cJSON* brownout = NULL;
+                cJSON* item = NULL;
+                cJSON_ArrayForEach(item, configRoot) {
+                    if (item->string && strcmp(item->string, "ap_timeout") == 0) {
+                        if (cJSON_IsNumber(item)) apTimeoutVal = item->valuedouble;
+                        else if (cJSON_IsString(item)) apTimeoutVal = atof(item->valuestring);
+                    }
+                    if (item->string && strcmp(item->string, "brownout_threshold") == 0) {
+                        if (cJSON_IsNumber(item)) brownoutVal = item->valuedouble;
+                        else if (cJSON_IsString(item)) brownoutVal = atof(item->valuestring);
+                    }
+                }
+                // Remove all occurrences
+                while ((apTimeout = cJSON_GetObjectItemCaseSensitive(configRoot, "ap_timeout"))) {
+                    cJSON_DeleteItemFromObjectCaseSensitive(configRoot, "ap_timeout");
+                }
+                while ((brownout = cJSON_GetObjectItemCaseSensitive(configRoot, "brownout_threshold"))) {
+                    cJSON_DeleteItemFromObjectCaseSensitive(configRoot, "brownout_threshold");
+                }
+                // Add back as number
+                cJSON_AddNumberToObject(configRoot, "ap_timeout", apTimeoutVal);
+                cJSON_AddNumberToObject(configRoot, "brownout_threshold", brownoutVal);
                 // Merge missing keys from defaults
                 mergeDefaults();
                 return true;
@@ -285,20 +311,15 @@ void ConfigManager::mergeDefaults() {
         const char* dayNames[] = {"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"};
         for (int day = 0; day < 7; day++) {
             cJSON* daySchedule = cJSON_CreateObject();
-            
             cJSON* dayAlarm1 = cJSON_CreateObject();
             cJSON_AddNumberToObject(dayAlarm1, "hour", 18);
-        cJSON_AddNumberToObject(configRoot, "brownout_threshold", 2.5);
             cJSON_AddNumberToObject(dayAlarm1, "second", 0);
             cJSON_AddBoolToObject(dayAlarm1, "enabled", true);
-        cJSON_AddNumberToObject(configRoot, "cpu_speed", 160);
-            
+            cJSON_AddItemToObject(daySchedule, "alarm1", dayAlarm1);
             cJSON* dayAlarm2 = cJSON_CreateObject();
-        cJSON_AddNumberToObject(configRoot, "ap_timeout", 300);
             cJSON_AddNumberToObject(dayAlarm2, "minute", 0);
             cJSON_AddBoolToObject(dayAlarm2, "enabled", true);
             cJSON_AddItemToObject(daySchedule, "alarm2", dayAlarm2);
-            
             cJSON_AddItemToObject(weeklySchedule, dayNames[day], daySchedule);
         }
         cJSON_AddItemToObject(configRoot, "weekly_schedule", weeklySchedule);
@@ -306,6 +327,16 @@ void ConfigManager::mergeDefaults() {
             diagnosticManager->log(DiagnosticManager::LOG_INFO, "Config", 
                 "Added missing config section: weekly_schedule");
         }
+    }
+    // Add these keys only once, outside the loop
+    if (!cJSON_HasObjectItem(configRoot, "brownout_threshold")) {
+        cJSON_AddNumberToObject(configRoot, "brownout_threshold", 2.5);
+    }
+    if (!cJSON_HasObjectItem(configRoot, "cpu_speed")) {
+        cJSON_AddNumberToObject(configRoot, "cpu_speed", 160);
+    }
+    if (!cJSON_HasObjectItem(configRoot, "ap_timeout")) {
+        cJSON_AddNumberToObject(configRoot, "ap_timeout", 300);
     }
     
     // Schedule control flags
@@ -339,11 +370,9 @@ void ConfigManager::mergeDefaults() {
         cJSON_AddStringToObject(configRoot, "debug_level", "3");
     }
     if (!cJSON_HasObjectItem(configRoot, "touch_threshold")) {
-        cJSON_AddStringToObject(configRoot, "touch_threshold", "40");
+        cJSON_AddNumberToObject(configRoot, "touch_threshold", 40);
     }
-    if (!cJSON_HasObjectItem(configRoot, "brownout_threshold")) {
-        cJSON_AddStringToObject(configRoot, "brownout_threshold", "2.5");
-    }
+    // Do not add brownout_threshold here; handled in load()
     
     // Add other missing keys as needed
     if (!cJSON_HasObjectItem(configRoot, "relay_count")) {
@@ -379,9 +408,7 @@ void ConfigManager::mergeDefaults() {
     if (!cJSON_HasObjectItem(configRoot, "ap_password")) {
         cJSON_AddStringToObject(configRoot, "ap_password", "irrigation123");
     }
-    if (!cJSON_HasObjectItem(configRoot, "ap_timeout")) {
-        cJSON_AddStringToObject(configRoot, "ap_timeout", "1800");
-    }
+    // Do not add ap_timeout here; handled in load()
     
     // NTP configuration defaults
     if (!cJSON_HasObjectItem(configRoot, "ntp_server_1")) {
@@ -458,9 +485,50 @@ void ConfigManager::mergeDefaults() {
     cJSON_Delete(tempDefaults);
 }
 
+void ConfigManager::set(const char* key, const char* value) {
+    if (!configRoot) return;
+    // For ap_timeout and brownout_threshold, only ever allow a single number value, never a string, not even temporarily
+    if (strcmp(key, "ap_timeout") == 0 || strcmp(key, "brownout_threshold") == 0) {
+        // Remove all occurrences (string or number)
+        while (cJSON_GetObjectItemCaseSensitive(configRoot, key)) {
+            cJSON_DeleteItemFromObjectCaseSensitive(configRoot, key);
+        }
+        double numVal = atof(value);
+        cJSON_AddNumberToObject(configRoot, key, numVal);
+        return;
+    }
+    cJSON* item = cJSON_GetObjectItemCaseSensitive(configRoot, key);
+    if (item) {
+        // Only set string value for non-special keys
+        cJSON_SetValuestring(item, value);
+    } else {
+        cJSON_AddStringToObject(configRoot, key, value);
+    }
+}
+
 const char* ConfigManager::get(const char* key) {
     if (!configRoot) return "";
     cJSON* item = cJSON_GetObjectItemCaseSensitive(configRoot, key);
+    // Special handling for ap_timeout and brownout_threshold: always return as string, but store as number
+    if (strcmp(key, "ap_timeout") == 0 || strcmp(key, "brownout_threshold") == 0) {
+        // Remove all string versions if present (should not exist, but for safety)
+        while (item && cJSON_IsString(item)) {
+            cJSON_DeleteItemFromObjectCaseSensitive(configRoot, key);
+            item = cJSON_GetObjectItemCaseSensitive(configRoot, key);
+        }
+        if (!item) {
+            // Add default if missing
+            double defVal = (strcmp(key, "ap_timeout") == 0) ? 1800 : 2.5;
+            cJSON_AddNumberToObject(configRoot, key, defVal);
+            item = cJSON_GetObjectItemCaseSensitive(configRoot, key);
+        }
+        if (cJSON_IsNumber(item)) {
+            static char numBuf[32];
+            snprintf(numBuf, sizeof(numBuf), "%g", item->valuedouble);
+            return numBuf;
+        }
+        return "";
+    }
     if (cJSON_IsString(item) && (item->valuestring != nullptr)) {
         return item->valuestring;
     }
@@ -473,26 +541,8 @@ const char* ConfigManager::get(const char* key) {
         cJSON_AddStringToObject(configRoot, "ap_password", "irrigation123");
         return "irrigation123";
     }
-    if (strcmp(key, "ap_timeout") == 0) {
-        cJSON_AddStringToObject(configRoot, "ap_timeout", "1800");
-        return "1800";
-    }
-    if (strcmp(key, "brownout_threshold") == 0) {
-        cJSON_AddStringToObject(configRoot, "brownout_threshold", "2.5");
-        return "2.5";
-    }
     // ...add more defaults as needed...
     return "";
-}
-
-void ConfigManager::set(const char* key, const char* value) {
-    if (!configRoot) return;
-    cJSON* item = cJSON_GetObjectItemCaseSensitive(configRoot, key);
-    if (item) {
-        cJSON_SetValuestring(item, value);
-    } else {
-        cJSON_AddStringToObject(configRoot, key, value);
-    }
 }
 
 void ConfigManager::setBool(const char* key, bool value) {
