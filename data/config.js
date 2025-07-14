@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // System
                     newConfig.device_name = document.getElementById('device-name').value;
                     newConfig.cpu_speed = parseInt(document.getElementById('cpu-speed').value);
-                    newConfig.brownout_threshold = parseFloat(document.getElementById('brownout-threshold').value);
+                    newConfig.brownout_threshold = document.getElementById('brownout-threshold').value.toString();
                     // NTP/Time
                     newConfig.ntp_server_1 = document.getElementById('ntp-server-1').value;
                     newConfig.ntp_server_2 = document.getElementById('ntp-server-2').value;
