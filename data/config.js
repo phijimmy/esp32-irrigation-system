@@ -1,3 +1,30 @@
+// --- Restart Button Logic ---
+document.addEventListener('DOMContentLoaded', function() {
+    const restartBtn = document.getElementById('restart-btn');
+    const clearStatus = document.getElementById('clear-config-status');
+    if (restartBtn) {
+        restartBtn.addEventListener('click', function() {
+            if (!confirm('Are you sure you want to restart the device?')) return;
+            restartBtn.disabled = true;
+            clearStatus.textContent = 'Restarting...';
+            fetch('/api/restart', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.result === 'ok') {
+                        clearStatus.textContent = 'Restarting device...';
+                    } else {
+                        clearStatus.textContent = 'Failed to restart device.';
+                    }
+                })
+                .catch(() => {
+                    clearStatus.textContent = 'Failed to restart device.';
+                })
+                .finally(() => {
+                    restartBtn.disabled = false;
+                });
+        });
+    }
+});
 // --- Clear Config Button Logic ---
 document.addEventListener('DOMContentLoaded', function() {
     const clearBtn = document.getElementById('clear-config-btn');

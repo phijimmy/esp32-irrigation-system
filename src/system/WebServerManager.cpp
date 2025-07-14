@@ -30,6 +30,19 @@ void WebServerManager::begin() {
         cJSON_free(respStr);
         cJSON_Delete(resp);
     });
+
+    // Restart API
+    server->on("/api/restart", HTTP_POST, [](AsyncWebServerRequest* request) {
+        cJSON* resp = cJSON_CreateObject();
+        cJSON_AddStringToObject(resp, "result", "ok");
+        cJSON_AddStringToObject(resp, "message", "System will restart now.");
+        char* respStr = cJSON_PrintUnformatted(resp);
+        request->send(200, "application/json", respStr);
+        cJSON_free(respStr);
+        cJSON_Delete(resp);
+        delay(200); // Allow response to be sent
+        systemManager.restart();
+    });
     // Config save API
     server->on("/api/config", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,
         [this](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
