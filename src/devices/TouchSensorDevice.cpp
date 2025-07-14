@@ -33,12 +33,13 @@ uint16_t TouchSensorDevice::getThreshold() const { return threshold; }
 
 void TouchSensorDevice::begin() {
     if (configManager) {
-        const char* gpioStr = configManager->get("touch_gpio");
-        const char* longPressStr = configManager->get("touch_long_press");
-        const char* thresholdStr = configManager->get("touch_threshold");
-        gpio = gpioStr && *gpioStr ? atoi(gpioStr) : 4;
-        longPressDuration = longPressStr && *longPressStr ? atoi(longPressStr) : 5000;
-        threshold = thresholdStr && *thresholdStr ? atoi(thresholdStr) : 40;
+        cJSON* root = configManager->getRoot();
+        cJSON* gpioItem = cJSON_GetObjectItem(root, "touch_gpio");
+        cJSON* longPressItem = cJSON_GetObjectItem(root, "touch_long_press");
+        cJSON* thresholdItem = cJSON_GetObjectItem(root, "touch_threshold");
+        gpio = (gpioItem && cJSON_IsNumber(gpioItem)) ? gpioItem->valueint : 4;
+        longPressDuration = (longPressItem && cJSON_IsNumber(longPressItem)) ? longPressItem->valueint : 5000;
+        threshold = (thresholdItem && cJSON_IsNumber(thresholdItem)) ? thresholdItem->valueint : 40;
     }
     // No pinMode for touchRead pins
     if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_INFO, "Touch", "Touch sensor initialized on GPIO %d, long press %d ms, threshold %d", gpio, longPressDuration, threshold);

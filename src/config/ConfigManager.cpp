@@ -118,7 +118,7 @@ void ConfigManager::loadDefaults() {
     cJSON_AddStringToObject(configRoot, "wifi_max_reconnect_attempts", "5"); // max attempts before fallback to AP
     cJSON_AddStringToObject(configRoot, "device_name", "esp32_device");
     cJSON_AddStringToObject(configRoot, "debug_level", "3"); // LOG_INFO default
-    cJSON_AddStringToObject(configRoot, "touch_threshold", "40");
+    cJSON_AddNumberToObject(configRoot, "touch_threshold", 40);
     // Relay defaults
     cJSON_AddNumberToObject(configRoot, "relay_count", 4);
     cJSON_AddNumberToObject(configRoot, "relay_gpio_0", 32);
@@ -136,15 +136,15 @@ void ConfigManager::loadDefaults() {
     // GPIO for manual/interrupt control of relay 2
     cJSON_AddNumberToObject(configRoot, "relay2_control_gpio", 18); // GPIO 18 for relay 2 manual control
     // Power/brownout defaults
-    cJSON_AddStringToObject(configRoot, "brownout_threshold", "2.5");
-    cJSON_AddStringToObject(configRoot, "cpu_speed", "160");
+    cJSON_AddNumberToObject(configRoot, "brownout_threshold", 2.5);
+    cJSON_AddNumberToObject(configRoot, "cpu_speed", 160);
     // Network/AP defaults
     cJSON_AddStringToObject(configRoot, "ap_ssid", "ESP32-Iot-DeV");
     cJSON_AddStringToObject(configRoot, "ap_password", "irrigation123");
-    cJSON_AddStringToObject(configRoot, "ap_timeout", "300"); // 5 minutes (300 seconds)
+    cJSON_AddNumberToObject(configRoot, "ap_timeout", 300); // 5 minutes (300 seconds)
     // I2C defaults
-    cJSON_AddStringToObject(configRoot, "i2c_sda", "21");
-    cJSON_AddStringToObject(configRoot, "i2c_scl", "22");
+    cJSON_AddNumberToObject(configRoot, "i2c_sda", 21);
+    cJSON_AddNumberToObject(configRoot, "i2c_scl", 22);
     // Time defaults
     cJSON_AddStringToObject(configRoot, "default_time", "");
     // NTP server configuration
@@ -287,13 +287,13 @@ void ConfigManager::mergeDefaults() {
             
             cJSON* dayAlarm1 = cJSON_CreateObject();
             cJSON_AddNumberToObject(dayAlarm1, "hour", 18);
-            cJSON_AddNumberToObject(dayAlarm1, "minute", 0);
+        cJSON_AddNumberToObject(configRoot, "brownout_threshold", 2.5);
             cJSON_AddNumberToObject(dayAlarm1, "second", 0);
             cJSON_AddBoolToObject(dayAlarm1, "enabled", true);
-            cJSON_AddItemToObject(daySchedule, "alarm1", dayAlarm1);
+        cJSON_AddNumberToObject(configRoot, "cpu_speed", 160);
             
             cJSON* dayAlarm2 = cJSON_CreateObject();
-            cJSON_AddNumberToObject(dayAlarm2, "hour", 22);
+        cJSON_AddNumberToObject(configRoot, "ap_timeout", 300);
             cJSON_AddNumberToObject(dayAlarm2, "minute", 0);
             cJSON_AddBoolToObject(dayAlarm2, "enabled", true);
             cJSON_AddItemToObject(daySchedule, "alarm2", dayAlarm2);

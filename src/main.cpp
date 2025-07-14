@@ -83,13 +83,19 @@ void setup() {
     // led.setMode(LedDevice::BLINK); // Set LED ON at boot
 
     // Get touch config from proper config sections
-    int touchGpio = cJSON_GetObjectItem(root, "touch_gpio") ? cJSON_GetObjectItem(root, "touch_gpio")->valueint : 4;
-    int touchLongPress = cJSON_GetObjectItem(root, "touch_long_press") ? cJSON_GetObjectItem(root, "touch_long_press")->valueint : 5000;
-    
+    // Patch: ensure touch_threshold and touch_long_press are numbers in config
+    cJSON* thresholdItem = cJSON_GetObjectItem(root, "touch_threshold");
+    if (thresholdItem && cJSON_IsString(thresholdItem)) {
+        int thresholdVal = atoi(thresholdItem->valuestring);
+        cJSON_ReplaceItemInObject(root, "touch_threshold", cJSON_CreateNumber(thresholdVal));
+    }
+    cJSON* longPressItem = cJSON_GetObjectItem(root, "touch_long_press");
+    if (longPressItem && cJSON_IsString(longPressItem)) {
+        int longPressVal = atoi(longPressItem->valuestring);
+        cJSON_ReplaceItemInObject(root, "touch_long_press", cJSON_CreateNumber(longPressVal));
+    }
     touch.setConfigManager(&systemManager.getConfigManager());
     touch.setDiagnosticManager(&systemManager.getDiagnosticManager());
-    touch.setGpio(touchGpio);
-    touch.setLongPressDuration(touchLongPress);
     systemManager.getDeviceManager().addDevice(&touch);
     touch.begin(); // Explicitly call begin() since DeviceManager.begin() was called before adding this device
 
