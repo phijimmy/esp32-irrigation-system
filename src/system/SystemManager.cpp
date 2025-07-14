@@ -1,8 +1,24 @@
+
 #include "system/SystemManager.h"
 #include "system/I2CManager.h"
 #include "devices/BME280Device.h"
 #include "system/TimeManager.h"
 #include <cJSON.h>
+
+// --- Restart scheduling ---
+void SystemManager::scheduleRestart(unsigned long delayMs) {
+    this->restartDelayMs = delayMs;
+    this->restartScheduledAt = millis();
+    this->restartPending = true;
+}
+
+bool SystemManager::isRestartPending() const {
+    return this->restartPending;
+}
+
+void SystemManager::clearRestartPending() {
+    this->restartPending = false;
+}
 
 void SystemManager::begin() {
     initHardware();
@@ -29,6 +45,12 @@ void SystemManager::update() {
     timeManager.update();
     checkSystemHealth();
     deviceManager.update();
+
+    // Handle scheduled restart
+    if (restartPending && (millis() - restartScheduledAt >= restartDelayMs)) {
+        restartPending = false;
+        restart();
+    }
 }
 
 void SystemManager::restart() {

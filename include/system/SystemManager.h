@@ -15,6 +15,7 @@
 #include "system/ADS1115Manager.h"
 
 
+
 class SystemManager {
 public:
     void begin();
@@ -36,6 +37,11 @@ public:
     cJSON* getHealthJson(); // Returns health info as a cJSON object
     cJSON* getI2CInfoJson(); // Returns I2C info as a cJSON object
 
+    // Restart scheduling
+    void scheduleRestart(unsigned long delayMs = 3000);
+    bool isRestartPending() const;
+    void clearRestartPending();
+
 private:
     void initHardware();
     void checkSystemHealth();
@@ -50,6 +56,11 @@ private:
     I2CManager i2cManager;
     TimeManager timeManager;
     ADS1115Manager ads1115Manager;
+
+    // Restart scheduling
+    bool restartPending = false;
+    unsigned long restartScheduledAt = 0;
+    unsigned long restartDelayMs = 3000;
 };
 
 #endif // SYSTEM_MANAGER_H

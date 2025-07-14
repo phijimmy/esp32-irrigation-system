@@ -31,17 +31,17 @@ void WebServerManager::begin() {
         cJSON_Delete(resp);
     });
 
-    // Restart API
+    // Restart API (schedule restart after delay)
     server->on("/api/restart", HTTP_POST, [](AsyncWebServerRequest* request) {
         cJSON* resp = cJSON_CreateObject();
         cJSON_AddStringToObject(resp, "result", "ok");
-        cJSON_AddStringToObject(resp, "message", "System will restart now.");
+        cJSON_AddStringToObject(resp, "message", "System will restart in 3 seconds.");
         char* respStr = cJSON_PrintUnformatted(resp);
         request->send(200, "application/json", respStr);
         cJSON_free(respStr);
         cJSON_Delete(resp);
-        delay(200); // Allow response to be sent
-        systemManager.restart();
+        // Schedule restart via SystemManager
+        systemManager.scheduleRestart(3000);
     });
     // Config save API
     server->on("/api/config", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,
