@@ -111,7 +111,7 @@ void ConfigManager::loadDefaults() {
     cJSON_AddBoolToObject(configRoot, "auto_update_daily", true); // Auto-update alarms at midnight
     
     // Legacy string-based configs for backward compatibility
-    cJSON_AddStringToObject(configRoot, "wifi_mode", "client"); // "ap" for Access Point, "client" for WiFi Client
+    cJSON_AddStringToObject(configRoot, "wifi_mode", "ap"); // "ap" for Access Point, "client" for WiFi Client
     cJSON_AddStringToObject(configRoot, "wifi_ssid", "M1M-LS-MR-82");
     cJSON_AddStringToObject(configRoot, "wifi_pass", "BqY3#sTgKu$Ve5D2cMhAw[FnXrPz(8J7");
     cJSON_AddStringToObject(configRoot, "wifi_reconnect_interval", "60"); // seconds between reconnection attempts
@@ -318,7 +318,7 @@ void ConfigManager::mergeDefaults() {
     
     // Legacy string-based configs for backward compatibility
     if (!cJSON_HasObjectItem(configRoot, "wifi_mode")) {
-        cJSON_AddStringToObject(configRoot, "wifi_mode", "client");
+        cJSON_AddStringToObject(configRoot, "wifi_mode", "ap");
     }
     if (!cJSON_HasObjectItem(configRoot, "wifi_ssid")) {
         cJSON_AddStringToObject(configRoot, "wifi_ssid", "M1M-LS-MR-82");
