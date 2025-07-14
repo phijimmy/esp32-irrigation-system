@@ -144,8 +144,7 @@ void loop() {
         webServerManager->begin();
         webServerStarted = true;
         Serial.println("[WebServerManager] Started after valid sensor data detected.");
-        // After webserver is started, delete config.json
-        systemManager.getFileSystemManager().deleteConfigJson();
+        // config.json is no longer deleted automatically here; deletion is now on-demand only
     }
     // --- Sequential sensor initialization (non-blocking) ---
     if (!sensorsInitialized) {
