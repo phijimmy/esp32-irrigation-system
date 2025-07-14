@@ -167,7 +167,7 @@ void ConfigManager::loadDefaults() {
     // Network/AP defaults
     cJSON_AddStringToObject(configRoot, "ap_ssid", "ESP32-Iot-DeV");
     cJSON_AddStringToObject(configRoot, "ap_password", "irrigation123");
-    cJSON_AddNumberToObject(configRoot, "ap_timeout", 300); // 5 minutes (300 seconds)
+    cJSON_AddNumberToObject(configRoot, "ap_timeout", 900); // 15 minutes (900 seconds)
     // I2C defaults
     cJSON_AddNumberToObject(configRoot, "i2c_sda", 21);
     cJSON_AddNumberToObject(configRoot, "i2c_scl", 22);
@@ -336,7 +336,7 @@ void ConfigManager::mergeDefaults() {
         cJSON_AddNumberToObject(configRoot, "cpu_speed", 160);
     }
     if (!cJSON_HasObjectItem(configRoot, "ap_timeout")) {
-        cJSON_AddNumberToObject(configRoot, "ap_timeout", 300);
+        cJSON_AddNumberToObject(configRoot, "ap_timeout", 900);
     }
     
     // Schedule control flags
