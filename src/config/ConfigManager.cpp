@@ -175,6 +175,7 @@ void ConfigManager::loadDefaults() {
     cJSON* soilMoisture = cJSON_CreateObject();
     cJSON_AddNumberToObject(soilMoisture, "wet", 4400); // 4400 = fully wet (glass of water)
     cJSON_AddNumberToObject(soilMoisture, "dry", 10700); // 10700 = fully dry
+    cJSON_AddNumberToObject(soilMoisture, "stabilisation_time", 10); // 10 seconds default
     cJSON_AddItemToObject(configRoot, "soil_moisture", soilMoisture);
 
     // Soil moisture power control GPIO (default 16)

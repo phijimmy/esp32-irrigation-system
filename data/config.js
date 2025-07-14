@@ -120,6 +120,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (config.soil_moisture.dry !== undefined) {
                     document.getElementById('soil-moisture-dry').value = config.soil_moisture.dry;
                 }
+                if (config.soil_moisture.stabilisation_time !== undefined) {
+                    document.getElementById('soil-stabilisation-time').value = config.soil_moisture.stabilisation_time;
+                }
             }
             if (config.soil_power_gpio !== undefined) {
                 document.getElementById('soil-power-gpio').value = config.soil_power_gpio;
@@ -203,7 +206,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Soil Moisture
                     newConfig.soil_moisture = {
                         wet: parseInt(document.getElementById('soil-moisture-wet').value),
-                        dry: parseInt(document.getElementById('soil-moisture-dry').value)
+                        dry: parseInt(document.getElementById('soil-moisture-dry').value),
+                        stabilisation_time: parseInt(document.getElementById('soil-stabilisation-time').value)
                     };
                     newConfig.soil_power_gpio = parseInt(document.getElementById('soil-power-gpio').value);
                     // Relays

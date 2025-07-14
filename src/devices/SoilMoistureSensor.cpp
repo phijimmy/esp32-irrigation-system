@@ -11,10 +11,15 @@ void SoilMoistureSensor::begin(ADS1115Manager* adsMgr, ConfigManager* configMgr,
     timeManager = timeMgr;
     diagnosticManager = diagMgr;
     state = IDLE;
-    // Get stabilisation time from config if available
+    // Get stabilisation time from config->soil_moisture if available
     if (config) {
-        int t = config->getInt("soil_stabilisation_time", 10);
-        if (t > 0) stabilisationTimeSec = t;
+        cJSON* soilSection = config->getSection("soil_moisture");
+        if (soilSection) {
+            cJSON* stabItem = cJSON_GetObjectItem(soilSection, "stabilisation_time");
+            int t = 10;
+            if (cJSON_IsNumber(stabItem)) t = stabItem->valueint;
+            if (t > 0) stabilisationTimeSec = t;
+        }
         // Get soil power gpio from config
         soilPowerGpio = config->getInt("soil_power_gpio", 16);
         if (soilPowerGpio >= 0) {
