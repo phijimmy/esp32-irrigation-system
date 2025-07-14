@@ -15,6 +15,7 @@ public:
     void setBlinkRate(uint32_t rateMs);
     void setGpio(uint8_t gpioNum);
     void setDiagnosticManager(DiagnosticManager* diag);
+    void setConfigManager(ConfigManager* config);
     Mode getMode() const;
     uint32_t getBlinkRate() const;
     uint8_t getGpio() const;

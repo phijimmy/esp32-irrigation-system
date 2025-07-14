@@ -33,12 +33,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function updateLedIndicator(led) {
     const indicator = document.getElementById('led-indicator');
+    const blinkRateDiv = document.getElementById('led-blink-rate');
     if (!indicator) return;
     indicator.textContent = '';
     indicator.className = 'led-indicator';
     if (!led) {
         indicator.style.background = '#ccc';
         indicator.title = 'No LED data available';
+        if (blinkRateDiv) blinkRateDiv.textContent = '';
         return;
     }
     // Set color and animation based on state/mode
@@ -46,11 +48,27 @@ function updateLedIndicator(led) {
         indicator.classList.add('led-blink');
         indicator.style.background = '#ffd700'; // yellow for blinking
         indicator.title = 'Blinking';
+        // Set animation duration to match configured blink rate (full cycle = 2x blink_rate)
+        if (typeof led.blink_rate === 'number' && led.blink_rate > 0) {
+            indicator.style.animationDuration = (led.blink_rate * 2) + 'ms';
+        } else {
+            indicator.style.animationDuration = '';
+        }
     } else if (led.state === 'on') {
         indicator.style.background = '#4caf50'; // green for on
         indicator.title = 'On';
+        indicator.style.animationDuration = '';
     } else {
         indicator.style.background = '#b0b0b0'; // gray for off
         indicator.title = 'Off';
+        indicator.style.animationDuration = '';
+    }
+    // Show blink rate if available
+    if (blinkRateDiv) {
+        if (typeof led.blink_rate === 'number' && led.blink_rate > 0) {
+            blinkRateDiv.textContent = `Blink Rate: ${led.blink_rate} ms`;
+        } else {
+            blinkRateDiv.textContent = '';
+        }
     }
 }

@@ -118,3 +118,7 @@ void LedDevice::blink() {
 void LedDevice::setDiagnosticManager(DiagnosticManager* diag) {
     diagnosticManager = diag;
 }
+
+void LedDevice::setConfigManager(ConfigManager* config) {
+    configManager = config;
+}

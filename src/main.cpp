@@ -76,6 +76,7 @@ void setup() {
     
     led.setGpio(ledGpio);
     led.setBlinkRate(ledBlinkRate);
+    led.setConfigManager(&systemManager.getConfigManager());
     led.setDiagnosticManager(&systemManager.getDiagnosticManager());
     systemManager.getDeviceManager().addDevice(&led);
     led.begin(); // Explicitly call begin() since DeviceManager.begin() was called before adding this device
