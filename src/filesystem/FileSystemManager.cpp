@@ -4,8 +4,18 @@
 bool FileSystemManager::deleteConfigJson() {
     const char* configPath = "/config.json";
     if (exists(configPath)) {
-        return removeFile(configPath);
+        bool removed = removeFile(configPath);
+        if (removed) {
+            Serial.println("[FS] config.json deleted");
+            if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_INFO, "FS", "config.json deleted");
+        } else {
+            Serial.println("[FS] config.json delete failed");
+            if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_WARN, "FS", "config.json delete failed");
+        }
+        return removed;
     }
+    Serial.println("[FS] config.json not found");
+    if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_WARN, "FS", "config.json not found");
     return false;
 }
 #include "diagnostics/DiagnosticManager.h"
