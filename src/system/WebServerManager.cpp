@@ -14,6 +14,22 @@ WebServerManager::WebServerManager(DashboardManager* dashMgr, DiagnosticManager*
 void WebServerManager::begin() {
     // Create server before registering any routes
     server = new AsyncWebServer(80);
+    // Clear Config API
+    server->on("/api/clearconfig", HTTP_POST, [](AsyncWebServerRequest* request) {
+        bool ok = systemManager.getFileSystemManager().deleteConfigJson();
+        cJSON* resp = cJSON_CreateObject();
+        if (ok) {
+            cJSON_AddStringToObject(resp, "result", "ok");
+            cJSON_AddStringToObject(resp, "message", "Config cleared. Reboot to restore defaults.");
+        } else {
+            cJSON_AddStringToObject(resp, "result", "error");
+            cJSON_AddStringToObject(resp, "message", "Failed to clear config.");
+        }
+        char* respStr = cJSON_PrintUnformatted(resp);
+        request->send(200, "application/json", respStr);
+        cJSON_free(respStr);
+        cJSON_Delete(resp);
+    });
     // Config save API
     server->on("/api/config", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,
         [this](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {

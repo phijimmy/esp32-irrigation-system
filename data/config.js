@@ -1,3 +1,30 @@
+// --- Clear Config Button Logic ---
+document.addEventListener('DOMContentLoaded', function() {
+    const clearBtn = document.getElementById('clear-config-btn');
+    const clearStatus = document.getElementById('clear-config-status');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            if (!confirm('Are you sure you want to clear the config? This will delete config.json and restore defaults after reboot.')) return;
+            clearBtn.disabled = true;
+            clearStatus.textContent = 'Clearing config...';
+            fetch('/api/clearconfig', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.result === 'ok') {
+                        clearStatus.textContent = 'Config cleared. Please reboot the device.';
+                    } else {
+                        clearStatus.textContent = data && data.error ? data.error : 'Failed to clear config.';
+                    }
+                })
+                .catch(() => {
+                    clearStatus.textContent = 'Failed to clear config.';
+                })
+                .finally(() => {
+                    clearBtn.disabled = false;
+                });
+        });
+    }
+});
 document.addEventListener('DOMContentLoaded', function() {
     fetch('/api/status')
         .then(response => response.json())
