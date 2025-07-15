@@ -22,8 +22,9 @@ public:
     bool isComplete() const;
     void reset();
     void waterNow();
+    void setMQ135Sensor(class MQ135Sensor* sensor);
 private:
-    enum State { IDLE, START, BME_READING, SOIL_READING, WATER_NOW, COMPLETE };
+    enum State { IDLE, START, BME_READING, SOIL_READING, MQ135_READING, WATER_NOW, COMPLETE };
     State state = IDLE;
     BME280Device* bme280 = nullptr;
     SoilMoistureSensor* soilSensor = nullptr;
@@ -48,6 +49,8 @@ private:
     float lastAvgSoilCorrected = 0;
     time_t lastReadingTimestamp = 0;
     time_t lastRunTimestamp = 0; // Track when irrigation sequence was last completed
+    class MQ135Sensor* mq135Sensor; // Add MQ135Sensor pointer
+    float lastAirQualityVoltage; // Add last air quality voltage
     void startNextState(State next);
 public:
     float getLastAvgTemp() const { return lastAvgTemp; }

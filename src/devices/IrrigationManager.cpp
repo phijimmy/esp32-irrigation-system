@@ -1,14 +1,20 @@
+
 #include "devices/IrrigationManager.h"
 #include "devices/RelayController.h"
 #include "devices/Relay.h"
+#include "devices/MQ135Sensor.h"
 #include <Arduino.h>
 #include <time.h>
 
-#include "devices/IrrigationManager.h"
-#include <Arduino.h>
-#include <time.h>
 
-IrrigationManager::IrrigationManager() {}
+IrrigationManager::IrrigationManager()
+    : mq135Sensor(nullptr), lastAirQualityVoltage(-1.0f)
+{}
+// Setter for MQ135Sensor
+void IrrigationManager::setMQ135Sensor(MQ135Sensor* sensor) {
+    mq135Sensor = sensor;
+}
+// ...existing code...
 
 void IrrigationManager::begin(BME280Device* bme, SoilMoistureSensor* soil, TimeManager* timeMgr) {
     bme280 = bme;
@@ -149,9 +155,44 @@ void IrrigationManager::update() {
                 wateringActive = true;
                 wateringStart = millis();
             }
-            startNextState(COMPLETE);
+            // After soil reading and watering logic, always go to air quality reading next
+            startNextState(MQ135_READING);
             break;
-        // ...removed MQ135_READING state...
+        case MQ135_READING: {
+            // Show progress for MQ135 warmup and reading
+            static bool started = false;
+            static unsigned long lastMQ135ProgressPrint = 0;
+            if (mq135Sensor) {
+                if (!started) {
+                    Serial.println("[IrrigationManager] Starting MQ135 air quality sensor warmup...");
+                    mq135Sensor->startReading();
+                    started = true;
+                    lastMQ135ProgressPrint = millis();
+                }
+                unsigned long now = millis();
+                int elapsed = (now - mq135Sensor->getWarmupStart()) / 1000;
+                int total = mq135Sensor->getWarmupTimeSec();
+                if (!mq135Sensor->readyForReading()) {
+                    if (now - lastMQ135ProgressPrint >= 1000) {
+                        Serial.printf("[IrrigationManager][MQ135Sensor] Warming up... %d/%d seconds\n", elapsed, total);
+                        lastMQ135ProgressPrint = now;
+                    }
+                } else {
+                    Serial.println("[IrrigationManager] MQ135 warmup complete, taking air quality reading...");
+                    mq135Sensor->takeReading();
+                    lastAirQualityVoltage = mq135Sensor->getLastReading().avgVoltage;
+                    Serial.printf("[IrrigationManager][MQ135] Air quality voltage: %.4f V\n", lastAirQualityVoltage);
+                    started = false;
+                    startNextState(COMPLETE);
+                }
+            } else {
+                Serial.println("[IrrigationManager] MQ135 sensor not available, skipping air quality reading.");
+                lastAirQualityVoltage = -1.0f;
+                started = false;
+                startNextState(COMPLETE);
+            }
+            break;
+        }
         case COMPLETE:
             if (wateringActive) {
                 unsigned long now = millis();
@@ -189,7 +230,10 @@ void IrrigationManager::update() {
                     if (relayController) relayController->setRelayMode(1, Relay::OFF); // Relay 1 OFF
                     Serial.println("[IrrigationManager] Water Now complete. Relay 1 OFF.");
                     wateringActive = false;
-                    state = COMPLETE;
+                    // After manual watering, also take air quality reading
+                    state = MQ135_READING;
+                    stateStart = millis();
+                    break;
                 }
             }
             if (!completePrinted && !wateringActive) {
