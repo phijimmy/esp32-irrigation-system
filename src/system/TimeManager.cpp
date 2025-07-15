@@ -842,29 +842,26 @@ void TimeManager::setBuildTimeIfNeeded() {
 }
 
 DateTime TimeManager::buildTime() {
-    // Extract compile date and time from __DATE__ and __TIME__ macros
-    // __DATE__ format: "MMM DD YYYY" (e.g., "Jul 09 2025")
-    // __TIME__ format: "HH:MM:SS" (e.g., "10:30:45")
-
+#ifdef BUILD_TIME
+    // BUILD_TIME format: "YYYY-MM-DD HH:MM:SS"
+    int year = 2000, month = 1, day = 1, hour = 0, minute = 0, second = 0;
+    if (sscanf(BUILD_TIME, "%d-%d-%d %d:%d:%d", &year, &month, &day, &hour, &minute, &second) == 6) {
+        return DateTime(year, month, day, hour, minute, second);
+    }
+#endif
+    // Fallback to __DATE__ and __TIME__ if BUILD_TIME is not defined
     char month_str[4] = {0};
     int day = 1, year = 2000, hour = 0, minute = 0, second = 0;
-
-    // Parse __DATE__ safely
     if (sscanf(__DATE__, "%3s %d %d", month_str, &day, &year) != 3) {
-        // Fallback to a safe default if parsing fails
         strcpy(month_str, "Jan");
         day = 1;
         year = 2000;
     }
-
-    // Parse __TIME__ safely
     if (sscanf(__TIME__, "%d:%d:%d", &hour, &minute, &second) != 3) {
         hour = 0;
         minute = 0;
         second = 0;
     }
-
-    // Convert month string to number
     const char* months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
                            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
     int month = 1;
@@ -874,14 +871,11 @@ DateTime TimeManager::buildTime() {
             break;
         }
     }
-
-    // Final sanity check
     if (year < 2000 || month < 1 || month > 12 || day < 1 || day > 31) {
         year = 2000;
         month = 1;
         day = 1;
     }
-
     return DateTime(year, month, day, hour, minute, second);
 }
 

@@ -278,32 +278,7 @@ void ConfigManager::mergeDefaults() {
         }
     }
     
-    // Alarm1 config
-    if (!cJSON_HasObjectItem(configRoot, "alarm1")) {
-        cJSON* alarm1 = cJSON_CreateObject();
-        cJSON_AddNumberToObject(alarm1, "hour", 10);
-        cJSON_AddNumberToObject(alarm1, "minute", 30);
-        cJSON_AddNumberToObject(alarm1, "second", 0);
-        cJSON_AddBoolToObject(alarm1, "enabled", true);
-        cJSON_AddItemToObject(configRoot, "alarm1", alarm1);
-        if (diagnosticManager) {
-            diagnosticManager->log(DiagnosticManager::LOG_INFO, "Config", 
-                "Added missing config section: alarm1");
-        }
-    }
-    
-    // Alarm2 config
-    if (!cJSON_HasObjectItem(configRoot, "alarm2")) {
-        cJSON* alarm2 = cJSON_CreateObject();
-        cJSON_AddNumberToObject(alarm2, "hour", 10);
-        cJSON_AddNumberToObject(alarm2, "minute", 35);
-        cJSON_AddBoolToObject(alarm2, "enabled", true);
-        cJSON_AddItemToObject(configRoot, "alarm2", alarm2);
-        if (diagnosticManager) {
-            diagnosticManager->log(DiagnosticManager::LOG_INFO, "Config", 
-                "Added missing config section: alarm2");
-        }
-    }
+    // Removed legacy root-level alarm1 and alarm2 config section creation
     
     // Weekly schedule defaults
     if (!cJSON_HasObjectItem(configRoot, "weekly_schedule")) {
