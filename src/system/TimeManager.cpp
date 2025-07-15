@@ -671,16 +671,18 @@ void TimeManager::setAlarmsForToday() {
         return;
     }
     
-    // Set Alarm1 for today only if scheduled time is in the future
+    // Use day-level enabled flag for both alarms
+    bool dayEnabled = cJSON_GetObjectItem(todaySchedule, "enabled") ? cJSON_IsTrue(cJSON_GetObjectItem(todaySchedule, "enabled")) : false;
+
+    // Set Alarm1 for today only if scheduled time is in the future and day is enabled
     cJSON* alarm1Config = cJSON_GetObjectItem(todaySchedule, "alarm1");
     if (alarm1Config) {
         int hour = cJSON_GetObjectItem(alarm1Config, "hour") ? cJSON_GetObjectItem(alarm1Config, "hour")->valueint : 8;
         int minute = cJSON_GetObjectItem(alarm1Config, "minute") ? cJSON_GetObjectItem(alarm1Config, "minute")->valueint : 0;
         int second = cJSON_GetObjectItem(alarm1Config, "second") ? cJSON_GetObjectItem(alarm1Config, "second")->valueint : 0;
-        bool enabled = cJSON_GetObjectItem(alarm1Config, "enabled") ? cJSON_IsTrue(cJSON_GetObjectItem(alarm1Config, "enabled")) : false;
 
         bool shouldSetAlarm = false;
-        if (enabled) {
+        if (dayEnabled) {
             // Compare scheduled time to current time
             DateTime now = rtc.now();
             int nowSec = now.hour() * 3600 + now.minute() * 60 + now.second();
@@ -692,7 +694,7 @@ void TimeManager::setAlarmsForToday() {
 
         if (diagnosticManager) {
             diagnosticManager->log(DiagnosticManager::LOG_INFO, "Time", "%s Alarm1: %02d:%02d:%02d %s (will %s)",
-                dayName.c_str(), hour, minute, second, enabled ? "enabled" : "disabled", shouldSetAlarm ? "set" : "clear");
+                dayName.c_str(), hour, minute, second, dayEnabled ? "enabled" : "disabled", shouldSetAlarm ? "set" : "clear");
         }
         if (shouldSetAlarm) {
             setAlarm1(hour, minute, second, true);
@@ -700,19 +702,18 @@ void TimeManager::setAlarmsForToday() {
             setAlarm1(hour, minute, second, false); // disables and clears alarm
         }
     }
-    
-    // Set Alarm2 for today
+
+    // Set Alarm2 for today, using day-level enabled
     cJSON* alarm2Config = cJSON_GetObjectItem(todaySchedule, "alarm2");
     if (alarm2Config) {
         int hour = cJSON_GetObjectItem(alarm2Config, "hour") ? cJSON_GetObjectItem(alarm2Config, "hour")->valueint : 8;
         int minute = cJSON_GetObjectItem(alarm2Config, "minute") ? cJSON_GetObjectItem(alarm2Config, "minute")->valueint : 5;
-        bool enabled = cJSON_GetObjectItem(alarm2Config, "enabled") ? cJSON_IsTrue(cJSON_GetObjectItem(alarm2Config, "enabled")) : false;
-        
+
         if (diagnosticManager) {
             diagnosticManager->log(DiagnosticManager::LOG_INFO, "Time", "%s Alarm2: %02d:%02d %s", 
-                dayName.c_str(), hour, minute, enabled ? "enabled" : "disabled");
+                dayName.c_str(), hour, minute, dayEnabled ? "enabled" : "disabled");
         }
-        setAlarm2(hour, minute, enabled);
+        setAlarm2(hour, minute, dayEnabled);
     }
 }
 
