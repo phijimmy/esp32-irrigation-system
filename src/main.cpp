@@ -70,6 +70,7 @@ void setup() {
     irrigationManager.begin(systemManager.getDeviceManager().getBME280Device(), &soilMoistureSensor, &systemManager.getTimeManager());
     irrigationManager.setConfigManager(&systemManager.getConfigManager());
     irrigationManager.setRelayController(&relayController);
+    irrigationManager.setMQ135Sensor(&mq135Sensor);
     irrigationTriggered = false;
     irrigationTriggerTime = 0;
     // Weekly schedule alarms are already set during TimeManager initialization

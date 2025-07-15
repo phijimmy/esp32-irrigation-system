@@ -141,7 +141,6 @@ void IrrigationManager::update() {
             Serial.printf("[IrrigationManager] Avg Soil Moisture: %.2f %%\n", lastAvgSoilPercent);
             Serial.printf("[IrrigationManager] Corrected Soil Moisture: %.2f %%\n", lastAvgSoilCorrected);
             // Watering logic
-            wateringActive = false;
             if (configManager) {
                 wateringThreshold = static_cast<float>(configManager->getInt("watering_threshold", 50));
                 wateringDuration = configManager->getInt("watering_duration_sec", 60);
@@ -154,9 +153,12 @@ void IrrigationManager::update() {
                 if (relayController) relayController->setRelayMode(1, Relay::ON);
                 wateringActive = true;
                 wateringStart = millis();
+                // Go to watering state, then after watering is done, go to air quality
+                startNextState(COMPLETE);
+            } else {
+                // No watering needed, go directly to air quality reading
+                startNextState(MQ135_READING);
             }
-            // After soil reading and watering logic, always go to air quality reading next
-            startNextState(MQ135_READING);
             break;
         case MQ135_READING: {
             // Show progress for MQ135 warmup and reading
@@ -205,9 +207,10 @@ void IrrigationManager::update() {
                     if (relayController) relayController->setRelayMode(1, Relay::OFF); // Relay 1 OFF
                     Serial.println("[IrrigationManager] Watering complete. Relay 1 OFF.");
                     wateringActive = false;
+                    // After watering is done, go to air quality reading
+                    startNextState(MQ135_READING);
                 }
-            }
-            if (!completePrinted && !wateringActive) {
+            } else if (!completePrinted) {
                 Serial.println("[IrrigationManager] Irrigation reading sequence complete.");
                 updateDashboardSensorValues(); // Update dashboard with latest sensor readings
                 if (timeManager) {
