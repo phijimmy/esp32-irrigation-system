@@ -32,6 +32,7 @@ public:
     bool isWarmingUp() const { return warmingUp; }
     unsigned long getWarmupStart() const { return warmupStart; }
     int getWarmupTimeSec() const { return warmupTimeSec; }
+    void setWarmupTimeSec(int sec) { warmupTimeSec = sec; }
     void setTimeManager(TimeManager* tm) { timeManager = tm; }
     State getState() const { return state; }
     const char* stateToString() const {

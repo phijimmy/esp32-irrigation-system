@@ -39,6 +39,7 @@ public:
     void printReading() const; // Print the last reading to Serial
     unsigned long getStabilisationStart() const { return stabilisationStart; }
     int getStabilisationTimeSec() const { return stabilisationTimeSec; }
+    void setStabilisationTimeSec(int sec) { stabilisationTimeSec = sec; }
     void setPowerGpio(int gpio) { soilPowerGpio = gpio; }
     int getPowerGpio() const { return soilPowerGpio; }
     static const char* stateToString(State s) {

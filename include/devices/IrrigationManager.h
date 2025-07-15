@@ -3,18 +3,18 @@
 
 #include "devices/BME280Device.h"
 #include "devices/SoilMoistureSensor.h"
-#include "devices/MQ135Sensor.h"
+#include "devices/RelayController.h"
+#include "devices/Relay.h"
+#include "devices/BME280Device.h"
 #include "system/TimeManager.h"
 #include "config/ConfigManager.h" // Corrected include path
 #include <cJSON.h>
 
 class IrrigationManager {
 public:
-    // Control whether to skip air quality reading for this run
-    void setSkipAirQualityThisRun(bool skip);
-    bool getSkipAirQualityThisRun() const;
+    // ...existing code...
     IrrigationManager();
-    void begin(BME280Device* bme, SoilMoistureSensor* soil, MQ135Sensor* mq135, TimeManager* timeMgr);
+    void begin(BME280Device* bme, SoilMoistureSensor* soil, TimeManager* timeMgr);
     void trigger(); // Start the irrigation reading sequence
     void update();  // Call this in loop to process state
     void checkAndRunScheduled(); // Check if it's time to run scheduled irrigation
@@ -23,12 +23,10 @@ public:
     void reset();
     void waterNow();
 private:
-    bool skipAirQualityThisRun = false;
-    enum State { IDLE, START, BME_READING, SOIL_READING, MQ135_READING, WATER_NOW, COMPLETE };
+    enum State { IDLE, START, BME_READING, SOIL_READING, WATER_NOW, COMPLETE };
     State state = IDLE;
     BME280Device* bme280 = nullptr;
     SoilMoistureSensor* soilSensor = nullptr;
-    MQ135Sensor* mq135Sensor = nullptr;
     TimeManager* timeManager = nullptr;
     ConfigManager* configManager = nullptr; // Add ConfigManager pointer
     RelayController* relayController = nullptr;
@@ -48,7 +46,6 @@ private:
     float lastAvgSoilVoltage = 0;
     float lastAvgSoilPercent = 0;
     float lastAvgSoilCorrected = 0;
-    float lastAvgAir = 0;
     time_t lastReadingTimestamp = 0;
     time_t lastRunTimestamp = 0; // Track when irrigation sequence was last completed
     void startNextState(State next);
@@ -62,7 +59,6 @@ public:
     float getLastAvgSoilVoltage() const { return lastAvgSoilVoltage; }
     float getLastAvgSoilPercent() const { return lastAvgSoilPercent; }
     float getLastAvgSoilCorrected() const { return lastAvgSoilCorrected; }
-    float getLastAvgAir() const { return lastAvgAir; }
     time_t getLastReadingTimestamp() const { return lastReadingTimestamp; }
     time_t getLastRunTimestamp() const { return lastRunTimestamp; }
     void setConfigManager(ConfigManager* cfg) { configManager = cfg; } // Setter for ConfigManager

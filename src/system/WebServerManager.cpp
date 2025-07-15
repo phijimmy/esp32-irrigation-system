@@ -158,8 +158,23 @@ void WebServerManager::begin() {
                 cJSON_AddNumberToObject(resp, "pressure", r.pressure);
                 cJSON_AddNumberToObject(resp, "heat_index", r.heatIndex);
                 cJSON_AddNumberToObject(resp, "dew_point", r.dewPoint);
+                // Print to terminal for manual reading
+                if (r.valid) {
+                    char timeStr[32] = "";
+                    if (r.timestamp.isValid()) {
+                        snprintf(timeStr, sizeof(timeStr), "%04d-%02d-%02d %02d:%02d:%02d", r.timestamp.year(), r.timestamp.month(), r.timestamp.day(), r.timestamp.hour(), r.timestamp.minute(), r.timestamp.second());
+                    } else {
+                        strcpy(timeStr, "N/A");
+                    }
+                    Serial.printf("[BME280] Manual reading: T=%.2fC, H=%.2f%%, P=%.2fhPa, HI=%.2fC, DP=%.2fC | avgT=%.2fC, avgH=%.2f%%, avgP=%.2fhPa, avgHI=%.2fC, avgDP=%.2fC, time=%s\n",
+                        r.temperature, r.humidity, r.pressure, r.heatIndex, r.dewPoint,
+                        r.avgTemperature, r.avgHumidity, r.avgPressure, r.avgHeatIndex, r.avgDewPoint, timeStr);
+                } else {
+                    Serial.println("[BME280] Manual reading: not valid");
+                }
             } else {
                 cJSON_AddStringToObject(resp, "result", "error");
+                Serial.println("[BME280] Manual reading: device not found");
             }
             char* respStr = cJSON_PrintUnformatted(resp);
             request->send(200, "application/json", respStr);
@@ -176,7 +191,7 @@ void WebServerManager::begin() {
     server->on("/api/irrigation/trigger", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,
         [](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
             int result = 0;
-            irrigationManager.setSkipAirQualityThisRun(true);
+            // irrigationManager.setSkipAirQualityThisRun(true); // Removed: no longer needed
             irrigationManager.trigger();
             cJSON* resp = cJSON_CreateObject();
             cJSON_AddStringToObject(resp, "result", "ok");
