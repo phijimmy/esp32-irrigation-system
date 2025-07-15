@@ -8,6 +8,8 @@
 #include "devices/IrrigationManager.h"
 #include "system/DashboardManager.h"
 
+#include "system/ReadingManager.h"
+
 #include "system/WebServerManager.h"
 
 SystemManager systemManager;
@@ -15,6 +17,7 @@ LedDevice led;
 TouchSensorDevice touch;
 RelayController relayController;
 SoilMoistureSensor soilMoistureSensor;
+
 MQ135Sensor mq135Sensor;
 bool soilReadingTaken = false;
 bool soilReadingRequested = false;
@@ -45,6 +48,8 @@ DashboardManager* dashboard = nullptr;
 
 
 void setup() {
+    // ...existing code...
+    // ...existing initialization code...
     systemManager.begin();
     // Set soil power GPIO LOW at boot (redundant safety)
     int soilPowerGpio = systemManager.getConfigManager().getInt("soil_power_gpio", 16);
@@ -141,33 +146,31 @@ void setup() {
     // Serial.println(dashboard.getStatusString());
     // REMOVE webServerManager = new WebServerManager(&dashboard, &systemManager.getDiagnosticManager());
     // REMOVE webServerManager->begin();
+
+    // --- ReadingManager: instantiation moved to loop() after sensorsInitialized ---
 }
 
 void loop() {
+    // ...existing code...
+
     systemManager.update();
-    // --- WebServer non-blocking initialization ---
-    if (!webServerStarted && dashboard && dashboard->hasValidSensorData()) {
-        webServerManager = new WebServerManager(dashboard, &systemManager.getDiagnosticManager());
-        webServerManager->begin();
-        webServerStarted = true;
-        Serial.println("[WebServerManager] Started after valid sensor data detected.");
-        // config.json is no longer deleted automatically here; deletion is now on-demand only
-    }
+    static ReadingManager* readingManager = nullptr;
+    static bool readingManagerInitialized = false;
+    DateTime now = systemManager.getTimeManager().getTime();
+    int year = now.year();
+
     // --- Sequential sensor initialization (non-blocking) ---
     if (!sensorsInitialized) {
         switch (initState) {
             case INIT_IDLE: {
-                // Start soil sensor stabilization first with override for initial reading
                 originalSoilStab = soilMoistureSensor.getStabilisationTimeSec();
-                soilMoistureSensor.setStabilisationTimeSec(3); // override to 3 seconds for initial
+                soilMoistureSensor.setStabilisationTimeSec(3);
                 soilMoistureSensor.beginStabilisation();
                 Serial.println("[INIT] Starting soil sensor stabilisation (override 3s)...");
                 initState = INIT_SOIL_STABILISING;
                 lastStabilisationPrint = millis();
-                // Do NOT restore configured value yet; wait until after initial stabilization/reading
                 break;
             }
-                
             case INIT_SOIL_STABILISING: {
                 unsigned long now = millis();
                 int elapsed = (now - soilMoistureSensor.getStabilisationStart()) / 1000;
@@ -180,25 +183,20 @@ void loop() {
                     Serial.println("[INIT] Soil sensor stabilisation complete, taking reading...");
                     soilMoistureSensor.takeReading();
                     soilMoistureSensor.printReading();
-                    // Restore configured value for future readings
                     soilMoistureSensor.setStabilisationTimeSec(originalSoilStab);
                     initState = INIT_SOIL_DONE;
                 }
                 break;
             }
-            
             case INIT_SOIL_DONE: {
-                // Soil is done, now start MQ135 warmup (sequential to avoid ADS1115 conflicts)
                 originalMQ135Warmup = mq135Sensor.getWarmupTimeSec();
-                mq135Sensor.setWarmupTimeSec(5); // override to 5 seconds for initial
+                mq135Sensor.setWarmupTimeSec(5);
                 Serial.println("[INIT] Soil sensor done, starting MQ135 warmup (override 5s)...");
-                mq135Sensor.startReading(); // Start MQ135 warmup
+                mq135Sensor.startReading();
                 initState = INIT_MQ135_WARMUP;
                 mq135LastProgressPrint = millis();
-                // Do NOT restore configured value yet; wait until after initial warmup/reading
                 break;
             }
-                
             case INIT_MQ135_WARMUP: {
                 unsigned long now = millis();
                 int elapsed = (now - mq135Sensor.getWarmupStart()) / 1000;
@@ -220,14 +218,11 @@ void loop() {
                 }
                 break;
             }
-            
             case INIT_MQ135_DONE:
-                // Restore configured value for future MQ135 readings
                 mq135Sensor.setWarmupTimeSec(originalMQ135Warmup);
                 Serial.println("[INIT] All sensors initialized!");
                 sensorsInitialized = true;
                 initState = INIT_COMPLETE;
-                // Now create and initialize DashboardManager
                 dashboard = new DashboardManager(
                     &systemManager.getTimeManager(),
                     &systemManager.getConfigManager(),
@@ -246,14 +241,36 @@ void loop() {
                 Serial.println("[DashboardManager] JSON status:");
                 Serial.println(dashboard->getStatusString());
                 break;
-                
             case INIT_COMPLETE:
-                // Sensors are ready
                 break;
         }
-        // Don't continue with normal operations until initialization is complete
         return;
     }
+
+    // --- WebServerManager initialization ---
+    if (!webServerStarted && dashboard && dashboard->hasValidSensorData()) {
+        Serial.println("[DEBUG] Initializing WebServerManager...");
+        webServerManager = new WebServerManager(dashboard, &systemManager.getDiagnosticManager());
+        webServerManager->begin();
+        webServerStarted = true;
+        Serial.println("[WebServerManager] Started after valid sensor data detected.");
+    }
+
+    // --- ReadingManager initialization ---
+    if (!readingManagerInitialized) {
+        Serial.printf("[DEBUG] RM? sensorsInitialized=%d, webServerStarted=%d, dashboard=%p, dashboard->hasValidSensorData()=%d\n",
+            sensorsInitialized, webServerStarted, dashboard, (dashboard ? dashboard->hasValidSensorData() : -1));
+    }
+    if (!readingManagerInitialized && sensorsInitialized && webServerStarted) {
+        Serial.println("[DEBUG] Initializing ReadingManager...");
+        readingManager = new ReadingManager(systemManager.getDeviceManager().getBME280Device(), &soilMoistureSensor);
+        readingManager->begin();
+        readingManagerInitialized = true;
+        char timeStr[32] = "";
+        snprintf(timeStr, sizeof(timeStr), "%04d-%02d-%02d %02d:%02d:%02d", now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second());
+        Serial.printf("[ReadingManager] Initialized at %s after sensors and web server ready.\n", timeStr);
+    }
+    if (readingManagerInitialized && readingManager) readingManager->loop(now);
     
     if (sensorsInitialized && initState == INIT_COMPLETE) {
         irrigationManager.update();
