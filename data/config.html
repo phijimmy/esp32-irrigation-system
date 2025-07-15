@@ -19,12 +19,21 @@
                 <a href="touch.html">Touch</a>
                 <a href="irrigation.html">Irrigation</a>
                 <a href="config.html" class="active">Config</a>
-                <a href="schedule.html">Schedule</a>
+                <!-- Schedule link removed -->
             </nav>
             <p>System Configuration</p>
         </div>
         <form id="config-form">
         <div class="cards-grid">
+            <div class="card" id="schedule-card">
+                <div class="card-header">
+                    <div class="card-icon time-icon">⏲️</div>
+                    <div class="card-title">Schedule</div>
+                </div>
+                <div class="card-content" id="schedule-content">
+                    <div id="schedule-loading" class="loading">Loading schedule...</div>
+                </div>
+            </div>
             <div class="card">
                 <div class="card-header">
                     <div class="card-icon info-icon">🌐</div>

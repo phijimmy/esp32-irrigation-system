@@ -1,5 +1,146 @@
 // --- Restart Button Logic ---
 document.addEventListener('DOMContentLoaded', function() {
+    // --- Schedule Card Logic ---
+    function pad2(n) { return n.toString().padStart(2, '0'); }
+    const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    function renderScheduleCard(schedule) {
+        const container = document.getElementById('schedule-content');
+        if (!container) return;
+        let html = '<table style="width:100%;border-collapse:collapse;">';
+        html += '<tr><th>Day</th><th>Enabled</th><th>Start (alarm1)</th><th>Stop (alarm2)</th></tr>';
+        for (let i = 0; i < 7; i++) {
+            const dayKey = dayNames[i].toLowerCase();
+            const day = schedule[dayKey] || {};
+            const enabled = day.enabled ? 'checked' : '';
+            const a1 = day.alarm1 || {hour:0,minute:0,second:0};
+            const a2 = day.alarm2 || {hour:0,minute:0,second:0};
+            html += `<tr>`;
+            html += `<td>${dayNames[i]}</td>`;
+            html += `<td><input type="checkbox" class="sched-enabled" data-day="${dayKey}" ${enabled}></td>`;
+            html += `<td>`;
+            html += `<select class="sched-hour" data-day="${dayKey}" data-alarm="1">`;
+            for(let h=0;h<24;h++) html += `<option value="${h}"${h==a1.hour?' selected':''}>${pad2(h)}</option>`;
+            html += `</select> : <select class="sched-minute" data-day="${dayKey}" data-alarm="1">`;
+            for(let m=0;m<60;m++) html += `<option value="${m}"${m==a1.minute?' selected':''}>${pad2(m)}</option>`;
+            html += `</select>`;
+            html += `</td>`;
+            html += `<td>`;
+            html += `<select class="sched-hour" data-day="${dayKey}" data-alarm="2">`;
+            for(let h=0;h<24;h++) html += `<option value="${h}"${h==a2.hour?' selected':''}>${pad2(h)}</option>`;
+            html += `</select> : <select class="sched-minute" data-day="${dayKey}" data-alarm="2">`;
+            for(let m=0;m<60;m++) html += `<option value="${m}"${m==a2.minute?' selected':''}>${pad2(m)}</option>`;
+            html += `</select>`;
+            html += `</td>`;
+            html += `</tr>`;
+        }
+        html += '</table>';
+        container.innerHTML = html;
+    }
+
+    // Load schedule on page load, then render the rest of the config form only after schedule is loaded
+    fetch('/api/status').then(r=>r.json()).then(data=>{
+        let schedule = (data.config && data.config.weekly_schedule) ? data.config.weekly_schedule : {};
+        renderScheduleCard(schedule);
+        document.getElementById('schedule-loading')?.remove();
+        // Now that schedule is rendered, enable the config form submit handler
+        enableConfigFormHandler(data.config || {});
+    });
+
+    // Use a named handler so we can remove it before adding
+    let configFormSubmitHandler = function(e) {
+        e.preventDefault();
+        let form = e.target;
+        // Gather all config values from the form
+        let newConfig = JSON.parse(JSON.stringify(config));
+        // --- Gather schedule values ---
+        let schedule = {};
+        const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+        for (let i = 0; i < 7; i++) {
+            const dayKey = dayNames[i];
+            let day = {};
+            day.enabled = document.querySelector(`.sched-enabled[data-day='${dayKey}']`)?.checked || false;
+            day.alarm1 = {
+                hour: parseInt(document.querySelector(`.sched-hour[data-day='${dayKey}'][data-alarm='1']`).value),
+                minute: parseInt(document.querySelector(`.sched-minute[data-day='${dayKey}'][data-alarm='1']`).value),
+                second: 0
+            };
+            day.alarm2 = {
+                hour: parseInt(document.querySelector(`.sched-hour[data-day='${dayKey}'][data-alarm='2']`).value),
+                minute: parseInt(document.querySelector(`.sched-minute[data-day='${dayKey}'][data-alarm='2']`).value),
+                second: 0
+            };
+            schedule[dayKey] = day;
+        }
+        newConfig.weekly_schedule = schedule;
+        // Now gather the rest of the config fields
+        newConfig.wifi_mode = document.getElementById('network-mode').value;
+        newConfig.wifi_ssid = document.getElementById('wifi-ssid').value;
+        newConfig.wifi_pass = document.getElementById('wifi-pass').value;
+        newConfig.ap_ssid = document.getElementById('ap-ssid').value;
+        newConfig.ap_password = document.getElementById('ap-password').value;
+        newConfig.ap_timeout = parseInt(document.getElementById('ap-timeout').value);
+        newConfig.led_gpio = parseInt(document.getElementById('led-gpio').value);
+        newConfig.led_blink_rate = parseInt(document.getElementById('led-blink-rate').value);
+        newConfig.touch_gpio = parseInt(document.getElementById('touch-gpio').value);
+        newConfig.touch_long_press = parseInt(document.getElementById('touch-long-press').value);
+        newConfig.touch_threshold = parseInt(document.getElementById('touch-threshold').value);
+        newConfig.device_name = document.getElementById('device-name').value;
+        newConfig.cpu_speed = parseInt(document.getElementById('cpu-speed').value);
+        newConfig.brownout_threshold = parseFloat(document.getElementById('brownout-threshold').value);
+        newConfig.ntp_server_1 = document.getElementById('ntp-server-1').value;
+        newConfig.ntp_server_2 = document.getElementById('ntp-server-2').value;
+        newConfig.ntp_enabled = document.getElementById('ntp-enabled').checked;
+        newConfig.ntp_sync_interval = parseInt(document.getElementById('ntp-sync-interval').value);
+        newConfig.ntp_timeout = parseInt(document.getElementById('ntp-timeout').value);
+        newConfig.soil_moisture = {
+            wet: parseInt(document.getElementById('soil-moisture-wet').value),
+            dry: parseInt(document.getElementById('soil-moisture-dry').value),
+            stabilisation_time: parseInt(document.getElementById('soil-stabilisation-time').value)
+        };
+        newConfig.soil_power_gpio = parseInt(document.getElementById('soil-power-gpio').value);
+        newConfig.mq135 = {
+            warmup_time: parseInt(document.getElementById('mq135-warmup-time').value)
+        };
+        let relayCount = (typeof config.relay_count === 'number') ? config.relay_count : 0;
+        newConfig.relay_count = relayCount;
+        for (let i = 0; i < relayCount; i++) {
+            newConfig['relay_gpio_' + i] = parseInt(document.getElementById('relay-gpio-' + i).value);
+            let radios = document.getElementsByName('relay-active-high-' + i);
+            let activeHigh = true;
+            for (let r = 0; r < radios.length; r++) {
+                if (radios[r].checked && radios[r].value === 'low') activeHigh = false;
+            }
+            newConfig['relay_active_high_' + i] = activeHigh;
+        }
+        let relayNames = [];
+        for (let i = 0; i < relayCount; i++) {
+            relayNames.push(document.getElementById('relay-name-' + i).value);
+        }
+        newConfig.relay_names = relayNames;
+        if (relayCount > 2) {
+            const relay2GpioElem = document.getElementById('relay2-control-gpio');
+            if (relay2GpioElem) newConfig.relay2_control_gpio = parseInt(relay2GpioElem.value);
+        }
+        newConfig.watering_threshold = parseFloat(document.getElementById('watering-threshold').value);
+        newConfig.watering_duration_sec = parseInt(document.getElementById('watering-duration').value);
+        newConfig.irrigation_scheduled_hour = parseInt(document.getElementById('irrigation-scheduled-hour').value);
+        newConfig.irrigation_scheduled_minute = parseInt(document.getElementById('irrigation-scheduled-minute').value);
+
+        fetch('/api/config', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(newConfig)
+        }).then(r => r.json()).then(resp => {
+            alert('Config saved!');
+        });
+    };
+    const form = document.getElementById('config-form');
+    if (!form) return;
+    // Remove any previous submit handler of this function
+    form.removeEventListener('submit', configFormSubmitHandler);
+    form.addEventListener('submit', configFormSubmitHandler);
+
+    // Add to config save logic
     const restartBtn = document.getElementById('restart-btn');
     const clearStatus = document.getElementById('clear-config-status');
     if (restartBtn) {
@@ -305,7 +446,30 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Gather all config values from the form
                     const formData = new FormData(form);
                     // Build config object (add all fields you want to save)
-                    let newConfig = {};
+        // Start with a copy of the loaded config
+        let newConfig = JSON.parse(JSON.stringify(config));
+        // --- Gather schedule values ---
+        let schedule = {};
+        const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+        for (let i = 0; i < 7; i++) {
+            const dayKey = dayNames[i];
+            let day = {};
+            day.enabled = document.querySelector(`.sched-enabled[data-day='${dayKey}']`)?.checked || false;
+            // alarm1 (no enabled)
+            day.alarm1 = {
+                hour: parseInt(document.querySelector(`.sched-hour[data-day='${dayKey}'][data-alarm='1']`).value),
+                minute: parseInt(document.querySelector(`.sched-minute[data-day='${dayKey}'][data-alarm='1']`).value),
+                second: 0
+            };
+            // alarm2 (no enabled)
+            day.alarm2 = {
+                hour: parseInt(document.querySelector(`.sched-hour[data-day='${dayKey}'][data-alarm='2']`).value),
+                minute: parseInt(document.querySelector(`.sched-minute[data-day='${dayKey}'][data-alarm='2']`).value),
+                second: 0
+            };
+            schedule[dayKey] = day;
+        }
+        newConfig.weekly_schedule = schedule;
                     // Network
                     newConfig.wifi_mode = document.getElementById('network-mode').value;
                     newConfig.wifi_ssid = document.getElementById('wifi-ssid').value;
@@ -323,7 +487,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // System
                     newConfig.device_name = document.getElementById('device-name').value;
                     newConfig.cpu_speed = parseInt(document.getElementById('cpu-speed').value);
-                    newConfig.brownout_threshold = document.getElementById('brownout-threshold').value.toString();
+                    newConfig.brownout_threshold = parseFloat(document.getElementById('brownout-threshold').value);
                     // NTP/Time
                     newConfig.ntp_server_1 = document.getElementById('ntp-server-1').value;
                     newConfig.ntp_server_2 = document.getElementById('ntp-server-2').value;

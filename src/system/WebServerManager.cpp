@@ -46,9 +46,22 @@ void WebServerManager::begin() {
     // Config save API
     server->on("/api/config", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,
         [this](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
-            String body = String((char*)data).substring(0, len);
-            cJSON* incoming = cJSON_Parse(body.c_str());
+            static String bodyAccum;
+            if (index == 0) bodyAccum = "";
+            bodyAccum += String((const char*)data, len);
+            if (index + len < total) {
+                // Wait for more chunks
+                return;
+            }
+            // Now we have the full body
+            if (diagnosticManager) {
+                diagnosticManager->log(DiagnosticManager::LOG_ERROR, "ConfigAPI", "Raw config POST body: %s", bodyAccum.c_str());
+            }
+            cJSON* incoming = cJSON_Parse(bodyAccum.c_str());
             if (!incoming) {
+                if (diagnosticManager) {
+                    diagnosticManager->log(DiagnosticManager::LOG_ERROR, "ConfigAPI", "Failed to parse config JSON!");
+                }
                 request->send(400, "application/json", "{\"error\":\"Invalid JSON\"}");
                 return;
             }
@@ -398,12 +411,7 @@ void WebServerManager::begin() {
         handleStaticFile(request);
     });
 
-    server->on("/schedule.html", HTTP_GET, [this](AsyncWebServerRequest* request) {
-        handleStaticFile(request);
-    });
-    server->on("/schedule.js", HTTP_GET, [this](AsyncWebServerRequest* request) {
-        handleStaticFile(request);
-    });
+    // Removed schedule.html and schedule.js routes (files deleted)
     
     server->onNotFound([this](AsyncWebServerRequest* request) {
         handleNotFound(request);

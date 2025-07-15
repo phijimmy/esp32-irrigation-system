@@ -112,22 +112,20 @@ void ConfigManager::loadDefaults() {
     const char* dayNames[] = {"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"};
     for (int day = 0; day < 7; day++) {
         cJSON* daySchedule = cJSON_CreateObject();
-        
+        // Add single enabled flag for the day
+        cJSON_AddBoolToObject(daySchedule, "enabled", true);
         // Alarm1 settings for this day (always 18:00)
         cJSON* dayAlarm1 = cJSON_CreateObject();
         cJSON_AddNumberToObject(dayAlarm1, "hour", 18);
         cJSON_AddNumberToObject(dayAlarm1, "minute", 0);
         cJSON_AddNumberToObject(dayAlarm1, "second", 0);
-        cJSON_AddBoolToObject(dayAlarm1, "enabled", true);
         cJSON_AddItemToObject(daySchedule, "alarm1", dayAlarm1);
-        
         // Alarm2 settings for this day (always 22:00)
         cJSON* dayAlarm2 = cJSON_CreateObject();
         cJSON_AddNumberToObject(dayAlarm2, "hour", 22);
         cJSON_AddNumberToObject(dayAlarm2, "minute", 0);
-        cJSON_AddBoolToObject(dayAlarm2, "enabled", true); // All days enabled
+        cJSON_AddNumberToObject(dayAlarm2, "second", 0);
         cJSON_AddItemToObject(daySchedule, "alarm2", dayAlarm2);
-        
         cJSON_AddItemToObject(weeklySchedule, dayNames[day], daySchedule);
     }
     cJSON_AddItemToObject(configRoot, "weekly_schedule", weeklySchedule);
@@ -283,17 +281,41 @@ void ConfigManager::mergeDefaults() {
     // Weekly schedule defaults
     if (!cJSON_HasObjectItem(configRoot, "weekly_schedule")) {
         cJSON* weeklySchedule = cJSON_CreateObject();
+        // Define unique default times for each day (example values, adjust as needed)
+        struct AlarmTime { int hour; int minute; int second; };
+        struct DayAlarms { AlarmTime alarm1; AlarmTime alarm2; bool enabled; };
+        DayAlarms weekDefaults[7] = {
+            // Sunday
+            { {8, 0, 0}, {20, 0, 0}, true },
+            // Monday
+            { {9, 15, 0}, {21, 15, 0}, true },
+            // Tuesday
+            { {10, 30, 0}, {22, 30, 0}, true },
+            // Wednesday
+            { {11, 45, 0}, {23, 45, 0}, true },
+            // Thursday
+            { {12, 0, 0}, {18, 0, 0}, true },
+            // Friday
+            { {13, 30, 0}, {19, 30, 0}, true },
+            // Saturday
+            { {14, 0, 0}, {20, 0, 0}, true }
+        };
         const char* dayNames[] = {"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"};
         for (int day = 0; day < 7; day++) {
             cJSON* daySchedule = cJSON_CreateObject();
+            // Add single enabled flag for the day
+            cJSON_AddBoolToObject(daySchedule, "enabled", weekDefaults[day].enabled);
+            // Alarm1
             cJSON* dayAlarm1 = cJSON_CreateObject();
-            cJSON_AddNumberToObject(dayAlarm1, "hour", 18);
-            cJSON_AddNumberToObject(dayAlarm1, "second", 0);
-            cJSON_AddBoolToObject(dayAlarm1, "enabled", true);
+            cJSON_AddNumberToObject(dayAlarm1, "hour", weekDefaults[day].alarm1.hour);
+            cJSON_AddNumberToObject(dayAlarm1, "minute", weekDefaults[day].alarm1.minute);
+            cJSON_AddNumberToObject(dayAlarm1, "second", weekDefaults[day].alarm1.second);
             cJSON_AddItemToObject(daySchedule, "alarm1", dayAlarm1);
+            // Alarm2
             cJSON* dayAlarm2 = cJSON_CreateObject();
-            cJSON_AddNumberToObject(dayAlarm2, "minute", 0);
-            cJSON_AddBoolToObject(dayAlarm2, "enabled", true);
+            cJSON_AddNumberToObject(dayAlarm2, "hour", weekDefaults[day].alarm2.hour);
+            cJSON_AddNumberToObject(dayAlarm2, "minute", weekDefaults[day].alarm2.minute);
+            cJSON_AddNumberToObject(dayAlarm2, "second", weekDefaults[day].alarm2.second);
             cJSON_AddItemToObject(daySchedule, "alarm2", dayAlarm2);
             cJSON_AddItemToObject(weeklySchedule, dayNames[day], daySchedule);
         }
