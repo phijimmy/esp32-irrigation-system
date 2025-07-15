@@ -425,6 +425,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     html += `<label>Active:</label> `;
                     html += `<label><input type="radio" name="relay-active-high-${i}" value="high" ${activeHigh ? 'checked' : ''}>High</label> `;
                     html += `<label><input type="radio" name="relay-active-high-${i}" value="low" ${!activeHigh ? 'checked' : ''}>Low</label><br>`;
+                    if (i === 0 && config.int_sqw_gpio !== undefined) {
+                        html += `<div style='margin-top:0.5em; color:#888; font-size:0.95em;'><b>INT/SQW GPIO:</b> <span id='int-sqw-gpio-info'>${config.int_sqw_gpio}</span> <span style='font-style:italic;'>(info only)</span></div>`;
+                    }
                     if (i === 2) {
                         const relay2Gpio = config.relay2_control_gpio !== undefined ? config.relay2_control_gpio : '';
                         html += `<label for="relay2-control-gpio">Interrupt GPIO:</label> <input type="number" id="relay2-control-gpio" value="${relay2Gpio}"><br>`;

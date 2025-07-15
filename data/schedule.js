@@ -3,10 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             const config = data.config || {};
-            // INT/SQW GPIO
-            if (config.int_sqw_gpio !== undefined) {
-                document.getElementById('int-sqw-gpio').value = config.int_sqw_gpio;
-            }
+            // INT/SQW GPIO removed
             // Schedule settings
             if (config.use_weekly_schedule !== undefined) {
                 document.getElementById('use-weekly-schedule').checked = !!config.use_weekly_schedule;

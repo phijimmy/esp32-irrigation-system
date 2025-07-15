@@ -255,8 +255,10 @@ void loop() {
         return;
     }
     
-    irrigationManager.update();
-    irrigationManager.checkAndRunScheduled();
+    if (sensorsInitialized && initState == INIT_COMPLETE) {
+        irrigationManager.update();
+        irrigationManager.checkAndRunScheduled();
+    }
 
     switch (sensorState) {
         case IDLE:
