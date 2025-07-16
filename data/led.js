@@ -27,7 +27,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('led-on').addEventListener('click', function() { sendLedCommand('on'); });
     document.getElementById('led-off').addEventListener('click', function() { sendLedCommand('off'); });
-    document.getElementById('led-toggle').addEventListener('click', function() { sendLedCommand('toggle'); });
     document.getElementById('led-blink').addEventListener('click', function() { sendLedCommand('blink'); });
 });
 
