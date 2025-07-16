@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (btn) {
         btn.addEventListener('click', function() {
             btn.disabled = true;
-            btn.textContent = 'Starting...';
+            btn.textContent = 'Start';
             fetch('/api/irrigation/trigger', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -89,16 +89,16 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(res => res.json())
             .then(data => {
-                btn.textContent = data.result === 'ok' ? 'Started!' : 'Error';
+                btn.textContent = data.result === 'ok' ? 'Start' : 'Error';
                 setTimeout(() => {
-                    btn.textContent = 'Start Irrigation';
+                    btn.textContent = 'Start';
                     btn.disabled = false;
                 }, 2000);
             })
             .catch(() => {
                 btn.textContent = 'Error';
                 setTimeout(() => {
-                    btn.textContent = 'Start Irrigation';
+                    btn.textContent = 'Start';
                     btn.disabled = false;
                 }, 2000);
             });
@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (waterNowBtn) {
         waterNowBtn.addEventListener('click', function() {
             waterNowBtn.disabled = true;
-            waterNowBtn.textContent = 'Watering...';
+            waterNowBtn.textContent = 'Water';
             fetch('/api/irrigation/waternow', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -117,16 +117,16 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(res => res.json())
             .then(data => {
-                waterNowBtn.textContent = data.result === 'ok' ? 'Watered!' : 'Error';
+                waterNowBtn.textContent = data.result === 'ok' ? 'Water' : 'Error';
                 setTimeout(() => {
-                    waterNowBtn.textContent = 'Water Now';
+                    waterNowBtn.textContent = 'Water';
                     waterNowBtn.disabled = false;
                 }, 2000);
             })
             .catch(() => {
                 waterNowBtn.textContent = 'Error';
                 setTimeout(() => {
-                    waterNowBtn.textContent = 'Water Now';
+                    waterNowBtn.textContent = 'Water';
                     waterNowBtn.disabled = false;
                 }, 2000);
             });
@@ -138,7 +138,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (stopBtn) {
         stopBtn.addEventListener('click', function() {
             stopBtn.disabled = true;
-            stopBtn.textContent = 'Stopping...';
+            stopBtn.textContent = 'Stop';
             fetch('/api/irrigation/stop', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -146,16 +146,16 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(res => res.json())
             .then(data => {
-                stopBtn.textContent = data.result === 'ok' ? 'Stopped!' : 'Error';
+                stopBtn.textContent = data.result === 'ok' ? 'Stop' : 'Error';
                 setTimeout(() => {
-                    stopBtn.textContent = 'Stop Irrigation';
+                    stopBtn.textContent = 'Stop';
                     stopBtn.disabled = false;
                 }, 2000);
             })
             .catch(() => {
                 stopBtn.textContent = 'Error';
                 setTimeout(() => {
-                    stopBtn.textContent = 'Stop Irrigation';
+                    stopBtn.textContent = 'Stop';
                     stopBtn.disabled = false;
                 }, 2000);
             });
