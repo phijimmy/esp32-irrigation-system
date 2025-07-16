@@ -55,9 +55,8 @@ void WebServerManager::begin() {
                 return;
             }
             // Now we have the full body
-            if (diagnosticManager) {
-                diagnosticManager->log(DiagnosticManager::LOG_ERROR, "ConfigAPI", "Raw config POST body: %s", bodyAccum.c_str());
-            }
+            Serial.print("[ConfigAPI] Raw config POST body: ");
+            Serial.println(bodyAccum);
             cJSON* incoming = cJSON_Parse(bodyAccum.c_str());
             if (!incoming) {
                 if (diagnosticManager) {
