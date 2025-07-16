@@ -1,89 +1,108 @@
+// Render relay table with left-aligned names and large, spaced buttons
 document.addEventListener('DOMContentLoaded', function() {
-    // Dynamically render relay controls using names from API
-    function renderRelayControls(relays) {
-        const container = document.getElementById('relay-controls-dynamic');
-        if (!container) return;
-        container.innerHTML = '';
-        if (!relays) return;
-        relays.forEach((relay, i) => {
-            const div = document.createElement('div');
-            div.innerHTML = `
-                <span>${relay.name || 'Zone ' + (i+1)}: </span>
-                <button class="relay-on" data-relay="${i}">On</button>
-                <button class="relay-off" data-relay="${i}">Off</button>
-                <span id="relay-indicator-${i}" class="relay-indicator"></span>
-            `;
-            container.appendChild(div);
-        });
-        // Re-attach event listeners for new buttons
-        document.querySelectorAll('.relay-on').forEach(btn => {
+    const container = document.getElementById('relay-table-container');
+    if (!container) return;
+
+    function renderRelayTable(data) {
+        let relayCount = 4;
+        let relayNames = ["Zone 1", "Zone 2", "Zone 3", "Zone 4"];
+        if (data && data.config && Array.isArray(data.config.relay_names)) {
+            relayNames = data.config.relay_names.map((n, i) => n || `Zone ${i+1}`);
+        }
+        if (data && data.config && typeof data.config.relay_count === 'number') {
+            relayCount = data.config.relay_count;
+        }
+        let relayStates = [];
+        if (data && data.relays && Array.isArray(data.relays)) {
+            // Each relay is an object with .state ('on'|'off')
+            relayStates = data.relays.map(r => r && r.state === 'on');
+        } else {
+            relayStates = Array(relayCount).fill(false);
+        }
+
+        let html = '<table id="relay-table">';
+        for (let i = 0; i < relayCount; i++) {
+            html += '<tr>';
+            html += `<td class="name-col">${relayNames[i] || `Zone ${i+1}`}</td>`;
+            html += `<td class="button-col">
+                <div style="display:flex;align-items:center;justify-content:flex-end;gap:0.7em;">
+                    <button class="relay-btn relay-on" data-relay="${i}"${relayStates[i] ? ' disabled' : ''}>On</button>
+                    <button class="relay-btn relay-off" data-relay="${i}"${!relayStates[i] ? ' disabled' : ''}>Off</button>
+                    <span class="relay-indicator" id="relay-indicator-${i}" style="display:inline-block;width:1.2em;height:1.2em;border-radius:50%;background:${relayStates[i] ? '#27ae60' : '#888'};vertical-align:middle;"></span>
+                </div>
+            </td>`;
+            html += '</tr>';
+        }
+        html += '</table>';
+        container.innerHTML = html;
+
+        // Add event listeners for ON/OFF buttons
+        container.querySelectorAll('.relay-on').forEach(btn => {
             btn.addEventListener('click', function() {
-                const relay = parseInt(this.getAttribute('data-relay'));
-                sendRelayCommand(relay, 'on');
+                const idx = parseInt(this.getAttribute('data-relay'));
+                fetch('/api/relay', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ relay: idx, command: 'on' })
+                })
+                .then(r => {
+                    if (!r.ok) throw new Error('Relay ON failed');
+                    return r.json();
+                })
+                .then(() => {
+                    setTimeout(fetchAndRender, 200);
+                })
+                .catch(err => {
+                    showError(`Failed to turn ON relay ${idx+1}: ${err.message}`);
+                });
             });
         });
-        document.querySelectorAll('.relay-off').forEach(btn => {
+        container.querySelectorAll('.relay-off').forEach(btn => {
             btn.addEventListener('click', function() {
-                const relay = parseInt(this.getAttribute('data-relay'));
-                sendRelayCommand(relay, 'off');
+                const idx = parseInt(this.getAttribute('data-relay'));
+                fetch('/api/relay', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ relay: idx, command: 'off' })
+                })
+                .then(r => {
+                    if (!r.ok) throw new Error('Relay OFF failed');
+                    return r.json();
+                })
+                .then(() => {
+                    setTimeout(fetchAndRender, 200);
+                })
+                .catch(err => {
+                    showError(`Failed to turn OFF relay ${idx+1}: ${err.message}`);
+                });
             });
         });
     }
-    function refreshRelayIndicators() {
+
+    // No need for updateRelayRow; table is always re-rendered from backend state
+
+    function showError(msg) {
+        container.innerHTML = `<div style='color:red;'>${msg}</div>`;
+    }
+
+    function fetchAndRender() {
         fetch('/api/status')
-            .then(response => response.json())
+            .then(r => {
+                if (!r.ok) throw new Error('Network response was not ok');
+                return r.json();
+            })
             .then(data => {
-                renderRelayControls(data.relays);
-                updateRelayIndicators(data.relays);
+                if (!data || !data.config || (typeof data.config.relay_count !== 'number' && !Array.isArray(data.relays))) {
+                    container.innerHTML = '<div style="color:red;">No relay data found in API response.</div>';
+                    return;
+                }
+                renderRelayTable(data);
             })
             .catch(err => {
-                const container = document.getElementById('relay-controls-dynamic');
-                if (container) container.innerHTML = '<div style="color:red">Failed to load relay data</div>';
+                container.innerHTML = `<div style='color:red;'>Failed to load relay data: ${err.message}</div>`;
             });
     }
-    refreshRelayIndicators();
 
-    function sendRelayCommand(relay, command) {
-        fetch('/api/relay', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ relay, command })
-        })
-        .then(r => r.json())
-        .then(() => refreshRelayIndicators());
-    }
-
-    document.querySelectorAll('.relay-on').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const relay = parseInt(this.getAttribute('data-relay'));
-            sendRelayCommand(relay, 'on');
-        });
-    });
-    document.querySelectorAll('.relay-off').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const relay = parseInt(this.getAttribute('data-relay'));
-            sendRelayCommand(relay, 'off');
-        });
-    });
+    // Initial fetch and render
+    fetchAndRender();
 });
-
-function updateRelayIndicators(relays) {
-    for (let i = 0; i < 4; i++) {
-        const indicator = document.getElementById('relay-indicator-' + i);
-        if (!indicator) continue;
-        indicator.className = 'relay-indicator';
-        indicator.textContent = '';
-        if (!relays || !relays[i]) {
-            indicator.style.background = '#ccc';
-            indicator.title = 'No data';
-            continue;
-        }
-        if (relays[i].state === 'on') {
-            indicator.style.background = '#4caf50'; // green
-            indicator.title = 'On';
-        } else {
-            indicator.style.background = '#b0b0b0'; // gray
-            indicator.title = 'Off';
-        }
-    }
-}
