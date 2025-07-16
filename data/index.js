@@ -1,6 +1,5 @@
-// index.js - JS for index.html
-
-async function loadSystemInfo() {
+// Automatically load dashboard data on page load
+window.addEventListener('DOMContentLoaded', async () => {
     try {
         const response = await fetch('/api/status');
         const data = await response.json();
@@ -12,9 +11,11 @@ async function loadSystemInfo() {
         updateI2CInfo(data);
     } catch (error) {
         console.error('Error fetching system info:', error);
-        showError('Failed to load system information');
+        if (typeof showError === 'function') showError('Failed to load system information');
     }
-}
+});
+// index.js - JS for index.html
+
 
 function updateDeviceAndSystemInfo(data) {
     const deviceInfoEl = document.getElementById('device-info');
