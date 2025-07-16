@@ -32,6 +32,102 @@
                 </div>
                 <div class="card-content" id="schedule-content">
                     <div id="schedule-loading" class="loading">Loading schedule...</div>
+                    <table id="schedule-table" style="width:100%;margin-top:1em;text-align:center;">
+                        <thead>
+                            <tr>
+                                <th>Day</th>
+                                <th>Enabled</th>
+                                <th>Alarm 1</th>
+                                <th>Alarm 2</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Sunday</td>
+                                <td><input type="checkbox" class="sched-enabled" data-day="sunday"></td>
+                                <td>
+                                    <select class="sched-hour" data-day="sunday" data-alarm="1"></select> :
+                                    <select class="sched-minute" data-day="sunday" data-alarm="1"></select>
+                                </td>
+                                <td>
+                                    <select class="sched-hour" data-day="sunday" data-alarm="2"></select> :
+                                    <select class="sched-minute" data-day="sunday" data-alarm="2"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Monday</td>
+                                <td><input type="checkbox" class="sched-enabled" data-day="monday"></td>
+                                <td>
+                                    <select class="sched-hour" data-day="monday" data-alarm="1"></select> :
+                                    <select class="sched-minute" data-day="monday" data-alarm="1"></select>
+                                </td>
+                                <td>
+                                    <select class="sched-hour" data-day="monday" data-alarm="2"></select> :
+                                    <select class="sched-minute" data-day="monday" data-alarm="2"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Tuesday</td>
+                                <td><input type="checkbox" class="sched-enabled" data-day="tuesday"></td>
+                                <td>
+                                    <select class="sched-hour" data-day="tuesday" data-alarm="1"></select> :
+                                    <select class="sched-minute" data-day="tuesday" data-alarm="1"></select>
+                                </td>
+                                <td>
+                                    <select class="sched-hour" data-day="tuesday" data-alarm="2"></select> :
+                                    <select class="sched-minute" data-day="tuesday" data-alarm="2"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Wednesday</td>
+                                <td><input type="checkbox" class="sched-enabled" data-day="wednesday"></td>
+                                <td>
+                                    <select class="sched-hour" data-day="wednesday" data-alarm="1"></select> :
+                                    <select class="sched-minute" data-day="wednesday" data-alarm="1"></select>
+                                </td>
+                                <td>
+                                    <select class="sched-hour" data-day="wednesday" data-alarm="2"></select> :
+                                    <select class="sched-minute" data-day="wednesday" data-alarm="2"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Thursday</td>
+                                <td><input type="checkbox" class="sched-enabled" data-day="thursday"></td>
+                                <td>
+                                    <select class="sched-hour" data-day="thursday" data-alarm="1"></select> :
+                                    <select class="sched-minute" data-day="thursday" data-alarm="1"></select>
+                                </td>
+                                <td>
+                                    <select class="sched-hour" data-day="thursday" data-alarm="2"></select> :
+                                    <select class="sched-minute" data-day="thursday" data-alarm="2"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Friday</td>
+                                <td><input type="checkbox" class="sched-enabled" data-day="friday"></td>
+                                <td>
+                                    <select class="sched-hour" data-day="friday" data-alarm="1"></select> :
+                                    <select class="sched-minute" data-day="friday" data-alarm="1"></select>
+                                </td>
+                                <td>
+                                    <select class="sched-hour" data-day="friday" data-alarm="2"></select> :
+                                    <select class="sched-minute" data-day="friday" data-alarm="2"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Saturday</td>
+                                <td><input type="checkbox" class="sched-enabled" data-day="saturday"></td>
+                                <td>
+                                    <select class="sched-hour" data-day="saturday" data-alarm="1"></select> :
+                                    <select class="sched-minute" data-day="saturday" data-alarm="1"></select>
+                                </td>
+                                <td>
+                                    <select class="sched-hour" data-day="saturday" data-alarm="2"></select> :
+                                    <select class="sched-minute" data-day="saturday" data-alarm="2"></select>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
             <div class="card">

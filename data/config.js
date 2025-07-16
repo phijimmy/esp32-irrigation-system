@@ -1,173 +1,61 @@
-// --- Restart Button Logic ---
+// --- Clear Config Button Logic ---
 document.addEventListener('DOMContentLoaded', function() {
-    // --- Schedule Card Logic ---
-    function pad2(n) { return n.toString().padStart(2, '0'); }
-    const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    function renderScheduleCard(schedule) {
-        const container = document.getElementById('schedule-content');
-        if (!container) return;
-        let html = '<table style="width:100%;border-collapse:collapse;">';
-        html += '<tr><th>Day</th><th>Enabled</th><th>Start (alarm1)</th><th>Stop (alarm2)</th></tr>';
-        for (let i = 0; i < 7; i++) {
-            const dayKey = dayNames[i].toLowerCase();
-            const day = schedule[dayKey] || {};
-            const enabled = day.enabled ? 'checked' : '';
-            const a1 = day.alarm1 || {hour:0,minute:0,second:0};
-            const a2 = day.alarm2 || {hour:0,minute:0,second:0};
-            html += `<tr>`;
-            html += `<td>${dayNames[i]}</td>`;
-            html += `<td><input type="checkbox" class="sched-enabled" data-day="${dayKey}" ${enabled}></td>`;
-            html += `<td>`;
-            html += `<select class="sched-hour" data-day="${dayKey}" data-alarm="1">`;
-            for(let h=0;h<24;h++) html += `<option value="${h}"${h==a1.hour?' selected':''}>${pad2(h)}</option>`;
-            html += `</select> : <select class="sched-minute" data-day="${dayKey}" data-alarm="1">`;
-            for(let m=0;m<60;m++) html += `<option value="${m}"${m==a1.minute?' selected':''}>${pad2(m)}</option>`;
-            html += `</select>`;
-            html += `</td>`;
-            html += `<td>`;
-            html += `<select class="sched-hour" data-day="${dayKey}" data-alarm="2">`;
-            for(let h=0;h<24;h++) html += `<option value="${h}"${h==a2.hour?' selected':''}>${pad2(h)}</option>`;
-            html += `</select> : <select class="sched-minute" data-day="${dayKey}" data-alarm="2">`;
-            for(let m=0;m<60;m++) html += `<option value="${m}"${m==a2.minute?' selected':''}>${pad2(m)}</option>`;
-            html += `</select>`;
-            html += `</td>`;
-            html += `</tr>`;
-        }
-        html += '</table>';
-        container.innerHTML = html;
-    }
-
-    // Load schedule on page load, then render the rest of the config form only after schedule is loaded
-    fetch('/api/status').then(r=>r.json()).then(data=>{
-        let schedule = (data.config && data.config.weekly_schedule) ? data.config.weekly_schedule : {};
-        renderScheduleCard(schedule);
-        document.getElementById('schedule-loading')?.remove();
-        // Now that schedule is rendered, enable the config form submit handler
-        enableConfigFormHandler(data.config || {});
-    });
-
-    // Use a named handler so we can remove it before adding
-    let configFormSubmitHandler = function(e) {
-        e.preventDefault();
-        let form = e.target;
-        // Gather all config values from the form
-        let newConfig = JSON.parse(JSON.stringify(config));
-        // --- Gather schedule values ---
-        let schedule = {};
-        const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-        for (let i = 0; i < 7; i++) {
-            const dayKey = dayNames[i];
-            let day = {};
-            day.enabled = document.querySelector(`.sched-enabled[data-day='${dayKey}']`)?.checked || false;
-            day.alarm1 = {
-                hour: parseInt(document.querySelector(`.sched-hour[data-day='${dayKey}'][data-alarm='1']`).value),
-                minute: parseInt(document.querySelector(`.sched-minute[data-day='${dayKey}'][data-alarm='1']`).value),
-                second: 0
-            };
-            day.alarm2 = {
-                hour: parseInt(document.querySelector(`.sched-hour[data-day='${dayKey}'][data-alarm='2']`).value),
-                minute: parseInt(document.querySelector(`.sched-minute[data-day='${dayKey}'][data-alarm='2']`).value),
-                second: 0
-            };
-            schedule[dayKey] = day;
-        }
-        newConfig.weekly_schedule = schedule;
-        // Now gather the rest of the config fields
-        newConfig.wifi_mode = document.getElementById('network-mode').value;
-        newConfig.wifi_ssid = document.getElementById('wifi-ssid').value;
-        newConfig.wifi_pass = document.getElementById('wifi-pass').value;
-        newConfig.ap_ssid = document.getElementById('ap-ssid').value;
-        newConfig.ap_password = document.getElementById('ap-password').value;
-        newConfig.ap_timeout = parseInt(document.getElementById('ap-timeout').value);
-        newConfig.led_gpio = parseInt(document.getElementById('led-gpio').value);
-        newConfig.led_blink_rate = parseInt(document.getElementById('led-blink-rate').value);
-        newConfig.touch_gpio = parseInt(document.getElementById('touch-gpio').value);
-        newConfig.touch_long_press = parseInt(document.getElementById('touch-long-press').value);
-        newConfig.touch_threshold = parseInt(document.getElementById('touch-threshold').value);
-        newConfig.device_name = document.getElementById('device-name').value;
-        newConfig.cpu_speed = parseInt(document.getElementById('cpu-speed').value);
-        newConfig.brownout_threshold = parseFloat(document.getElementById('brownout-threshold').value);
-        newConfig.ntp_server_1 = document.getElementById('ntp-server-1').value;
-        newConfig.ntp_server_2 = document.getElementById('ntp-server-2').value;
-        newConfig.ntp_enabled = document.getElementById('ntp-enabled').checked;
-        newConfig.ntp_sync_interval = parseInt(document.getElementById('ntp-sync-interval').value);
-        newConfig.ntp_timeout = parseInt(document.getElementById('ntp-timeout').value);
-        newConfig.soil_moisture = {
-            wet: parseInt(document.getElementById('soil-moisture-wet').value),
-            dry: parseInt(document.getElementById('soil-moisture-dry').value),
-            stabilisation_time: parseInt(document.getElementById('soil-stabilisation-time').value)
-        };
-        newConfig.soil_power_gpio = parseInt(document.getElementById('soil-power-gpio').value);
-        newConfig.mq135 = {
-            warmup_time: parseInt(document.getElementById('mq135-warmup-time').value)
-        };
-        let relayCount = (typeof config.relay_count === 'number') ? config.relay_count : 0;
-        newConfig.relay_count = relayCount;
-        for (let i = 0; i < relayCount; i++) {
-            newConfig['relay_gpio_' + i] = parseInt(document.getElementById('relay-gpio-' + i).value);
-            let radios = document.getElementsByName('relay-active-high-' + i);
-            let activeHigh = true;
-            for (let r = 0; r < radios.length; r++) {
-                if (radios[r].checked && radios[r].value === 'low') activeHigh = false;
-            }
-            newConfig['relay_active_high_' + i] = activeHigh;
-        }
-        let relayNames = [];
-        for (let i = 0; i < relayCount; i++) {
-            relayNames.push(document.getElementById('relay-name-' + i).value);
-        }
-        newConfig.relay_names = relayNames;
-        if (relayCount > 2) {
-            const relay2GpioElem = document.getElementById('relay2-control-gpio');
-            if (relay2GpioElem) newConfig.relay2_control_gpio = parseInt(relay2GpioElem.value);
-        }
-        newConfig.watering_threshold = parseFloat(document.getElementById('watering-threshold').value);
-        newConfig.watering_duration_sec = parseInt(document.getElementById('watering-duration').value);
-        newConfig.irrigation_scheduled_hour = parseInt(document.getElementById('irrigation-scheduled-hour').value);
-        newConfig.irrigation_scheduled_minute = parseInt(document.getElementById('irrigation-scheduled-minute').value);
-
-        fetch('/api/config', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(newConfig)
-        }).then(r => r.json()).then(resp => {
-            alert('Config saved!');
-        });
-    };
-    const form = document.getElementById('config-form');
-    if (!form) return;
-    // Remove any previous submit handler of this function
-    form.removeEventListener('submit', configFormSubmitHandler);
-    form.addEventListener('submit', configFormSubmitHandler);
-
-    // Add to config save logic
+    // --- Restart Button Logic ---
     const restartBtn = document.getElementById('restart-btn');
-    const clearStatus = document.getElementById('clear-config-status');
     if (restartBtn) {
         restartBtn.addEventListener('click', function() {
-            if (!confirm('Are you sure you want to restart the device?')) return;
             restartBtn.disabled = true;
-            clearStatus.textContent = 'Restarting...';
+            restartBtn.textContent = 'Restarting...';
             fetch('/api/restart', { method: 'POST' })
                 .then(r => r.json())
                 .then(data => {
                     if (data && data.result === 'ok') {
-                        clearStatus.textContent = 'Restarting device...';
+                        restartBtn.textContent = 'Restarted!';
+                        alert('Device is restarting...');
                     } else {
-                        clearStatus.textContent = 'Failed to restart device.';
+                        restartBtn.textContent = 'Restart failed';
+                        alert('Restart failed.');
                     }
                 })
                 .catch(() => {
-                    clearStatus.textContent = 'Failed to restart device.';
-                })
-                .finally(() => {
-                    restartBtn.disabled = false;
+                    restartBtn.textContent = 'Restart failed';
+                    alert('Restart failed.');
                 });
         });
     }
-});
-// --- Clear Config Button Logic ---
-document.addEventListener('DOMContentLoaded', function() {
+    // --- Populate schedule dropdowns (hours/minutes) for all days/alarms ---
+    function populateScheduleDropdowns() {
+        const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+        for (let i = 0; i < 7; i++) {
+            const dayKey = dayNames[i];
+            for (let alarm = 1; alarm <= 2; alarm++) {
+                // Hour dropdown
+                const hourSel = document.querySelector(`.sched-hour[data-day='${dayKey}'][data-alarm='${alarm}']`);
+                if (hourSel && hourSel.options.length === 0) {
+                    for (let h = 0; h < 24; h++) {
+                        let opt = document.createElement('option');
+                        opt.value = h;
+                        opt.text = h.toString().padStart(2, '0');
+                        hourSel.appendChild(opt);
+                    }
+                }
+                // Minute dropdown
+                const minSel = document.querySelector(`.sched-minute[data-day='${dayKey}'][data-alarm='${alarm}']`);
+                if (minSel && minSel.options.length === 0) {
+                    for (let m = 0; m < 60; m++) {
+                        let opt = document.createElement('option');
+                        opt.value = m;
+                        opt.text = m.toString().padStart(2, '0');
+                        minSel.appendChild(opt);
+                    }
+                }
+            }
+            // Ensure checkboxes are not checked by default
+            const enabledElem = document.querySelector(`.sched-enabled[data-day='${dayKey}']`);
+            if (enabledElem) enabledElem.checked = false;
+        }
+    }
+    populateScheduleDropdowns();
     const clearBtn = document.getElementById('clear-config-btn');
     const clearStatus = document.getElementById('clear-config-status');
     if (clearBtn) {
@@ -317,6 +205,54 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             const config = data.config || {};
+            // --- Populate Schedule Card ---
+            let schedulePopulated = false;
+            if (config.weekly_schedule) {
+                const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+                for (let i = 0; i < 7; i++) {
+                    const dayKey = dayNames[i];
+                    const day = config.weekly_schedule[dayKey];
+                    if (!day) continue;
+                    // Checkbox for enabled
+                    const enabledElem = document.querySelector(`.sched-enabled[data-day='${dayKey}']`);
+                    if (enabledElem) {
+                        enabledElem.checked = !!day.enabled;
+                        schedulePopulated = true;
+                    }
+                    // Alarm 1
+                    const alarm1Hour = document.querySelector(`.sched-hour[data-day='${dayKey}'][data-alarm='1']`);
+                    const alarm1Minute = document.querySelector(`.sched-minute[data-day='${dayKey}'][data-alarm='1']`);
+                    if (alarm1Hour && day.alarm1) {
+                        alarm1Hour.value = day.alarm1.hour;
+                        schedulePopulated = true;
+                    }
+                    if (alarm1Minute && day.alarm1) {
+                        alarm1Minute.value = day.alarm1.minute;
+                        schedulePopulated = true;
+                    }
+                    // Alarm 2
+                    const alarm2Hour = document.querySelector(`.sched-hour[data-day='${dayKey}'][data-alarm='2']`);
+                    const alarm2Minute = document.querySelector(`.sched-minute[data-day='${dayKey}'][data-alarm='2']`);
+                    if (alarm2Hour && day.alarm2) {
+                        alarm2Hour.value = day.alarm2.hour;
+                        schedulePopulated = true;
+                    }
+                    if (alarm2Minute && day.alarm2) {
+                        alarm2Minute.value = day.alarm2.minute;
+                        schedulePopulated = true;
+                    }
+                }
+            }
+            // Hide the loading message if present, or show error if not populated
+            const schedLoading = document.getElementById('schedule-loading');
+            if (schedLoading) {
+                if (schedulePopulated) {
+                    schedLoading.style.display = 'none';
+                } else {
+                    schedLoading.textContent = 'Failed to load schedule. Please check your config or reload.';
+                    schedLoading.style.display = '';
+                }
+            }
             // --- Air Quality (MQ135) Card ---
             const mq135Input = document.getElementById('mq135-warmup-time');
             let warmup = undefined;
