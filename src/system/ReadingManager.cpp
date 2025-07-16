@@ -44,8 +44,8 @@ void ReadingManager::loop(const DateTime& now) {
             Serial.printf("[ReadingManager] Hourly trigger at %02d:00.\n", now.hour());
             if (bme280) {
                 auto reading = bme280->readData();
-                Serial.printf("[ReadingManager] BME280: T=%.2fC, H=%.2f%%, P=%.2fhPa, time=%04d-%02d-%02d %02d:%02d:%02d\n",
-                    reading.temperature, reading.humidity, reading.pressure,
+                Serial.printf("[ReadingManager] BME280: T=%.2fC, H=%.2f%%, P=%.2fhPa, HI=%.2fC, DP=%.2fC, time=%04d-%02d-%02d %02d:%02d:%02d\n",
+                    reading.temperature, reading.humidity, reading.pressure, reading.heatIndex, reading.dewPoint,
                     now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second());
             }
             if (soilSensor) {
@@ -72,10 +72,14 @@ void ReadingManager::loop(const DateTime& now) {
         if (soilSensor->readyForReading()) {
             soilSensor->takeReading();
             auto s = soilSensor->getLastReading();
-            Serial.printf("[ReadingManager] Soil: raw=%d, V=%.3f, %%=%.1f, time=%ld\n", s.raw, s.voltage, s.percent, s.timestamp);
+            char soilTimeStr[32];
+            time_t soilTime = (time_t)s.timestamp;
+            struct tm* tm_info = localtime(&soilTime);
+            strftime(soilTimeStr, sizeof(soilTimeStr), "%Y-%m-%d %H:%M:%S", tm_info);
+            Serial.printf("[ReadingManager] Soil: raw=%d, V=%.3f, %%=%.1f, time=%s\n", s.raw, s.voltage, s.percent, soilTimeStr);
             soilState = SOIL_IDLE;
             lastStabProgressPrint = 0;
-        } else if (nowMs - soilStabStart > 60000) {
+        } else if (nowMs - soilStabStart > (unsigned long)soilSensor->getStabilisationTimeSec() * 1000) {
             Serial.println("[ReadingManager] Soil: Stabilisation timeout!");
             soilState = SOIL_IDLE;
             lastStabProgressPrint = 0;
