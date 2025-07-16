@@ -5,6 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sensor Dashboard</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+    .action-btn {
+        font-size: 1.18em;
+        padding: 0.7em 2.2em;
+        border-radius: 0.5em;
+        margin-top: 0.7em;
+        background: #2980b9;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .action-btn:active {
+        background: #145a86;
+    }
+    @media (max-width: 600px) {
+        .action-btn {
+            font-size: 1.08em;
+            padding: 0.7em 1.2em;
+        }
+    }
+    </style>
     <script src="sensors.js" defer></script>
 </head>
 <body>
