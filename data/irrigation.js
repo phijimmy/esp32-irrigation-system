@@ -20,7 +20,31 @@ function updateIrrigationState() {
             } else {
                 state = 'No irrigation data';
             }
-            document.getElementById('irrigation-state').textContent = state;
+            // Set status color class based on state
+            const stateElem = document.getElementById('irrigation-state');
+            stateElem.textContent = state;
+            // Remove previous status classes
+            stateElem.classList.remove('status-idle', 'status-watering', 'status-reading', 'status-error');
+            // Map state to class
+            let stateClass = '';
+            switch (state.toLowerCase()) {
+                case 'idle':
+                    stateClass = 'status-idle';
+                    break;
+                case 'watering':
+                    stateClass = 'status-watering';
+                    break;
+                case 'reading':
+                    stateClass = 'status-reading';
+                    break;
+                case 'error':
+                case 'no irrigation data':
+                    stateClass = 'status-error';
+                    break;
+                default:
+                    stateClass = 'status-idle';
+            }
+            stateElem.classList.add(stateClass);
             document.getElementById('irrigation-details').innerHTML = details;
 
             // BME280
@@ -47,9 +71,22 @@ function updateIrrigationState() {
 
             // Soil Moisture
             let soilHtml = '';
+            let soilStateClass = 'soil-status-unknown';
+            let soilStateText = 'N/A';
             if (data.soil_moisture) {
                 const s = data.soil_moisture;
-                soilHtml += `<b>State:</b> ${s.state || 'N/A'}` + '<br>';
+                soilStateText = s.state || 'N/A';
+                // Map state to class
+                if (soilStateText.toLowerCase() === 'ok' || soilStateText.toLowerCase() === 'normal') {
+                    soilStateClass = 'soil-status-ok';
+                } else if (soilStateText.toLowerCase() === 'dry') {
+                    soilStateClass = 'soil-status-dry';
+                } else if (soilStateText.toLowerCase() === 'wet') {
+                    soilStateClass = 'soil-status-wet';
+                } else {
+                    soilStateClass = 'soil-status-unknown';
+                }
+                soilHtml += `<b>State:</b> <span id="soil-state-span" class="${soilStateClass}">${soilStateText}</span><br>`;
                 soilHtml += `<b>Raw:</b> ${s.raw !== undefined ? s.raw : 'N/A'}` + '<br>';
                 soilHtml += `<b>Voltage:</b> ${s.voltage !== undefined ? s.voltage.toFixed(4) + ' V' : 'N/A'}` + '<br>';
                 soilHtml += `<b>Percent:</b> ${s.percent !== undefined ? s.percent.toFixed(2) + ' %' : 'N/A'}` + '<br>';

@@ -1,3 +1,77 @@
+/* Soil moisture state status colors (same as irrigation for consistency) */
+.soil-status-ok {
+  background: #10b981;
+  color: #fff;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.soil-status-dry {
+  background: #ef4444;
+  color: #fff;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.soil-status-wet {
+  background: #3b82f6;
+  color: #fff;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.soil-status-unknown {
+  background: #b0b0b0;
+  color: #333;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+/* Irrigation state status colors */
+.status-idle {
+  background: #b0b0b0;
+  color: #333;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.status-watering {
+  background: #10b981;
+  color: #fff;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.status-reading {
+  background: #3b82f6;
+  color: #fff;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.status-error {
+  background: #ef4444;
+  color: #fff;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
 * {
     margin: 0;
     padding: 0;
