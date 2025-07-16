@@ -22,6 +22,7 @@ public:
     bool isComplete() const;
     void reset();
     void waterNow();
+    void stopNow(); // Immediately stop all irrigation activity
     void setMQ135Sensor(class MQ135Sensor* sensor);
 private:
     enum State { IDLE, START, BME_READING, SOIL_READING, MQ135_READING, WATER_NOW, COMPLETE };

@@ -132,4 +132,33 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
+    // Stop Irrigation button logic
+    const stopBtn = document.getElementById('stop-irrigation-btn');
+    if (stopBtn) {
+        stopBtn.addEventListener('click', function() {
+            stopBtn.disabled = true;
+            stopBtn.textContent = 'Stopping...';
+            fetch('/api/irrigation/stop', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: '{}'
+            })
+            .then(res => res.json())
+            .then(data => {
+                stopBtn.textContent = data.result === 'ok' ? 'Stopped!' : 'Error';
+                setTimeout(() => {
+                    stopBtn.textContent = 'Stop Irrigation';
+                    stopBtn.disabled = false;
+                }, 2000);
+            })
+            .catch(() => {
+                stopBtn.textContent = 'Error';
+                setTimeout(() => {
+                    stopBtn.textContent = 'Stop Irrigation';
+                    stopBtn.disabled = false;
+                }, 2000);
+            });
+        });
+    }
 });

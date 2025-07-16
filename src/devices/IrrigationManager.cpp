@@ -14,6 +14,15 @@ IrrigationManager::IrrigationManager()
 void IrrigationManager::setMQ135Sensor(MQ135Sensor* sensor) {
     mq135Sensor = sensor;
 }
+// Immediately stop all irrigation activity, deactivate relay 1, and set state to IDLE
+void IrrigationManager::stopNow() {
+    Serial.println("[IrrigationManager] STOP: Immediately stopping all irrigation activity and deactivating relay 1.");
+    if (relayController) relayController->setRelayMode(1, Relay::OFF); // Relay 1 OFF
+    wateringActive = false;
+    // Optionally, reset/cancel any sensor activity here if needed
+    state = IDLE;
+    completePrinted = false;
+}
 // ...existing code...
 
 void IrrigationManager::begin(BME280Device* bme, SoilMoistureSensor* soil, TimeManager* timeMgr) {

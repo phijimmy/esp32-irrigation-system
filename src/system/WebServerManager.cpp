@@ -14,6 +14,7 @@ WebServerManager::WebServerManager(DashboardManager* dashMgr, DiagnosticManager*
 void WebServerManager::begin() {
     // Create server before registering any routes
     server = new AsyncWebServer(80);
+    // ...existing code...
     // Clear Config API
     server->on("/api/clearconfig", HTTP_POST, [](AsyncWebServerRequest* request) {
         bool ok = systemManager.getFileSystemManager().deleteConfigJson();
@@ -221,6 +222,20 @@ void WebServerManager::begin() {
             irrigationManager.waterNow();
             cJSON* resp = cJSON_CreateObject();
             cJSON_AddStringToObject(resp, "result", "ok");
+            char* respStr = cJSON_PrintUnformatted(resp);
+            request->send(200, "application/json", respStr);
+            cJSON_free(respStr);
+            cJSON_Delete(resp);
+        });
+
+    // Irrigation Stop Now API (grouped with other irrigation endpoints)
+    server->on("/api/irrigation/stop", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,
+        [](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
+            extern IrrigationManager irrigationManager;
+            irrigationManager.stopNow();
+            cJSON* resp = cJSON_CreateObject();
+            cJSON_AddStringToObject(resp, "result", "ok");
+            cJSON_AddStringToObject(resp, "message", "Irrigation stopped and relay 1 deactivated.");
             char* respStr = cJSON_PrintUnformatted(resp);
             request->send(200, "application/json", respStr);
             cJSON_free(respStr);
