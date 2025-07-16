@@ -1,4 +1,11 @@
+#include <Arduino.h>
+
 #include "devices/BME280Device.h"
+
+void BME280Device::forceIdle() {
+    state = READY;
+}
+
 #include "system/TimeManager.h"
 
 BME280Device::BME280Device(uint8_t addr, I2CManager* i2c, DiagnosticManager* diag)

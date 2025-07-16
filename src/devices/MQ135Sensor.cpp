@@ -1,3 +1,12 @@
+#include <Arduino.h>
+
+#include "devices/MQ135Sensor.h"
+
+void MQ135Sensor::forceIdle() {
+    state = IDLE;
+    warmingUp = false;
+}
+
 #include "devices/MQ135Sensor.h"
 #include <time.h>
 

@@ -1,4 +1,11 @@
+#include <Arduino.h>
+
 #include "devices/SoilMoistureSensor.h"
+
+void SoilMoistureSensor::forceIdle() {
+    state = IDLE;
+}
+
 #include "config/ConfigManager.h"
 #include <time.h>
 #include "system/TimeManager.h"

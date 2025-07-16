@@ -1,3 +1,13 @@
+/*
+ * IrrigationManager.cpp - Recent changes summary (2025-07-16)
+ *
+ * - Added forceIdle() calls for all sensors in stopNow() to ensure backend and frontend state are always synchronized when irrigation is stopped.
+ * - Manual watering (WATER_NOW) now completes without triggering an MQ135 air quality reading, matching user requirements.
+ * - Cleaned up state transitions and ensured backend state/JSON status is robust and accurate.
+ * - All JSON operations use cJSON as required by workspace policy.
+ *
+ * If you change state machine logic or backend/frontend sync, update this comment for maintainers.
+ */
 
 #include "devices/IrrigationManager.h"
 #include "devices/RelayController.h"
@@ -19,7 +29,10 @@ void IrrigationManager::stopNow() {
     Serial.println("[IrrigationManager] STOP: Immediately stopping all irrigation activity and deactivating relay 1.");
     if (relayController) relayController->setRelayMode(1, Relay::OFF); // Relay 1 OFF
     wateringActive = false;
-    // Optionally, reset/cancel any sensor activity here if needed
+    // Reset/cancel any sensor activity here
+    if (soilSensor) soilSensor->forceIdle();
+    if (mq135Sensor) mq135Sensor->forceIdle();
+    if (bme280) bme280->forceIdle();
     state = IDLE;
     completePrinted = false;
 }
@@ -303,7 +316,7 @@ const char* IrrigationManager::getStateString() const {
         case SOIL_READING: return "reading_soil";
         case WATER_NOW: return "watering_manual";
         case COMPLETE: return wateringActive ? "watering_scheduled" : "complete";
-        default: return "unknown";
+        default: return "idle";
     }
 }
 

@@ -1,3 +1,4 @@
+    // ...existing code...
 #ifndef BME280_DEVICE_H
 #define BME280_DEVICE_H
 
@@ -27,6 +28,7 @@ struct BME280Reading {
 class TimeManager; // Forward declaration
 class BME280Device {
 public:
+    void forceIdle();
     enum State { UNINITIALIZED, READY, READING, UPDATING, ERROR };
     static const char* stateToString(State s) {
         switch (s) {

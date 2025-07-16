@@ -1,3 +1,4 @@
+    // ...existing code...
 #ifndef MQ135_SENSOR_H
 #define MQ135_SENSOR_H
 
@@ -13,6 +14,7 @@ class TimeManager;
 
 class MQ135Sensor {
 public:
+    void forceIdle();
     enum State { IDLE, WARMING_UP, READING, ERROR };
     MQ135Sensor();
     void begin(ADS1115Manager* adsMgr, ConfigManager* configMgr, RelayController* relayCtrl, DiagnosticManager* diagMgr = nullptr);
