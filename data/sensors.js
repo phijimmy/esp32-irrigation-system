@@ -24,10 +24,21 @@ async function updateSensors() {
         if (data.soil_moisture) {
             const s = data.soil_moisture;
             let soilHtml = '';
+            let soilStateClass = 'soil-status-unknown';
+            let soilStateText = s.state || '--';
+            if (soilStateText.toLowerCase() === 'ok' || soilStateText.toLowerCase() === 'normal') {
+                soilStateClass = 'soil-status-ok';
+            } else if (soilStateText.toLowerCase() === 'dry') {
+                soilStateClass = 'soil-status-dry';
+            } else if (soilStateText.toLowerCase() === 'wet') {
+                soilStateClass = 'soil-status-wet';
+            } else {
+                soilStateClass = 'soil-status-unknown';
+            }
             soilHtml += `<b>Percent:</b> ${s.percent !== undefined ? s.percent.toFixed(2) + ' %' : '--'}<br>`;
             soilHtml += `<b>Raw Value:</b> ${s.raw !== undefined ? s.raw : '--'}<br>`;
             soilHtml += `<b>Timestamp:</b> ${s.timestamp || '--'}<br>`;
-            soilHtml += `<b>State:</b> ${s.state || '--'}<br>`;
+            soilHtml += `<b>State:</b> <span class="${soilStateClass}">${soilStateText}</span><br>`;
             document.getElementById('soilmoisture-data').innerHTML = soilHtml;
             if (soilBtn) {
                 if (s.state === 'stabilising' || s.state === 'reading') {
@@ -48,9 +59,21 @@ async function updateSensors() {
         // Air Quality
         if (data.mq135) {
             let mqHtml = '';
+            let airStateClass = 'air-status-unknown';
+            let airStateText = data.mq135.state || '--';
+            // Map state to class (customize as needed)
+            if (airStateText.toLowerCase() === 'good' || airStateText.toLowerCase() === 'ok' || airStateText.toLowerCase() === 'normal') {
+                airStateClass = 'air-status-good';
+            } else if (airStateText.toLowerCase() === 'moderate') {
+                airStateClass = 'air-status-moderate';
+            } else if (airStateText.toLowerCase() === 'poor' || airStateText.toLowerCase() === 'bad' || airStateText.toLowerCase() === 'danger') {
+                airStateClass = 'air-status-poor';
+            } else {
+                airStateClass = 'air-status-unknown';
+            }
             mqHtml += `<b>AQI:</b> ${data.mq135.aqi_label || '--'}<br>`;
             mqHtml += `<b>Timestamp:</b> ${data.mq135.timestamp || '--'}<br>`;
-            mqHtml += `<b>State:</b> ${data.mq135.state || '--'}<br>`;
+            mqHtml += `<b>State:</b> <span class="${airStateClass}">${airStateText}</span><br>`;
             if (data.mq135.state === 'warming_up') {
                 mqHtml += `<b>Warmup:</b> ${data.mq135.warmup_elapsed_sec || 0} / ${data.mq135.warmup_time_sec || 0} sec<br>`;
             }

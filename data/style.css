@@ -1,3 +1,76 @@
+/* Soil moisture and air quality state status colors for sensors.html */
+.soil-status-ok {
+  background: #10b981;
+  color: #fff;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.soil-status-dry {
+  background: #ef4444;
+  color: #fff;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.soil-status-wet {
+  background: #3b82f6;
+  color: #fff;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.soil-status-unknown {
+  background: #b0b0b0;
+  color: #333;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.air-status-good {
+  background: #10b981;
+  color: #fff;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.air-status-moderate {
+  background: #f59e42;
+  color: #fff;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.air-status-poor {
+  background: #ef4444;
+  color: #fff;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.air-status-unknown {
+  background: #b0b0b0;
+  color: #333;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
 /* Soil moisture state status colors (same as irrigation for consistency) */
 .soil-status-ok {
   background: #10b981;
