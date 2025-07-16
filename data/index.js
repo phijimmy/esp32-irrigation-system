@@ -134,4 +134,3 @@ function showError(message) {
     if (i2cEl) i2cEl.innerHTML = `<div class="error">${message}</div>`;
 }
 
-window.addEventListener('DOMContentLoaded', loadSystemInfo);

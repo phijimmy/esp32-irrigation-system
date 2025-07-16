@@ -104,4 +104,32 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
+    const waterNowBtn = document.getElementById('water-now-btn');
+    if (waterNowBtn) {
+        waterNowBtn.addEventListener('click', function() {
+            waterNowBtn.disabled = true;
+            waterNowBtn.textContent = 'Watering...';
+            fetch('/api/irrigation/waternow', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: '{}'
+            })
+            .then(res => res.json())
+            .then(data => {
+                waterNowBtn.textContent = data.result === 'ok' ? 'Watered!' : 'Error';
+                setTimeout(() => {
+                    waterNowBtn.textContent = 'Water Now';
+                    waterNowBtn.disabled = false;
+                }, 2000);
+            })
+            .catch(() => {
+                waterNowBtn.textContent = 'Error';
+                setTimeout(() => {
+                    waterNowBtn.textContent = 'Water Now';
+                    waterNowBtn.disabled = false;
+                }, 2000);
+            });
+        });
+    }
 });

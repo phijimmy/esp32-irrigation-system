@@ -233,8 +233,8 @@ void IrrigationManager::update() {
                     if (relayController) relayController->setRelayMode(1, Relay::OFF); // Relay 1 OFF
                     Serial.println("[IrrigationManager] Water Now complete. Relay 1 OFF.");
                     wateringActive = false;
-                    // After manual watering, also take air quality reading
-                    state = MQ135_READING;
+                    // After manual watering, finish without air quality reading
+                    state = COMPLETE;
                     stateStart = millis();
                     break;
                 }

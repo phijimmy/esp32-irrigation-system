@@ -213,6 +213,19 @@ void WebServerManager::begin() {
             cJSON_free(respStr);
             cJSON_Delete(resp);
         });
+
+    // Irrigation Water Now API
+    server->on("/api/irrigation/waternow", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,
+        [](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
+            extern IrrigationManager irrigationManager;
+            irrigationManager.waterNow();
+            cJSON* resp = cJSON_CreateObject();
+            cJSON_AddStringToObject(resp, "result", "ok");
+            char* respStr = cJSON_PrintUnformatted(resp);
+            request->send(200, "application/json", respStr);
+            cJSON_free(respStr);
+            cJSON_Delete(resp);
+        });
     server->on("/api/relay", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,
         [relayControllerPtr](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
             String body = String((char*)data).substring(0, len);
