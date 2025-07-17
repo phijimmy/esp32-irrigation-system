@@ -437,6 +437,12 @@ void WebServerManager::begin() {
     server->on("/config.html", HTTP_GET, [this](AsyncWebServerRequest* request) {
         handleStaticFile(request);
     });
+    server->on("/info.html", HTTP_GET, [this](AsyncWebServerRequest* request) {
+        handleStaticFile(request);
+    });
+    server->on("/info.js", HTTP_GET, [this](AsyncWebServerRequest* request) {
+        handleStaticFile(request);
+    });
 
     // Removed schedule.html and schedule.js routes (files deleted)
     
