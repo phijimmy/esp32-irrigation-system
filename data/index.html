@@ -5,10 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESP32 IoT System</title>
     <link rel="stylesheet" href="/style.css">
+    <style>
+    .action-btn {
+        font-size: 1.18em;
+        padding: 0.7em 2.2em;
+        border-radius: 0.5em;
+        margin-top: 0.7em;
+        background: #2980b9;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .action-btn:active {
+        background: #145a86;
+    }
+    @media (max-width: 600px) {
+        .action-btn {
+            font-size: 1.08em;
+            padding: 0.7em 1.2em;
+        }
+    }
+    </style>
 </head>
 <body>
     <div class="container">
-
         <div class="header">
             <h1>ESP32 IoT System</h1>
             <nav>
@@ -19,69 +40,35 @@
                 <a href="touch.html">Touch</a>
                 <a href="irrigation.html">Irrigation</a>
                 <a href="config.html">Config</a>
+                <a href="info.html">Info</a>
                 <!-- Schedule link removed -->
             </nav>
             <p>System Information Dashboard</p>
         </div>
-        
         <div class="cards-grid">
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-icon time-icon">🕐</div>
-                    <div class="card-title">System Time</div>
-                </div>
+            <div class="card" id="bme280-card">
+                <div class="card-header"><div class="card-title">BME280 Sensor Data</div></div>
                 <div class="card-content">
-                    <div id="system-time" class="loading">Loading system time...</div>
+                    <div id="bme280-data" class="sensor-value">--</div>
+                    <button id="bme280-read-btn" class="action-btn">Take BME280 Reading</button>
                 </div>
             </div>
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-icon info-icon">🌐</div>
-                    <div class="card-title">Network Info</div>
-                </div>
+            <div class="card" id="soilmoisture-card">
+                <div class="card-header"><div class="card-title">Soil Moisture Sensor Data</div></div>
                 <div class="card-content">
-                    <div id="network-info" class="loading">Loading network info...</div>
+                    <div id="soilmoisture-data" class="sensor-value">--</div>
+                    <button id="soilmoisture-read-btn" class="action-btn">Take Soil Moisture Reading</button>
                 </div>
             </div>
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-icon info-icon">ℹ️</div>
-                    <div class="card-title">Device Information</div>
-                </div>
+            <div class="card" id="mq135-card">
+                <div class="card-header"><div class="card-title">MQ135 Air Quality</div></div>
                 <div class="card-content">
-                    <div id="device-info" class="loading">Loading device information...</div>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-icon info-icon">💾</div>
-                    <div class="card-title">Filesystem</div>
-                </div>
-                <div class="card-content">
-                    <div id="filesystem-info" class="loading">Loading filesystem info...</div>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-icon info-icon">🔌</div>
-                    <div class="card-title">I2C Devices</div>
-                </div>
-                <div class="card-content">
-                    <div id="i2c-info" class="loading">Loading I2C info...</div>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-icon info-icon">❤️</div>
-                    <div class="card-title">Health</div>
-                </div>
-                <div class="card-content">
-                    <div id="health-info" class="loading">Loading health info...</div>
+                    <div id="mq135-data" class="sensor-value">--</div>
+                    <button id="mq135-read-btn" class="action-btn">Take Air Quality Reading</button>
                 </div>
             </div>
         </div>
     </div>
-
-    <script src="index.js"></script>
+    <script src="sensors.js" defer></script>
 </body>
 </html>

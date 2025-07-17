@@ -1,136 +1,168 @@
-// Automatically load dashboard data on page load
-window.addEventListener('DOMContentLoaded', async () => {
+// Dashboard cards removed; no JS needed on index page.
+// sensors.js - JS for index.html (formerly sensors.html)
+// Only handles BME280, Soil Moisture, and MQ135 sensors
+
+async function updateSensors() {
     try {
-        const response = await fetch('/api/status');
-        const data = await response.json();
-        updateDeviceAndSystemInfo(data);
-        updateSystemTime(data);
-        updateNetworkInfo(data);
-        updateFilesystemInfo(data);
-        updateHealthInfo(data);
-        updateI2CInfo(data);
-    } catch (error) {
-        console.error('Error fetching system info:', error);
-        if (typeof showError === 'function') showError('Failed to load system information');
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        // BME280
+        if (data.bme280 && data.bme280.last_reading) {
+            const r = data.bme280.last_reading;
+            let bmeHtml = '';
+            bmeHtml += `<b>Temperature:</b> ${r.temperature?.toFixed(2)} °C<br>`;
+            bmeHtml += `<b>Humidity:</b> ${r.humidity?.toFixed(2)} %<br>`;
+            bmeHtml += `<b>Pressure:</b> ${r.pressure?.toFixed(2)} hPa<br>`;
+            bmeHtml += `<b>Heat Index:</b> ${r.heat_index?.toFixed(2)} °C<br>`;
+            bmeHtml += `<b>Dew Point:</b> ${r.dew_point?.toFixed(2)} °C<br>`;
+            bmeHtml += `<b>Timestamp:</b> ${r.timestamp || '--'}<br>`;
+            document.getElementById('bme280-data').innerHTML = bmeHtml;
+        } else {
+            document.getElementById('bme280-data').textContent = '--';
+        }
+        // Soil Moisture
+        const soilBtn = document.getElementById('soilmoisture-read-btn');
+        if (data.soil_moisture) {
+            const s = data.soil_moisture;
+            let soilHtml = '';
+            let soilStateClass = 'soil-status-unknown';
+            let soilStateText = s.state || '--';
+            if (soilStateText.toLowerCase() === 'ok' || soilStateText.toLowerCase() === 'normal') {
+                soilStateClass = 'soil-status-ok';
+            } else if (soilStateText.toLowerCase() === 'dry') {
+                soilStateClass = 'soil-status-dry';
+            } else if (soilStateText.toLowerCase() === 'wet') {
+                soilStateClass = 'soil-status-wet';
+            } else {
+                soilStateClass = 'soil-status-unknown';
+            }
+            soilHtml += `<b>Percent:</b> ${s.percent !== undefined ? s.percent.toFixed(2) + ' %' : '--'}<br>`;
+            soilHtml += `<b>Raw Value:</b> ${s.raw !== undefined ? s.raw : '--'}<br>`;
+            soilHtml += `<b>Timestamp:</b> ${s.timestamp || '--'}<br>`;
+            soilHtml += `<b>State:</b> <span class="${soilStateClass}">${soilStateText}</span><br>`;
+            document.getElementById('soilmoisture-data').innerHTML = soilHtml;
+            if (soilBtn) {
+                if (s.state === 'stabilising' || s.state === 'reading') {
+                    soilBtn.disabled = true;
+                    soilBtn.textContent = 'Reading...';
+                } else {
+                    soilBtn.disabled = false;
+                    soilBtn.textContent = 'Take Soil Moisture Reading';
+                }
+            }
+        } else {
+            document.getElementById('soilmoisture-data').textContent = '--';
+            if (soilBtn) {
+                soilBtn.disabled = false;
+                soilBtn.textContent = 'Take Soil Moisture Reading';
+            }
+        }
+        // Air Quality
+        if (data.mq135) {
+            let mqHtml = '';
+            let airStateClass = 'air-status-unknown';
+            let airStateText = data.mq135.state || '--';
+            // Map state to class (customize as needed)
+            if (airStateText.toLowerCase() === 'good' || airStateText.toLowerCase() === 'ok' || airStateText.toLowerCase() === 'normal') {
+                airStateClass = 'air-status-good';
+            } else if (airStateText.toLowerCase() === 'moderate') {
+                airStateClass = 'air-status-moderate';
+            } else if (airStateText.toLowerCase() === 'poor' || airStateText.toLowerCase() === 'bad' || airStateText.toLowerCase() === 'danger') {
+                airStateClass = 'air-status-poor';
+            } else {
+                airStateClass = 'air-status-unknown';
+            }
+            mqHtml += `<b>AQI:</b> ${data.mq135.aqi_label || '--'}<br>`;
+            mqHtml += `<b>Timestamp:</b> ${data.mq135.timestamp || '--'}<br>`;
+            mqHtml += `<b>State:</b> <span class="${airStateClass}">${airStateText}</span><br>`;
+            if (data.mq135.state === 'warming_up') {
+                mqHtml += `<b>Warmup:</b> ${data.mq135.warmup_elapsed_sec || 0} / ${data.mq135.warmup_time_sec || 0} sec<br>`;
+            }
+            document.getElementById('mq135-data').innerHTML = mqHtml;
+            if (window.mqBtn) {
+                if (data.mq135.state === 'warming_up' || data.mq135.state === 'reading') {
+                    window.mqBtn.disabled = true;
+                    window.mqBtn.textContent = (data.mq135.state === 'warming_up') ? 'Warming up...' : 'Reading...';
+                } else {
+                    window.mqBtn.disabled = false;
+                    window.mqBtn.textContent = 'Take Air Quality Reading';
+                }
+            }
+        } else {
+            document.getElementById('mq135-data').textContent = '--';
+            if (window.mqBtn) {
+                window.mqBtn.disabled = false;
+                window.mqBtn.textContent = 'Take Air Quality Reading';
+            }
+        }
+    } catch (e) {
+        // Optionally show error
+    }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    updateSensors();
+    setInterval(updateSensors, 5000);
+
+    const bmeBtn = document.getElementById('bme280-read-btn');
+    if (bmeBtn) {
+        bmeBtn.addEventListener('click', async function() {
+            bmeBtn.disabled = true;
+            bmeBtn.textContent = 'Reading...';
+            try {
+                const res = await fetch('/api/bme280/trigger', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+                const data = await res.json();
+                if (data.result === 'ok') {
+                    let bmeHtml = '';
+                    bmeHtml += `<b>Temperature:</b> ${data.temperature?.toFixed(2)} °C<br>`;
+                    bmeHtml += `<b>Humidity:</b> ${data.humidity?.toFixed(2)} %<br>`;
+                    bmeHtml += `<b>Pressure:</b> ${data.pressure?.toFixed(2)} hPa<br>`;
+                    bmeHtml += `<b>Heat Index:</b> ${data.heat_index?.toFixed(2)} °C<br>`;
+                    bmeHtml += `<b>Dew Point:</b> ${data.dew_point?.toFixed(2)} °C<br>`;
+                    document.getElementById('bme280-data').innerHTML = bmeHtml;
+                    bmeBtn.textContent = 'Take BME280 Reading';
+                } else {
+                    bmeBtn.textContent = 'Error';
+                }
+            } catch (e) {
+                bmeBtn.textContent = 'Error';
+            }
+            setTimeout(() => {
+                bmeBtn.textContent = 'Take BME280 Reading';
+                bmeBtn.disabled = false;
+            }, 2000);
+        });
+    }
+
+    const soilBtn = document.getElementById('soilmoisture-read-btn');
+    if (soilBtn) {
+        soilBtn.addEventListener('click', async function() {
+            soilBtn.disabled = true;
+            soilBtn.textContent = 'Reading...';
+            try {
+                await fetch('/api/soilmoisture/trigger', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+                // No need to handle response, updateSensors will poll and update state
+            } catch (e) {
+                soilBtn.textContent = 'Error';
+                soilBtn.disabled = false;
+            }
+        });
+    }
+
+    // MQ135 Air Quality button handler - only attach once
+    window.mqBtn = document.getElementById('mq135-read-btn');
+    if (window.mqBtn) {
+        window.mqBtn.addEventListener('click', async function() {
+            window.mqBtn.disabled = true;
+            window.mqBtn.textContent = 'Warming up...';
+            try {
+                await fetch('/api/mq135/trigger', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+                // No need to handle response, updateSensors will poll and update state
+            } catch (e) {
+                window.mqBtn.textContent = 'Error';
+                window.mqBtn.disabled = false;
+            }
+        });
     }
 });
-// index.js - JS for index.html
-
-
-function updateDeviceAndSystemInfo(data) {
-    const deviceInfoEl = document.getElementById('device-info');
-    const deviceName = data.config?.device_name || 'Unknown Device';
-    const sys = data.system || {};
-    deviceInfoEl.innerHTML = `
-        <div><strong>Device Name:</strong> <span class="value">${deviceName}</span></div>
-        <div><strong>Chip ID:</strong> <span class="value">${sys.chip_id || 'N/A'}</span></div>
-        <div><strong>Free Heap:</strong> <span class="value">${formatBytes(sys.free_heap || 0)}</span></div>
-        <div><strong>Uptime:</strong> <span class="value">${formatUptime(sys.uptime_ms || 0)}</span></div>
-        <div><strong>Chip Revision:</strong> <span class="value">${sys.chip_revision ?? 'N/A'}</span></div>
-        <div><strong>CPU Freq:</strong> <span class="value">${sys.cpu_freq_mhz ? sys.cpu_freq_mhz + ' MHz' : 'N/A'}</span></div>
-        <div><strong>Flash Size:</strong> <span class="value">${formatBytes(sys.flash_chip_size || 0)}</span></div>
-        <div><strong>SDK Version:</strong> <span class="value">${sys.sdk_version || 'N/A'}</span></div>
-        <div><strong>Sketch Size:</strong> <span class="value">${formatBytes(sys.sketch_size || 0)}</span></div>
-        <div><strong>Sketch Free:</strong> <span class="value">${formatBytes(sys.sketch_free_space || 0)}</span></div>
-    `;
-}
-
-function updateSystemTime(data) {
-    const systemTimeEl = document.getElementById('system-time');
-    const humanDate = data.date_human || 'Unknown';
-    const humanTime = data.time_human || 'Unknown';
-    systemTimeEl.innerHTML = `
-        <div><strong>Date:</strong> <span class="value">${humanDate}</span></div>
-        <div><strong>Time:</strong> <span class="value">${humanTime}</span></div>
-    `;
-}
-
-function updateNetworkInfo(data) {
-    const net = data.network || {};
-    const el = document.getElementById('network-info');
-    if (!el) return;
-    el.innerHTML = `
-        <div><strong>Mode:</strong> <span class="value">${net.mode || 'N/A'}</span></div>
-        <div><strong>SSID:</strong> <span class="value">${net.ssid || 'N/A'}</span></div>
-        <div><strong>IP:</strong> <span class="value">${net.ip || 'N/A'}</span></div>
-        <div><strong>MAC:</strong> <span class="value">${net.mac || 'N/A'}</span></div>
-        <div><strong>Connected:</strong> <span class="value">${net.connected ? 'Yes' : 'No'}</span></div>
-        <div><strong>AP Active:</strong> <span class="value">${net.ap_active ? 'Yes' : 'No'}</span></div>
-        <div><strong>AP Clients:</strong> <span class="value">${net.ap_clients ?? 'N/A'}</span></div>
-    `;
-}
-
-function updateFilesystemInfo(data) {
-    const fs = data.filesystem || {};
-    const el = document.getElementById('filesystem-info');
-    if (!el) return;
-    el.innerHTML = `
-        <div><strong>Total:</strong> <span class="value">${formatBytes(fs.total_bytes || 0)}</span></div>
-        <div><strong>Used:</strong> <span class="value">${formatBytes(fs.used_bytes || 0)}</span></div>
-        <div><strong>Free:</strong> <span class="value">${formatBytes(fs.free_bytes || 0)}</span></div>
-    `;
-}
-
-function updateHealthInfo(data) {
-    const health = data.health || {};
-    const el = document.getElementById('health-info');
-    if (!el) return;
-    let healthHtml = '';
-    if (Object.keys(health).length > 0) {
-        healthHtml += `<div><strong>Config:</strong> <span class="value">${health.Config ? 'OK' : 'Fail'}</span></div>`;
-        healthHtml += `<div><strong>FileSystem:</strong> <span class="value">${health.FileSystem ? 'OK' : 'Fail'}</span></div>`;
-        healthHtml += `<div><strong>Overall:</strong> <span class="value">${health.overall ? 'OK' : 'Fail'}</span></div>`;
-    } else {
-        healthHtml = 'No health info';
-    }
-    el.innerHTML = healthHtml;
-}
-
-function updateI2CInfo(data) {
-    const i2c = data.i2c || {};
-    const el = document.getElementById('i2c-info');
-    if (!el) return;
-    let i2cHtml = '';
-    // Removed SDA/SCL pin display
-    if (Array.isArray(i2c.devices) && i2c.devices.length > 0) {
-        i2c.devices.forEach(dev => {
-            i2cHtml += `<div><strong>Device:</strong> <span class="value">${dev.name || 'Unknown'} (${dev.address || 'N/A'})</span></div>`;
-        });
-    } else {
-        i2cHtml += '<div>No I2C devices found</div>';
-    }
-    el.innerHTML = i2cHtml;
-}
-
-function formatBytes(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-function formatUptime(ms) {
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-    if (days > 0) return `${days}d ${hours % 24}h ${minutes % 60}m`;
-    if (hours > 0) return `${hours}h ${minutes % 60}m`;
-    if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
-    return `${seconds}s`;
-}
-
-function showError(message) {
-    document.getElementById('device-info').innerHTML = `<div class="error">${message}</div>`;
-    document.getElementById('system-time').innerHTML = `<div class="error">${message}</div>`;
-    const netEl = document.getElementById('network-info');
-    if (netEl) netEl.innerHTML = `<div class="error">${message}</div>`;
-    const fsEl = document.getElementById('filesystem-info');
-    if (fsEl) fsEl.innerHTML = `<div class="error">${message}</div>`;
-    const healthEl = document.getElementById('health-info');
-    if (healthEl) healthEl.innerHTML = `<div class="error">${message}</div>`;
-    const i2cEl = document.getElementById('i2c-info');
-    if (i2cEl) i2cEl.innerHTML = `<div class="error">${message}</div>`;
-}
 
