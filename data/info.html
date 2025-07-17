@@ -13,10 +13,7 @@
             <h1>System Information</h1>
             <nav>
                 <a href="index.html">Home</a>
-                <a href="sensors.html">Sensors</a>
-                <a href="led.html">LED</a>
                 <a href="relay.html">Relay</a>
-                <a href="touch.html">Touch</a>
                 <a href="irrigation.html">Irrigation</a>
                 <a href="config.html">Config</a>
                 <a href="info.html" class="active">Info</a>
@@ -90,6 +87,17 @@
                         <button id="led-blink" type="button">Blink</button>
                     </div>
                     <div id="led-blink-rate" class="led-blink-rate" style="margin-top:1rem; font-size:1.1em; color:#555;"></div>
+                </div>
+            </div>
+            <!-- Touch Sensor Card (migrated from touch.html) -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Current State</div>
+                </div>
+                <div class="card-content">
+                    <div id="touch-indicator" class="touch-indicator"></div>
+                    <div id="touch-state" class="sensor-value">Loading...</div>
+                    <div id="touch-long-press" class="sensor-value"></div>
                 </div>
             </div>
         </div>

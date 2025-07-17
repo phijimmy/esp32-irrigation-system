@@ -407,16 +407,10 @@ void WebServerManager::begin() {
     server->on("/index.js", HTTP_GET, [this](AsyncWebServerRequest* request) {
         handleStaticFile(request);
     });
-    server->on("/touch.js", HTTP_GET, [this](AsyncWebServerRequest* request) {
-        handleStaticFile(request);
-    });
     server->on("/irrigation.js", HTTP_GET, [this](AsyncWebServerRequest* request) {
         handleStaticFile(request);
     });
     server->on("/config.js", HTTP_GET, [this](AsyncWebServerRequest* request) {
-        handleStaticFile(request);
-    });
-    server->on("/touch.html", HTTP_GET, [this](AsyncWebServerRequest* request) {
         handleStaticFile(request);
     });
     server->on("/irrigation.html", HTTP_GET, [this](AsyncWebServerRequest* request) {
