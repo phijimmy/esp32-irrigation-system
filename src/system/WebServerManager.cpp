@@ -404,19 +404,10 @@ void WebServerManager::begin() {
     server->on("/relay.js", HTTP_GET, [this](AsyncWebServerRequest* request) {
         handleStaticFile(request);
     });
-    server->on("/led.html", HTTP_GET, [this](AsyncWebServerRequest* request) {
-        handleStaticFile(request);
-    });
-    server->on("/led.js", HTTP_GET, [this](AsyncWebServerRequest* request) {
-        handleStaticFile(request);
-    });
     server->on("/index.js", HTTP_GET, [this](AsyncWebServerRequest* request) {
         handleStaticFile(request);
     });
     server->on("/touch.js", HTTP_GET, [this](AsyncWebServerRequest* request) {
-        handleStaticFile(request);
-    });
-    server->on("/sensors.js", HTTP_GET, [this](AsyncWebServerRequest* request) {
         handleStaticFile(request);
     });
     server->on("/irrigation.js", HTTP_GET, [this](AsyncWebServerRequest* request) {
