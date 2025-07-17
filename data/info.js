@@ -9,11 +9,89 @@ window.addEventListener('DOMContentLoaded', async () => {
         updateFilesystemInfo(data);
         updateHealthInfo(data);
         updateI2CInfo(data);
+        updateLedIndicator(data.led);
     } catch (error) {
         console.error('Error fetching system info:', error);
         if (typeof showError === 'function') showError('Failed to load system information');
     }
+    // LED card event listeners (ensure only one set)
+    const ledOnBtn = document.getElementById('led-on');
+    const ledOffBtn = document.getElementById('led-off');
+    const ledBlinkBtn = document.getElementById('led-blink');
+    if (ledOnBtn) {
+        ledOnBtn.onclick = function() { sendLedCommand('on'); };
+    }
+    if (ledOffBtn) {
+        ledOffBtn.onclick = function() { sendLedCommand('off'); };
+    }
+    if (ledBlinkBtn) {
+        ledBlinkBtn.onclick = function() { sendLedCommand('blink'); };
+    }
 });
+function sendLedCommand(command) {
+    fetch('/api/led', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command })
+    })
+    .then(r => r.json())
+    .then(() => setTimeout(refreshLedStatus, 200)); // slight delay for backend update
+}
+function refreshLedStatus() {
+    fetch('/api/status')
+        .then(response => response.json())
+        .then(data => {
+            updateLedIndicator(data.led);
+        })
+        .catch(err => {
+            const indicator = document.getElementById('led-indicator');
+            if (indicator) {
+                indicator.textContent = 'Failed to load LED data';
+                indicator.style.background = '#ccc';
+            }
+        });
+}
+function updateLedIndicator(led) {
+    const indicator = document.getElementById('led-indicator');
+    const blinkRateDiv = document.getElementById('led-blink-rate');
+    if (!indicator) return;
+    indicator.textContent = '';
+    indicator.className = 'led-indicator';
+    if (!led) {
+        indicator.style.background = '#ccc';
+        indicator.title = 'No LED data available';
+        if (blinkRateDiv) blinkRateDiv.textContent = '';
+        return;
+    }
+    // Set color and animation based on state/mode
+    if (led.mode === 'blink') {
+        indicator.classList.add('led-blink');
+        indicator.style.background = '#ffd700'; // yellow for blinking
+        indicator.title = 'Blinking';
+        // Set animation duration to match configured blink rate (full cycle = 2x blink_rate)
+        if (typeof led.blink_rate === 'number' && led.blink_rate > 0) {
+            indicator.style.animationDuration = (led.blink_rate * 2) + 'ms';
+        } else {
+            indicator.style.animationDuration = '';
+        }
+    } else if (led.state === 'on') {
+        indicator.style.background = '#4caf50'; // green for on
+        indicator.title = 'On';
+        indicator.style.animationDuration = '';
+    } else {
+        indicator.style.background = '#b0b0b0'; // gray for off
+        indicator.title = 'Off';
+        indicator.style.animationDuration = '';
+    }
+    // Show blink rate if available
+    if (blinkRateDiv) {
+        if (typeof led.blink_rate === 'number' && led.blink_rate > 0) {
+            blinkRateDiv.textContent = `Blink Rate: ${led.blink_rate} ms`;
+        } else {
+            blinkRateDiv.textContent = '';
+        }
+    }
+}
 // index.js - JS for index.html
 
 function updateDeviceAndSystemInfo(data) {

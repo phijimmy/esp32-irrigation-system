@@ -327,3 +327,25 @@ body {
   transition: background 0.2s, box-shadow 0.2s;
   display: block;
 }
+
+/* LED controls custom styles (from led.html) */
+.led-controls button {
+    font-size: 1.18em;
+    padding: 0.7em 2.2em;
+    border-radius: 0.5em;
+    margin: 0 0.5em 0.5em 0;
+    background: #2980b9;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.led-controls button:active {
+    background: #145a86;
+}
+@media (max-width: 600px) {
+    .led-controls button {
+        font-size: 1.08em;
+        padding: 0.7em 1.2em;
+    }
+}
