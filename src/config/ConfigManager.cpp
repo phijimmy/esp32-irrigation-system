@@ -133,6 +133,13 @@ void ConfigManager::loadDefaults() {
     // Schedule settings
     cJSON_AddBoolToObject(configRoot, "use_weekly_schedule", true); // Use 7-day schedule instead of single alarms
     cJSON_AddBoolToObject(configRoot, "auto_update_daily", true); // Auto-update alarms at midnight
+
+    // MQTT settings
+    cJSON_AddBoolToObject(configRoot, "mqtt_enabled", false); // MQTT disabled by default
+    cJSON_AddStringToObject(configRoot, "mqtt_server", "192.168.1.100"); // Default MQTT broker IP
+    cJSON_AddNumberToObject(configRoot, "mqtt_port", 1883); // Default MQTT port
+    cJSON_AddStringToObject(configRoot, "mqtt_username", ""); // Default username empty
+    cJSON_AddStringToObject(configRoot, "mqtt_password", ""); // Default password empty
     
     // Legacy string-based configs for backward compatibility
     cJSON_AddStringToObject(configRoot, "wifi_mode", "ap"); // "ap" for Access Point, "client" for WiFi Client
@@ -347,6 +354,23 @@ void ConfigManager::mergeDefaults() {
     // Legacy string-based configs for backward compatibility
     if (!cJSON_HasObjectItem(configRoot, "wifi_mode")) {
         cJSON_AddStringToObject(configRoot, "wifi_mode", "ap");
+    }
+
+    // MQTT settings
+    if (!cJSON_HasObjectItem(configRoot, "mqtt_enabled")) {
+        cJSON_AddBoolToObject(configRoot, "mqtt_enabled", false);
+    }
+    if (!cJSON_HasObjectItem(configRoot, "mqtt_server")) {
+        cJSON_AddStringToObject(configRoot, "mqtt_server", "192.168.1.100");
+    }
+    if (!cJSON_HasObjectItem(configRoot, "mqtt_port")) {
+        cJSON_AddNumberToObject(configRoot, "mqtt_port", 1883);
+    }
+    if (!cJSON_HasObjectItem(configRoot, "mqtt_username")) {
+        cJSON_AddStringToObject(configRoot, "mqtt_username", "");
+    }
+    if (!cJSON_HasObjectItem(configRoot, "mqtt_password")) {
+        cJSON_AddStringToObject(configRoot, "mqtt_password", "");
     }
     if (!cJSON_HasObjectItem(configRoot, "wifi_ssid")) {
         cJSON_AddStringToObject(configRoot, "wifi_ssid", "M1M-LS-MR-82");

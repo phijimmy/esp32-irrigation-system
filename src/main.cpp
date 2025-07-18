@@ -11,14 +11,17 @@
 #include "system/ReadingManager.h"
 
 #include "system/WebServerManager.h"
+// Add MQTT Manager include
+#include "system/MqttManager.h"
 
 SystemManager systemManager;
 LedDevice led;
 TouchSensorDevice touch;
 RelayController relayController;
 SoilMoistureSensor soilMoistureSensor;
-
 MQ135Sensor mq135Sensor;
+// Add global MqttManager instance
+MqttManager mqttManager;
 bool soilReadingTaken = false;
 bool soilReadingRequested = false;
 bool mq135ReadingTaken = false;
@@ -152,11 +155,10 @@ void setup() {
 }
 
 void loop() {
-    // ...existing code...
-
     systemManager.update();
     static ReadingManager* readingManager = nullptr;
     static bool readingManagerInitialized = false;
+    static bool mqttManagerInitialized = false;
     DateTime now = systemManager.getTimeManager().getTime();
     int year = now.year();
 
@@ -219,7 +221,7 @@ void loop() {
                 }
                 break;
             }
-            case INIT_MQ135_DONE:
+            case INIT_MQ135_DONE: {
                 mq135Sensor.setWarmupTimeSec(originalMQ135Warmup);
                 Serial.println("[INIT] All sensors initialized!");
                 sensorsInitialized = true;
@@ -241,7 +243,32 @@ void loop() {
                 dashboard->begin();
                 Serial.println("[DashboardManager] JSON status:");
                 Serial.println(dashboard->getStatusString());
+
+                // --- MqttManager initialization: moved here to guarantee execution ---
+                const char* mqttEnabledStr = systemManager.getConfigManager().get("mqtt_enabled");
+                bool mqttEnabled = mqttEnabledStr && (strcmp(mqttEnabledStr, "true") == 0 || strcmp(mqttEnabledStr, "1") == 0);
+                if (mqttEnabled) {
+                    const char* deviceNameCStr = systemManager.getConfigManager().get("device_name");
+                    std::string deviceName = deviceNameCStr ? deviceNameCStr : "esp32_device";
+                    std::vector<std::string> relayNames;
+                    cJSON* relayNamesArr = cJSON_GetObjectItemCaseSensitive(systemManager.getConfigManager().getRoot(), "relay_names");
+                    if (relayNamesArr && cJSON_IsArray(relayNamesArr)) {
+                        int arrSize = cJSON_GetArraySize(relayNamesArr);
+                        for (int i = 0; i < arrSize; ++i) {
+                            cJSON* item = cJSON_GetArrayItem(relayNamesArr, i);
+                            if (cJSON_IsString(item)) relayNames.push_back(item->valuestring);
+                        }
+                    } else {
+                        relayNames = {"Zone 1", "Zone 2", "Zone 3", "Zone 4"};
+                    }
+                    mqttManager.begin(deviceName, relayNames, &systemManager.getConfigManager());
+                    mqttManager.setInitialized(true);
+                    // Set flag so loop MQTT logic runs
+                    mqttManagerInitialized = true;
+                    Serial.println("[MqttManager] Home Assistant discovery published for relays.");
+                }
                 break;
+            }
             case INIT_COMPLETE:
                 break;
         }
@@ -255,6 +282,58 @@ void loop() {
         webServerManager->begin();
         webServerStarted = true;
         Serial.println("[WebServerManager] Started after valid sensor data detected.");
+    }
+    // --- ReadingManager initialization ---
+    if (!readingManagerInitialized) {
+        Serial.printf("[DEBUG] RM? sensorsInitialized=%d, webServerStarted=%d, dashboard=%p, dashboard->hasValidSensorData()=%d\n",
+            sensorsInitialized, webServerStarted, dashboard, (dashboard ? dashboard->hasValidSensorData() : -1));
+    }
+    if (!readingManagerInitialized && sensorsInitialized && webServerStarted) {
+        Serial.println("[DEBUG] Initializing ReadingManager...");
+        readingManager = new ReadingManager(systemManager.getDeviceManager().getBME280Device(), &soilMoistureSensor);
+        readingManager->begin();
+        readingManagerInitialized = true;
+        char timeStr[32] = "";
+        snprintf(timeStr, sizeof(timeStr), "%04d-%02d-%02d %02d:%02d:%02d", now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second());
+
+        // --- MqttManager initialization: moved here to guarantee execution after ReadingManager ---
+        Serial.printf("[DEBUG] MQTT init check: mqttManagerInitialized=%d, webServerStarted=%d, dashboard=%p, dashboard->hasValidSensorData()=%d\n",
+            mqttManagerInitialized, webServerStarted, dashboard, (dashboard ? dashboard->hasValidSensorData() : -1));
+        // Robust MQTT enabled detection: handle boolean and string
+        cJSON* mqttEnabledItem = cJSON_GetObjectItemCaseSensitive(systemManager.getConfigManager().getRoot(), "mqtt_enabled");
+        bool mqttEnabled = false;
+        if (mqttEnabledItem) {
+            if (cJSON_IsBool(mqttEnabledItem)) {
+                mqttEnabled = cJSON_IsTrue(mqttEnabledItem);
+            } else if (cJSON_IsString(mqttEnabledItem)) {
+                const char* val = mqttEnabledItem->valuestring;
+                mqttEnabled = val && (strcmp(val, "true") == 0 || strcmp(val, "1") == 0);
+            }
+        }
+        Serial.printf("[DEBUG] MQTT config: mqtt_enabledItem type=%d, value='%s'\n", mqttEnabledItem ? mqttEnabledItem->type : -1, mqttEnabledItem && cJSON_IsString(mqttEnabledItem) ? mqttEnabledItem->valuestring : "(not string)");
+        if (!mqttManagerInitialized && webServerStarted && dashboard && dashboard->hasValidSensorData()) {
+            Serial.printf("[DEBUG] MQTT enabled: %d\n", mqttEnabled);
+            if (mqttEnabled) {
+                const char* deviceNameCStr = systemManager.getConfigManager().get("device_name");
+                std::string deviceName = deviceNameCStr ? deviceNameCStr : "esp32_device";
+                std::vector<std::string> relayNames;
+                cJSON* relayNamesArr = cJSON_GetObjectItemCaseSensitive(systemManager.getConfigManager().getRoot(), "relay_names");
+                if (relayNamesArr && cJSON_IsArray(relayNamesArr)) {
+                    int arrSize = cJSON_GetArraySize(relayNamesArr);
+                    for (int i = 0; i < arrSize; ++i) {
+                        cJSON* item = cJSON_GetArrayItem(relayNamesArr, i);
+                        if (cJSON_IsString(item)) relayNames.push_back(item->valuestring);
+                    }
+                } else {
+                    relayNames = {"Zone 1", "Zone 2", "Zone 3", "Zone 4"};
+                }
+                Serial.printf("[DEBUG] MQTT begin: deviceName='%s', relayNames.size=%d\n", deviceName.c_str(), (int)relayNames.size());
+                mqttManager.begin(deviceName, relayNames, &systemManager.getConfigManager());
+                mqttManager.setInitialized(true);
+                mqttManagerInitialized = true;
+                Serial.println("[MqttManager] Home Assistant discovery published for relays.");
+            }
+        }
     }
 
     // --- ReadingManager initialization ---
@@ -270,8 +349,35 @@ void loop() {
         char timeStr[32] = "";
         snprintf(timeStr, sizeof(timeStr), "%04d-%02d-%02d %02d:%02d:%02d", now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second());
         Serial.printf("[ReadingManager] Initialized at %s after sensors and web server ready.\n", timeStr);
+
+        // --- MqttManager initialization: moved here to guarantee execution after everything else ---
+        if (!mqttManagerInitialized) {
+            const char* mqttEnabledStr = systemManager.getConfigManager().get("mqtt_enabled");
+            bool mqttEnabled = mqttEnabledStr && (strcmp(mqttEnabledStr, "true") == 0 || strcmp(mqttEnabledStr, "1") == 0);
+            if (mqttEnabled) {
+                const char* deviceNameCStr = systemManager.getConfigManager().get("device_name");
+                std::string deviceName = deviceNameCStr ? deviceNameCStr : "esp32_device";
+                std::vector<std::string> relayNames;
+                cJSON* relayNamesArr = cJSON_GetObjectItemCaseSensitive(systemManager.getConfigManager().getRoot(), "relay_names");
+                if (relayNamesArr && cJSON_IsArray(relayNamesArr)) {
+                    int arrSize = cJSON_GetArraySize(relayNamesArr);
+                    for (int i = 0; i < arrSize; ++i) {
+                        cJSON* item = cJSON_GetArrayItem(relayNamesArr, i);
+                        if (cJSON_IsString(item)) relayNames.push_back(item->valuestring);
+                    }
+                } else {
+                    relayNames = {"Zone 1", "Zone 2", "Zone 3", "Zone 4"};
+                }
+                mqttManager.begin(deviceName, relayNames, &systemManager.getConfigManager());
+                mqttManager.setInitialized(true);
+                mqttManagerInitialized = true;
+                Serial.println("[MqttManager] Home Assistant discovery published for relays.");
+            }
+        }
     }
     if (readingManagerInitialized && readingManager) readingManager->loop(now);
+    // MQTT loop
+    if (mqttManagerInitialized) mqttManager.loop();
     
     if (sensorsInitialized && initState == INIT_COMPLETE) {
         irrigationManager.update();

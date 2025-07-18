@@ -372,6 +372,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 minuteSelect.value = config.irrigation_scheduled_minute;
             }
 
+            // --- Populate MQTT Card ---
+            if (document.getElementById('mqtt-enabled')) document.getElementById('mqtt-enabled').checked = !!config.mqtt_enabled;
+            if (document.getElementById('mqtt-server')) document.getElementById('mqtt-server').value = config.mqtt_server || '';
+            if (document.getElementById('mqtt-port')) document.getElementById('mqtt-port').value = config.mqtt_port || 1883;
+            if (document.getElementById('mqtt-username')) document.getElementById('mqtt-username').value = config.mqtt_username || '';
+            if (document.getElementById('mqtt-password')) document.getElementById('mqtt-password').value = config.mqtt_password || '';
+
 
 
             // Save config handler
@@ -418,6 +425,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     newConfig.led_blink_rate = parseInt(document.getElementById('led-blink-rate').value);
                     // Touch
                     newConfig.touch_gpio = parseInt(document.getElementById('touch-gpio').value);
+                    // MQTT
+                    newConfig.mqtt_enabled = document.getElementById('mqtt-enabled').checked;
+                    newConfig.mqtt_server = document.getElementById('mqtt-server').value;
+                    newConfig.mqtt_port = parseInt(document.getElementById('mqtt-port').value);
+                    newConfig.mqtt_username = document.getElementById('mqtt-username').value;
+                    newConfig.mqtt_password = document.getElementById('mqtt-password').value;
                     newConfig.touch_long_press = parseInt(document.getElementById('touch-long-press').value);
                     newConfig.touch_threshold = parseInt(document.getElementById('touch-threshold').value);
                     // System

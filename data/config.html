@@ -162,7 +162,6 @@
         </div>
         <form id="config-form">
         <div class="cards-grid">
-            <!-- ...existing cards... -->
             <div class="card">
                 <div class="card-header">
                     <div class="card-icon info-icon">🌐</div>
@@ -188,6 +187,24 @@
                         <label for="ap-timeout">AP Timeout (seconds):</label>
                         <input type="number" id="ap-timeout" name="ap-timeout" min="0"><br>
                     </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">🔗</div>
+                    <div class="card-title">MQTT</div>
+                </div>
+                <div class="card-content">
+                    <label for="mqtt-enabled">Enable MQTT:</label>
+                    <input type="checkbox" id="mqtt-enabled" name="mqtt-enabled"><br>
+                    <label for="mqtt-server">Server IP/Host:</label>
+                    <input type="text" id="mqtt-server" name="mqtt-server" autocomplete="off"><br>
+                    <label for="mqtt-port">Port:</label>
+                    <input type="number" id="mqtt-port" name="mqtt-port" min="1" max="65535"><br>
+                    <label for="mqtt-username">Username:</label>
+                    <input type="text" id="mqtt-username" name="mqtt-username" autocomplete="off"><br>
+                    <label for="mqtt-password">Password:</label>
+                    <input type="password" id="mqtt-password" name="mqtt-password" autocomplete="off"><br>
                 </div>
             </div>
 
