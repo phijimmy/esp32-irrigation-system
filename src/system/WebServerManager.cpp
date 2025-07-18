@@ -1,4 +1,5 @@
 #include "system/WebServerManager.h"
+#include "system/MqttManager.h"
 #include <Arduino.h>
 
 
@@ -264,10 +265,18 @@ void WebServerManager::begin() {
                 result = -2;
             } else if (command == "on") {
                 relayControllerPtr->setRelayMode(relay, Relay::ON);
+                extern MqttManager mqttManager;
+                mqttManager.publishRelayState(relay, true);
             } else if (command == "off") {
                 relayControllerPtr->setRelayMode(relay, Relay::OFF);
+                extern MqttManager mqttManager;
+                mqttManager.publishRelayState(relay, false);
             } else if (command == "toggle") {
                 relayControllerPtr->toggleRelay(relay);
+                extern MqttManager mqttManager;
+                // After toggling, publish the new state
+                bool newState = relayControllerPtr->getRelayState(relay);
+                mqttManager.publishRelayState(relay, newState);
             } else {
                 result = -1;
             }
