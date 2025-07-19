@@ -2,6 +2,12 @@
 
 #include "devices/BME280Device.h"
 
+#include "system/MqttManager.h"
+extern MqttManager mqttManager;
+// Ensure SystemManager type is visible for extern
+#include "system/SystemManager.h"
+extern SystemManager systemManager;
+
 void BME280Device::forceIdle() {
     state = READY;
 }
@@ -89,6 +95,24 @@ BME280Reading BME280Device::readData() {
     bme.setSampling(Adafruit_BME280::MODE_SLEEP, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::FILTER_X16, Adafruit_BME280::STANDBY_MS_0_5);
     if (i2cManager && i2cManager->getI2CMutex()) xSemaphoreGive(i2cManager->getI2CMutex());
     state = READY;
+    // Publish averaged temperature to MQTT/Home Assistant only if MQTT is enabled and in client mode
+    if (lastReading.valid) {
+        const char* wifiMode = systemManager.getConfigManager().get("wifi_mode");
+        cJSON* mqttEnabledItem = cJSON_GetObjectItemCaseSensitive(systemManager.getConfigManager().getRoot(), "mqtt_enabled");
+        bool mqttEnabled = false;
+        if (mqttEnabledItem) {
+            if (cJSON_IsBool(mqttEnabledItem)) {
+                mqttEnabled = cJSON_IsTrue(mqttEnabledItem);
+            } else if (cJSON_IsString(mqttEnabledItem)) {
+                const char* val = mqttEnabledItem->valuestring;
+                mqttEnabled = val && (strcmp(val, "true") == 0 || strcmp(val, "1") == 0);
+            }
+        }
+        bool isClientMode = wifiMode && (strcmp(wifiMode, "client") == 0 || strcmp(wifiMode, "wifi") == 0);
+        if (mqttEnabled && isClientMode && mqttManager.isInitialized()) {
+            mqttManager.publishBME280Temperature(lastReading.avgTemperature);
+        }
+    }
     return result;
 }
 

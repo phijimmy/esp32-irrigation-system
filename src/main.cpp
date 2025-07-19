@@ -263,6 +263,15 @@ void loop() {
                     }
                     mqttManager.begin(deviceName, relayNames, &systemManager.getConfigManager());
                     mqttManager.setInitialized(true);
+                    // Publish initial BME280 temperature to Home Assistant
+                    BME280Device* bme = systemManager.getDeviceManager().getBME280Device();
+                    if (bme) {
+                        BME280Reading r = bme->getLastReading();
+                        if (r.valid) {
+                            mqttManager.publishBME280Temperature(r.avgTemperature);
+                            Serial.printf("[MqttManager] Initial BME280 temperature published to Home Assistant: %.2fC\n", r.avgTemperature);
+                        }
+                    }
                     // Set flag so loop MQTT logic runs
                     mqttManagerInitialized = true;
                     Serial.println("[MqttManager] Home Assistant discovery published for relays.");

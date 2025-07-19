@@ -13,6 +13,8 @@ public:
     void loop();
     void setInitialized(bool initialized);
     bool isInitialized() const;
+    void publishDiscoveryForBME280Temperature();
+    void publishBME280Temperature(float temperature);
 private:
     std::string deviceName;
     std::vector<std::string> relayNames;

@@ -1,7 +1,11 @@
+// Implementation moved after constructor and includes
+
 // Includes
 #include <Arduino.h>
 #include "system/MqttManager.h"
 #include "devices/RelayController.h"
+#include "devices/BME280Device.h"
+#include "system/SystemManager.h"
 #include <cJSON.h>
 #include <string>
 #include <vector>
@@ -20,7 +24,43 @@ std::string mqttPass;
 std::string deviceName;
 std::vector<std::string> relayNames;
 
+extern SystemManager systemManager;
+
 MqttManager::MqttManager() : initialized(false) {}
+
+// Publish Home Assistant MQTT Discovery for BME280 temperature sensor
+void MqttManager::publishDiscoveryForBME280Temperature() {
+    char state_topic[128], availability_topic[128], topic[128], unique_id[128];
+    snprintf(state_topic, sizeof(state_topic), "homeassistant/%s/bme280_temperature/state", deviceName.c_str());
+    snprintf(availability_topic, sizeof(availability_topic), "homeassistant/esp32/%s/availability", deviceName.c_str());
+    snprintf(topic, sizeof(topic), "homeassistant/sensor/%s_bme280_temperature/config", deviceName.c_str());
+    snprintf(unique_id, sizeof(unique_id), "%s_bme280_temperature", deviceName.c_str());
+    cJSON* root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "name", "BME280 Temperature");
+    cJSON_AddStringToObject(root, "state_topic", state_topic);
+    cJSON_AddStringToObject(root, "unit_of_measurement", "°C");
+    cJSON_AddStringToObject(root, "device_class", "temperature");
+    cJSON_AddStringToObject(root, "availability_topic", availability_topic);
+    cJSON_AddStringToObject(root, "payload_available", "online");
+    cJSON_AddStringToObject(root, "payload_not_available", "offline");
+    cJSON_AddStringToObject(root, "unique_id", unique_id);
+    cJSON* device = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, "device", device);
+    cJSON_AddItemToArray(cJSON_AddArrayToObject(device, "identifiers"), cJSON_CreateString(deviceName.c_str()));
+    cJSON_AddStringToObject(device, "manufacturer", "Binghe");
+    cJSON_AddStringToObject(device, "model", "LC-Relay-ESP32-4R-A2");
+    cJSON_AddStringToObject(device, "name", deviceName.c_str());
+    publish(topic, root);
+}
+
+// Publish BME280 temperature value to MQTT
+void MqttManager::publishBME280Temperature(float temperature) {
+    char topic[128];
+    snprintf(topic, sizeof(topic), "homeassistant/%s/bme280_temperature/state", deviceName.c_str());
+    char payload[16];
+    snprintf(payload, sizeof(payload), "%.2f", temperature);
+    publish(topic, payload);
+}
 
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
     std::string payloadStr((char*)payload, length);
@@ -98,9 +138,21 @@ void MqttManager::setInitialized(bool init) {
 
         // Publish config topics for Home Assistant with retain=true
         publishDiscovery();
+        // Publish BME280 temperature sensor discovery for Home Assistant
+        publishDiscoveryForBME280Temperature();
 
         // Wait 1 second to ensure Home Assistant processes config before state
         delay(1000);
+
+        // Publish last BME280 temperature reading to Home Assistant
+        BME280Device* bme = systemManager.getDeviceManager().getBME280Device();
+        if (bme) {
+            BME280Reading r = bme->getLastReading();
+            if (r.valid) {
+                publishBME280Temperature(r.avgTemperature);
+                Serial.printf("[MqttManager] Initial BME280 temperature published to Home Assistant: %.2fC\n", r.avgTemperature);
+            }
+        }
 
         // Publish initial relay states so Home Assistant sees them as available
         extern RelayController relayController;
@@ -156,19 +208,55 @@ void MqttManager::publishDiscoveryForRelay(int relayIndex) {
 }
 
 void MqttManager::publishRelayState(int relayIndex, bool state) {
-    char topic[128];
-    snprintf(topic, sizeof(topic), "homeassistant/%s/relay%d/state", deviceName.c_str(), relayIndex + 1);
-    publish(topic, state ? "ON" : "OFF");
+    // Check config before publishing relay state
+    cJSON* config = systemManager.getConfigManager().getRoot();
+    cJSON* wifiModeItem = cJSON_GetObjectItemCaseSensitive(config, "wifi_mode");
+    cJSON* mqttEnabledItem = cJSON_GetObjectItemCaseSensitive(config, "mqtt_enabled");
+    bool mqttEnabled = false;
+    if (mqttEnabledItem) {
+        if (cJSON_IsBool(mqttEnabledItem)) {
+            mqttEnabled = cJSON_IsTrue(mqttEnabledItem);
+        } else if (cJSON_IsNumber(mqttEnabledItem)) {
+            mqttEnabled = mqttEnabledItem->valueint != 0;
+        } else if (cJSON_IsString(mqttEnabledItem)) {
+            std::string val = mqttEnabledItem->valuestring;
+            mqttEnabled = (val == "true" || val == "1" || val == "yes" || val == "on");
+        }
+    }
+    std::string wifiMode = wifiModeItem && cJSON_IsString(wifiModeItem) ? wifiModeItem->valuestring : "client";
+    if (mqttEnabled && (wifiMode == "client" || wifiMode == "wifi")) {
+        char topic[128];
+        snprintf(topic, sizeof(topic), "homeassistant/%s/relay%d/state", deviceName.c_str(), relayIndex + 1);
+        publish(topic, state ? "ON" : "OFF");
+    }
     // Only publish to Home Assistant topic format. Remove legacy topic publishing.
 }
 
 void MqttManager::handleRelayCommand(int relayIndex, const std::string& payload) {
-    bool newState = (payload == "ON");
-    // Relay hardware control: set relay state using global relayController instance
-    extern RelayController relayController;
-    relayController.setRelayMode(relayIndex, newState ? Relay::ON : Relay::OFF);
-    publishRelayState(relayIndex, newState);
-    Serial.printf("[MqttManager] Relay %d set to %s\n", relayIndex, newState ? "ON" : "OFF");
+    // Check config before handling relay command and publishing state
+    cJSON* config = systemManager.getConfigManager().getRoot();
+    cJSON* wifiModeItem = cJSON_GetObjectItemCaseSensitive(config, "wifi_mode");
+    cJSON* mqttEnabledItem = cJSON_GetObjectItemCaseSensitive(config, "mqtt_enabled");
+    bool mqttEnabled = false;
+    if (mqttEnabledItem) {
+        if (cJSON_IsBool(mqttEnabledItem)) {
+            mqttEnabled = cJSON_IsTrue(mqttEnabledItem);
+        } else if (cJSON_IsNumber(mqttEnabledItem)) {
+            mqttEnabled = mqttEnabledItem->valueint != 0;
+        } else if (cJSON_IsString(mqttEnabledItem)) {
+            std::string val = mqttEnabledItem->valuestring;
+            mqttEnabled = (val == "true" || val == "1" || val == "yes" || val == "on");
+        }
+    }
+    std::string wifiMode = wifiModeItem && cJSON_IsString(wifiModeItem) ? wifiModeItem->valuestring : "client";
+    if (mqttEnabled && (wifiMode == "client" || wifiMode == "wifi")) {
+        bool newState = (payload == "ON");
+        // Relay hardware control: set relay state using global relayController instance
+        extern RelayController relayController;
+        relayController.setRelayMode(relayIndex, newState ? Relay::ON : Relay::OFF);
+        publishRelayState(relayIndex, newState);
+        Serial.printf("[MqttManager] Relay %d set to %s\n", relayIndex, newState ? "ON" : "OFF");
+    }
 }
 
 void MqttManager::publish(const std::string& topic, cJSON* payload) {
