@@ -62,6 +62,210 @@ void MqttManager::publishBME280Temperature(float temperature) {
     publish(topic, payload);
 }
 
+// Publish BME280 humidity value to MQTT (with config checks)
+void MqttManager::publishBME280Humidity(float humidity) {
+    cJSON* config = systemManager.getConfigManager().getRoot();
+    cJSON* wifiModeItem = cJSON_GetObjectItemCaseSensitive(config, "wifi_mode");
+    cJSON* mqttEnabledItem = cJSON_GetObjectItemCaseSensitive(config, "mqtt_enabled");
+    bool mqttEnabled = false;
+    if (mqttEnabledItem) {
+        if (cJSON_IsBool(mqttEnabledItem)) {
+            mqttEnabled = cJSON_IsTrue(mqttEnabledItem);
+        } else if (cJSON_IsNumber(mqttEnabledItem)) {
+            mqttEnabled = mqttEnabledItem->valueint != 0;
+        } else if (cJSON_IsString(mqttEnabledItem)) {
+            std::string val = mqttEnabledItem->valuestring;
+            mqttEnabled = (val == "true" || val == "1" || val == "yes" || val == "on");
+        }
+    }
+    std::string wifiMode = wifiModeItem && cJSON_IsString(wifiModeItem) ? wifiModeItem->valuestring : "client";
+    if (mqttEnabled && (wifiMode == "client" || wifiMode == "wifi")) {
+        char topic[128];
+        snprintf(topic, sizeof(topic), "homeassistant/%s/bme280_humidity/state", deviceName.c_str());
+        char payload[16];
+        snprintf(payload, sizeof(payload), "%.2f", humidity);
+        publish(topic, payload);
+    }
+}
+
+// Publish BME280 pressure value to MQTT (with config checks)
+void MqttManager::publishBME280Pressure(float pressure) {
+    cJSON* config = systemManager.getConfigManager().getRoot();
+    cJSON* wifiModeItem = cJSON_GetObjectItemCaseSensitive(config, "wifi_mode");
+    cJSON* mqttEnabledItem = cJSON_GetObjectItemCaseSensitive(config, "mqtt_enabled");
+    bool mqttEnabled = false;
+    if (mqttEnabledItem) {
+        if (cJSON_IsBool(mqttEnabledItem)) {
+            mqttEnabled = cJSON_IsTrue(mqttEnabledItem);
+        } else if (cJSON_IsNumber(mqttEnabledItem)) {
+            mqttEnabled = mqttEnabledItem->valueint != 0;
+        } else if (cJSON_IsString(mqttEnabledItem)) {
+            std::string val = mqttEnabledItem->valuestring;
+            mqttEnabled = (val == "true" || val == "1" || val == "yes" || val == "on");
+        }
+    }
+    std::string wifiMode = wifiModeItem && cJSON_IsString(wifiModeItem) ? wifiModeItem->valuestring : "client";
+    if (mqttEnabled && (wifiMode == "client" || wifiMode == "wifi")) {
+        char topic[128];
+        snprintf(topic, sizeof(topic), "homeassistant/%s/bme280_pressure/state", deviceName.c_str());
+        char payload[16];
+        snprintf(payload, sizeof(payload), "%.2f", pressure);
+        publish(topic, payload);
+    }
+}
+
+// Publish BME280 heat index value to MQTT (with config checks)
+void MqttManager::publishBME280HeatIndex(float heatIndex) {
+    cJSON* config = systemManager.getConfigManager().getRoot();
+    cJSON* wifiModeItem = cJSON_GetObjectItemCaseSensitive(config, "wifi_mode");
+    cJSON* mqttEnabledItem = cJSON_GetObjectItemCaseSensitive(config, "mqtt_enabled");
+    bool mqttEnabled = false;
+    if (mqttEnabledItem) {
+        if (cJSON_IsBool(mqttEnabledItem)) {
+            mqttEnabled = cJSON_IsTrue(mqttEnabledItem);
+        } else if (cJSON_IsNumber(mqttEnabledItem)) {
+            mqttEnabled = mqttEnabledItem->valueint != 0;
+        } else if (cJSON_IsString(mqttEnabledItem)) {
+            std::string val = mqttEnabledItem->valuestring;
+            mqttEnabled = (val == "true" || val == "1" || val == "yes" || val == "on");
+        }
+    }
+    std::string wifiMode = wifiModeItem && cJSON_IsString(wifiModeItem) ? wifiModeItem->valuestring : "client";
+    if (mqttEnabled && (wifiMode == "client" || wifiMode == "wifi")) {
+        char topic[128];
+        snprintf(topic, sizeof(topic), "homeassistant/%s/bme280_heat_index/state", deviceName.c_str());
+        char payload[16];
+        snprintf(payload, sizeof(payload), "%.2f", heatIndex);
+        publish(topic, payload);
+    }
+}
+
+// Publish BME280 dew point value to MQTT (with config checks)
+void MqttManager::publishBME280DewPoint(float dewPoint) {
+    cJSON* config = systemManager.getConfigManager().getRoot();
+    cJSON* wifiModeItem = cJSON_GetObjectItemCaseSensitive(config, "wifi_mode");
+    cJSON* mqttEnabledItem = cJSON_GetObjectItemCaseSensitive(config, "mqtt_enabled");
+    bool mqttEnabled = false;
+    if (mqttEnabledItem) {
+        if (cJSON_IsBool(mqttEnabledItem)) {
+            mqttEnabled = cJSON_IsTrue(mqttEnabledItem);
+        } else if (cJSON_IsNumber(mqttEnabledItem)) {
+            mqttEnabled = mqttEnabledItem->valueint != 0;
+        } else if (cJSON_IsString(mqttEnabledItem)) {
+            std::string val = mqttEnabledItem->valuestring;
+            mqttEnabled = (val == "true" || val == "1" || val == "yes" || val == "on");
+        }
+    }
+    std::string wifiMode = wifiModeItem && cJSON_IsString(wifiModeItem) ? wifiModeItem->valuestring : "client";
+    if (mqttEnabled && (wifiMode == "client" || wifiMode == "wifi")) {
+        char topic[128];
+        snprintf(topic, sizeof(topic), "homeassistant/%s/bme280_dew_point/state", deviceName.c_str());
+        char payload[16];
+        snprintf(payload, sizeof(payload), "%.2f", dewPoint);
+        publish(topic, payload);
+    }
+}
+
+// Publish Home Assistant MQTT Discovery for BME280 humidity sensor
+void MqttManager::publishDiscoveryForBME280Humidity() {
+    char state_topic[128], availability_topic[128], topic[128], unique_id[128];
+    snprintf(state_topic, sizeof(state_topic), "homeassistant/%s/bme280_humidity/state", deviceName.c_str());
+    snprintf(availability_topic, sizeof(availability_topic), "homeassistant/esp32/%s/availability", deviceName.c_str());
+    snprintf(topic, sizeof(topic), "homeassistant/sensor/%s_bme280_humidity/config", deviceName.c_str());
+    snprintf(unique_id, sizeof(unique_id), "%s_bme280_humidity", deviceName.c_str());
+    cJSON* root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "name", "BME280 Humidity");
+    cJSON_AddStringToObject(root, "state_topic", state_topic);
+    cJSON_AddStringToObject(root, "unit_of_measurement", "%");
+    cJSON_AddStringToObject(root, "device_class", "humidity");
+    cJSON_AddStringToObject(root, "availability_topic", availability_topic);
+    cJSON_AddStringToObject(root, "payload_available", "online");
+    cJSON_AddStringToObject(root, "payload_not_available", "offline");
+    cJSON_AddStringToObject(root, "unique_id", unique_id);
+    cJSON* device = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, "device", device);
+    cJSON_AddItemToArray(cJSON_AddArrayToObject(device, "identifiers"), cJSON_CreateString(deviceName.c_str()));
+    cJSON_AddStringToObject(device, "manufacturer", "Binghe");
+    cJSON_AddStringToObject(device, "model", "LC-Relay-ESP32-4R-A2");
+    cJSON_AddStringToObject(device, "name", deviceName.c_str());
+    publish(topic, root);
+}
+
+// Publish Home Assistant MQTT Discovery for BME280 pressure sensor
+void MqttManager::publishDiscoveryForBME280Pressure() {
+    char state_topic[128], availability_topic[128], topic[128], unique_id[128];
+    snprintf(state_topic, sizeof(state_topic), "homeassistant/%s/bme280_pressure/state", deviceName.c_str());
+    snprintf(availability_topic, sizeof(availability_topic), "homeassistant/esp32/%s/availability", deviceName.c_str());
+    snprintf(topic, sizeof(topic), "homeassistant/sensor/%s_bme280_pressure/config", deviceName.c_str());
+    snprintf(unique_id, sizeof(unique_id), "%s_bme280_pressure", deviceName.c_str());
+    cJSON* root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "name", "BME280 Pressure");
+    cJSON_AddStringToObject(root, "state_topic", state_topic);
+    cJSON_AddStringToObject(root, "unit_of_measurement", "hPa");
+    cJSON_AddStringToObject(root, "device_class", "pressure");
+    cJSON_AddStringToObject(root, "availability_topic", availability_topic);
+    cJSON_AddStringToObject(root, "payload_available", "online");
+    cJSON_AddStringToObject(root, "payload_not_available", "offline");
+    cJSON_AddStringToObject(root, "unique_id", unique_id);
+    cJSON* device = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, "device", device);
+    cJSON_AddItemToArray(cJSON_AddArrayToObject(device, "identifiers"), cJSON_CreateString(deviceName.c_str()));
+    cJSON_AddStringToObject(device, "manufacturer", "Binghe");
+    cJSON_AddStringToObject(device, "model", "LC-Relay-ESP32-4R-A2");
+    cJSON_AddStringToObject(device, "name", deviceName.c_str());
+    publish(topic, root);
+}
+
+// Publish Home Assistant MQTT Discovery for BME280 heat index sensor
+void MqttManager::publishDiscoveryForBME280HeatIndex() {
+    char state_topic[128], availability_topic[128], topic[128], unique_id[128];
+    snprintf(state_topic, sizeof(state_topic), "homeassistant/%s/bme280_heat_index/state", deviceName.c_str());
+    snprintf(availability_topic, sizeof(availability_topic), "homeassistant/esp32/%s/availability", deviceName.c_str());
+    snprintf(topic, sizeof(topic), "homeassistant/sensor/%s_bme280_heat_index/config", deviceName.c_str());
+    snprintf(unique_id, sizeof(unique_id), "%s_bme280_heat_index", deviceName.c_str());
+    cJSON* root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "name", "BME280 Heat Index");
+    cJSON_AddStringToObject(root, "state_topic", state_topic);
+    cJSON_AddStringToObject(root, "unit_of_measurement", "°C");
+    cJSON_AddStringToObject(root, "device_class", "temperature");
+    cJSON_AddStringToObject(root, "availability_topic", availability_topic);
+    cJSON_AddStringToObject(root, "payload_available", "online");
+    cJSON_AddStringToObject(root, "payload_not_available", "offline");
+    cJSON_AddStringToObject(root, "unique_id", unique_id);
+    cJSON* device = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, "device", device);
+    cJSON_AddItemToArray(cJSON_AddArrayToObject(device, "identifiers"), cJSON_CreateString(deviceName.c_str()));
+    cJSON_AddStringToObject(device, "manufacturer", "Binghe");
+    cJSON_AddStringToObject(device, "model", "LC-Relay-ESP32-4R-A2");
+    cJSON_AddStringToObject(device, "name", deviceName.c_str());
+    publish(topic, root);
+}
+
+// Publish Home Assistant MQTT Discovery for BME280 dew point sensor
+void MqttManager::publishDiscoveryForBME280DewPoint() {
+    char state_topic[128], availability_topic[128], topic[128], unique_id[128];
+    snprintf(state_topic, sizeof(state_topic), "homeassistant/%s/bme280_dew_point/state", deviceName.c_str());
+    snprintf(availability_topic, sizeof(availability_topic), "homeassistant/esp32/%s/availability", deviceName.c_str());
+    snprintf(topic, sizeof(topic), "homeassistant/sensor/%s_bme280_dew_point/config", deviceName.c_str());
+    snprintf(unique_id, sizeof(unique_id), "%s_bme280_dew_point", deviceName.c_str());
+    cJSON* root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "name", "BME280 Dew Point");
+    cJSON_AddStringToObject(root, "state_topic", state_topic);
+    cJSON_AddStringToObject(root, "unit_of_measurement", "°C");
+    cJSON_AddStringToObject(root, "device_class", "temperature");
+    cJSON_AddStringToObject(root, "availability_topic", availability_topic);
+    cJSON_AddStringToObject(root, "payload_available", "online");
+    cJSON_AddStringToObject(root, "payload_not_available", "offline");
+    cJSON_AddStringToObject(root, "unique_id", unique_id);
+    cJSON* device = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, "device", device);
+    cJSON_AddItemToArray(cJSON_AddArrayToObject(device, "identifiers"), cJSON_CreateString(deviceName.c_str()));
+    cJSON_AddStringToObject(device, "manufacturer", "Binghe");
+    cJSON_AddStringToObject(device, "model", "LC-Relay-ESP32-4R-A2");
+    cJSON_AddStringToObject(device, "name", deviceName.c_str());
+    publish(topic, root);
+}
+
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
     std::string payloadStr((char*)payload, length);
     // Parse relay index from topic
@@ -140,6 +344,10 @@ void MqttManager::setInitialized(bool init) {
         publishDiscovery();
         // Publish BME280 temperature sensor discovery for Home Assistant
         publishDiscoveryForBME280Temperature();
+        publishDiscoveryForBME280Humidity();
+        publishDiscoveryForBME280Pressure();
+        publishDiscoveryForBME280HeatIndex();
+        publishDiscoveryForBME280DewPoint();
 
         // Wait 1 second to ensure Home Assistant processes config before state
         delay(1000);
@@ -150,6 +358,10 @@ void MqttManager::setInitialized(bool init) {
             BME280Reading r = bme->getLastReading();
             if (r.valid) {
                 publishBME280Temperature(r.avgTemperature);
+                publishBME280Humidity(r.avgHumidity);
+                publishBME280Pressure(r.avgPressure);
+                publishBME280HeatIndex(r.avgHeatIndex);
+                publishBME280DewPoint(r.avgDewPoint);
                 Serial.printf("[MqttManager] Initial BME280 temperature published to Home Assistant: %.2fC\n", r.avgTemperature);
             }
         }

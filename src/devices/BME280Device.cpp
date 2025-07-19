@@ -111,6 +111,10 @@ BME280Reading BME280Device::readData() {
         bool isClientMode = wifiMode && (strcmp(wifiMode, "client") == 0 || strcmp(wifiMode, "wifi") == 0);
         if (mqttEnabled && isClientMode && mqttManager.isInitialized()) {
             mqttManager.publishBME280Temperature(lastReading.avgTemperature);
+            mqttManager.publishBME280Humidity(lastReading.avgHumidity);
+            mqttManager.publishBME280Pressure(lastReading.avgPressure);
+            mqttManager.publishBME280HeatIndex(lastReading.avgHeatIndex);
+            mqttManager.publishBME280DewPoint(lastReading.avgDewPoint);
         }
     }
     return result;

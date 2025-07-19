@@ -15,6 +15,15 @@ public:
     bool isInitialized() const;
     void publishDiscoveryForBME280Temperature();
     void publishBME280Temperature(float temperature);
+    // Add declarations for new BME280 sensor functions
+    void publishDiscoveryForBME280Humidity();
+    void publishDiscoveryForBME280Pressure();
+    void publishDiscoveryForBME280HeatIndex();
+    void publishDiscoveryForBME280DewPoint();
+    void publishBME280Humidity(float humidity);
+    void publishBME280Pressure(float pressure);
+    void publishBME280HeatIndex(float heatIndex);
+    void publishBME280DewPoint(float dewPoint);
 private:
     std::string deviceName;
     std::vector<std::string> relayNames;
