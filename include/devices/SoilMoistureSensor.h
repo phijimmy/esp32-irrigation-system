@@ -1,4 +1,4 @@
-    // ...existing code...
+// ...existing code...
 #ifndef SOIL_MOISTURE_SENSOR_H
 #define SOIL_MOISTURE_SENSOR_H
 
@@ -10,6 +10,12 @@
 #include "diagnostics/DiagnosticManager.h"
 
 class SoilMoistureSensor {
+public:
+    float getLastPercent();
+    float getLastAvgPercent();
+    void onNewReading(float percent);
+private:
+    float lastPercent = -1.0f;
 public:
     void forceIdle();
     enum State {

@@ -1,6 +1,25 @@
-#include <Arduino.h>
-
 #include "devices/SoilMoistureSensor.h"
+#include "system/MqttManager.h"
+
+float SoilMoistureSensor::getLastPercent() {
+    // Return the latest single percent value from lastReading
+    return lastReading.percent;
+}
+
+float SoilMoistureSensor::getLastAvgPercent() {
+    // Return the latest averaged percent value from lastReading
+    return lastReading.avgPercent;
+}
+
+// Call this after each valid soil moisture reading
+void SoilMoistureSensor::onNewReading(float percent) {
+    extern MqttManager mqttManager;
+    if (mqttManager.isInitialized()) {
+        // Publish single and averaged values using latest readings
+        mqttManager.publishSoilMoisture(lastReading.percent);
+    }
+}
+
 
 void SoilMoistureSensor::forceIdle() {
     state = IDLE;
@@ -90,6 +109,8 @@ void SoilMoistureSensor::takeReading() {
     lastReading.raw = (int16_t)rawVals[0];
     lastReading.voltage = voltVals[0];
     lastReading.percent = percentVals[0];
+    // Call onNewReading to trigger MQTT publish and any listeners
+    onNewReading(lastReading.percent);
     // Filter outliers and average
     filterAndAverage(rawVals, voltVals, percentVals, N, lastReading.avgRaw, lastReading.avgVoltage, lastReading.avgPercent);
     if (timeManager) {

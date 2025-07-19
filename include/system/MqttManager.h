@@ -20,6 +20,9 @@ public:
     void publishDiscoveryForBME280Pressure();
     void publishDiscoveryForBME280HeatIndex();
     void publishDiscoveryForBME280DewPoint();
+    void publishDiscoveryForSoilMoisture();
+    void publishDiscoveryForSoilMoistureAvg();
+    void publishSoilMoisture(float percent);
     void publishBME280Humidity(float humidity);
     void publishBME280Pressure(float pressure);
     void publishBME280HeatIndex(float heatIndex);

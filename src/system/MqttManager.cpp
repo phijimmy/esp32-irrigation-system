@@ -5,6 +5,7 @@
 #include "system/MqttManager.h"
 #include "devices/RelayController.h"
 #include "devices/BME280Device.h"
+#include "devices/SoilMoistureSensor.h"
 #include "system/SystemManager.h"
 #include <cJSON.h>
 #include <string>
@@ -266,6 +267,62 @@ void MqttManager::publishDiscoveryForBME280DewPoint() {
     publish(topic, root);
 }
 
+// Publish Home Assistant MQTT Discovery for Soil Moisture sensor
+void MqttManager::publishDiscoveryForSoilMoisture() {
+    char state_topic[128], availability_topic[128], topic[128], unique_id[128];
+    snprintf(state_topic, sizeof(state_topic), "homeassistant/%s/soil_moisture/state", deviceName.c_str());
+    snprintf(availability_topic, sizeof(availability_topic), "homeassistant/esp32/%s/availability", deviceName.c_str());
+    snprintf(topic, sizeof(topic), "homeassistant/sensor/%s_soil_moisture/config", deviceName.c_str());
+    snprintf(unique_id, sizeof(unique_id), "%s_soil_moisture", deviceName.c_str());
+    cJSON* root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "name", "Soil Moisture");
+    cJSON_AddStringToObject(root, "state_topic", state_topic);
+    cJSON_AddStringToObject(root, "unit_of_measurement", "%");
+    cJSON_AddStringToObject(root, "device_class", "moisture");
+    cJSON_AddStringToObject(root, "availability_topic", availability_topic);
+    cJSON_AddStringToObject(root, "payload_available", "online");
+    cJSON_AddStringToObject(root, "payload_not_available", "offline");
+    cJSON_AddStringToObject(root, "unique_id", unique_id);
+    cJSON* device = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, "device", device);
+    cJSON_AddItemToArray(cJSON_AddArrayToObject(device, "identifiers"), cJSON_CreateString(deviceName.c_str()));
+    cJSON_AddStringToObject(device, "manufacturer", "Binghe");
+    cJSON_AddStringToObject(device, "model", "LC-Relay-ESP32-4R-A2");
+    cJSON_AddStringToObject(device, "name", deviceName.c_str());
+    publish(topic, root);
+}
+
+// Publish Soil Moisture value to MQTT (with config checks)
+void MqttManager::publishSoilMoisture(float percent) {
+    cJSON* config = systemManager.getConfigManager().getRoot();
+    cJSON* wifiModeItem = cJSON_GetObjectItemCaseSensitive(config, "wifi_mode");
+    cJSON* mqttEnabledItem = cJSON_GetObjectItemCaseSensitive(config, "mqtt_enabled");
+    bool mqttEnabled = false;
+    if (mqttEnabledItem) {
+        if (cJSON_IsBool(mqttEnabledItem)) {
+            mqttEnabled = cJSON_IsTrue(mqttEnabledItem);
+        } else if (cJSON_IsNumber(mqttEnabledItem)) {
+            mqttEnabled = mqttEnabledItem->valueint != 0;
+        } else if (cJSON_IsString(mqttEnabledItem)) {
+            std::string val = mqttEnabledItem->valuestring;
+            mqttEnabled = (val == "true" || val == "1" || val == "yes" || val == "on");
+        }
+    }
+    std::string wifiMode = wifiModeItem && cJSON_IsString(wifiModeItem) ? wifiModeItem->valuestring : "client";
+    if (mqttEnabled && (wifiMode == "client" || wifiMode == "wifi")) {
+        // Always fetch latest single value from sensor object and publish
+        SoilMoistureSensor* soil = systemManager.getDeviceManager().getSoilMoistureSensor();
+        if (soil) {
+            float singlePercent = soil->getLastPercent();
+            char topic[128];
+            snprintf(topic, sizeof(topic), "homeassistant/%s/soil_moisture/state", deviceName.c_str());
+            char payload[16];
+            snprintf(payload, sizeof(payload), "%.2f", singlePercent);
+            publish(topic, payload);
+        }
+    }
+}
+
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
     std::string payloadStr((char*)payload, length);
     // Parse relay index from topic
@@ -349,6 +406,9 @@ void MqttManager::setInitialized(bool init) {
         publishDiscoveryForBME280HeatIndex();
         publishDiscoveryForBME280DewPoint();
 
+        // Publish Soil Moisture sensor discovery for Home Assistant
+        publishDiscoveryForSoilMoisture();
+
         // Wait 1 second to ensure Home Assistant processes config before state
         delay(1000);
 
@@ -364,6 +424,15 @@ void MqttManager::setInitialized(bool init) {
                 publishBME280DewPoint(r.avgDewPoint);
                 Serial.printf("[MqttManager] Initial BME280 temperature published to Home Assistant: %.2fC\n", r.avgTemperature);
             }
+        }
+
+        // Publish last soil moisture reading to Home Assistant
+        SoilMoistureSensor* soil = systemManager.getDeviceManager().getSoilMoistureSensor();
+        if (soil) {
+            float percent = soil->getLastPercent();
+            // Always publish initial value after discovery, even if 0
+            publishSoilMoisture(percent);
+            Serial.printf("[MqttManager] Initial soil moisture published to Home Assistant: %.2f%%\n", percent);
         }
 
         // Publish initial relay states so Home Assistant sees them as available
@@ -529,3 +598,5 @@ void MqttManager::publish(const std::string& topic, const char* payload) {
     Serial.printf("[MQTT] Publishing to topic '%s': %s (retain=%s)\n", topic.c_str(), payload, retain ? "true" : "false");
     Serial.printf("[MQTT] Publish result: %s\n", pubResult ? "success" : "fail");
 }
+
+// Removed: publishDiscoveryForSoilMoistureAvg()

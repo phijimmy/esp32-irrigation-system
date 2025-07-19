@@ -2,8 +2,10 @@
 #define DEVICE_MANAGER_H
 
 #include <Arduino.h>
+
 #include "devices/Device.h"
 #include "config/ConfigManager.h"
+#include "devices/SoilMoistureSensor.h"
 
 class Device;
 class BME280Device;
@@ -16,6 +18,7 @@ public:
     
     // Getter methods for specific device types
     BME280Device* getBME280Device();
+    SoilMoistureSensor* getSoilMoistureSensor();
     
     // Setter methods for sensor devices (these are managed separately)
     void setBME280Device(BME280Device* device);

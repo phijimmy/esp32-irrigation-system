@@ -1,6 +1,7 @@
 #include "devices/DeviceManager.h"
 #include "devices/Device.h"
 #include "devices/BME280Device.h"
+#include "devices/SoilMoistureSensor.h"
 
 void DeviceManager::begin(ConfigManager& configMgr) {
     configManager = &configMgr;
@@ -23,6 +24,12 @@ void DeviceManager::addDevice(Device* device) {
 
 BME280Device* DeviceManager::getBME280Device() {
     return bme280Device;
+}
+
+SoilMoistureSensor* DeviceManager::getSoilMoistureSensor() {
+    // Replace with actual instance if available
+    extern SoilMoistureSensor soilMoistureSensor;
+    return &soilMoistureSensor;
 }
 
 void DeviceManager::setBME280Device(BME280Device* device) {
