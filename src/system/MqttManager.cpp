@@ -59,8 +59,12 @@ void MqttManager::publishDiscoveryForBME280Temperature() {
 void MqttManager::publishBME280Temperature(float temperature) {
     char topic[128];
     snprintf(topic, sizeof(topic), "homeassistant/%s/bme280_temperature/state", deviceName.c_str());
+    // Add random jitter between 0.01 and 0.02
+    float jitter = ((float)random(10, 21)) / 100.0f; // 0.10 to 0.20, but we want 0.01 to 0.02
+    jitter = jitter / 10.0f; // 0.01 to 0.02
+    float tempJittered = temperature + jitter;
     char payload[16];
-    snprintf(payload, sizeof(payload), "%.2f", temperature);
+    snprintf(payload, sizeof(payload), "%.2f", tempJittered);
     publish(topic, payload);
 }
 
@@ -84,8 +88,12 @@ void MqttManager::publishBME280Humidity(float humidity) {
     if (mqttEnabled && (wifiMode == "client" || wifiMode == "wifi")) {
         char topic[128];
         snprintf(topic, sizeof(topic), "homeassistant/%s/bme280_humidity/state", deviceName.c_str());
+        // Add random jitter between 0.01 and 0.02
+        float jitter = ((float)random(10, 21)) / 100.0f;
+        jitter = jitter / 10.0f;
+        float humJittered = humidity + jitter;
         char payload[16];
-        snprintf(payload, sizeof(payload), "%.2f", humidity);
+        snprintf(payload, sizeof(payload), "%.2f", humJittered);
         publish(topic, payload);
     }
 }
@@ -110,8 +118,12 @@ void MqttManager::publishBME280Pressure(float pressure) {
     if (mqttEnabled && (wifiMode == "client" || wifiMode == "wifi")) {
         char topic[128];
         snprintf(topic, sizeof(topic), "homeassistant/%s/bme280_pressure/state", deviceName.c_str());
+        // Add random jitter between 0.01 and 0.02
+        float jitter = ((float)random(10, 21)) / 100.0f;
+        jitter = jitter / 10.0f;
+        float pressureJittered = pressure + jitter;
         char payload[16];
-        snprintf(payload, sizeof(payload), "%.2f", pressure);
+        snprintf(payload, sizeof(payload), "%.2f", pressureJittered);
         publish(topic, payload);
     }
 }
@@ -136,8 +148,12 @@ void MqttManager::publishBME280HeatIndex(float heatIndex) {
     if (mqttEnabled && (wifiMode == "client" || wifiMode == "wifi")) {
         char topic[128];
         snprintf(topic, sizeof(topic), "homeassistant/%s/bme280_heat_index/state", deviceName.c_str());
+        // Add random jitter between 0.01 and 0.02
+        float jitter = ((float)random(10, 21)) / 100.0f;
+        jitter = jitter / 10.0f;
+        float heatIndexJittered = heatIndex + jitter;
         char payload[16];
-        snprintf(payload, sizeof(payload), "%.2f", heatIndex);
+        snprintf(payload, sizeof(payload), "%.2f", heatIndexJittered);
         publish(topic, payload);
     }
 }
@@ -162,8 +178,12 @@ void MqttManager::publishBME280DewPoint(float dewPoint) {
     if (mqttEnabled && (wifiMode == "client" || wifiMode == "wifi")) {
         char topic[128];
         snprintf(topic, sizeof(topic), "homeassistant/%s/bme280_dew_point/state", deviceName.c_str());
+        // Add random jitter between 0.01 and 0.02
+        float jitter = ((float)random(10, 21)) / 100.0f;
+        jitter = jitter / 10.0f;
+        float dewPointJittered = dewPoint + jitter;
         char payload[16];
-        snprintf(payload, sizeof(payload), "%.2f", dewPoint);
+        snprintf(payload, sizeof(payload), "%.2f", dewPointJittered);
         publish(topic, payload);
     }
 }
@@ -342,10 +362,14 @@ void MqttManager::publishSoilMoisture(float percent) {
         SoilMoistureSensor* soil = systemManager.getDeviceManager().getSoilMoistureSensor();
         if (soil) {
             float singlePercent = soil->getLastPercent();
+            // Add random jitter between 0.01 and 0.02
+            float jitter = ((float)random(10, 21)) / 100.0f;
+            jitter = jitter / 10.0f;
+            float percentJittered = singlePercent + jitter;
             char topic[128];
             snprintf(topic, sizeof(topic), "homeassistant/%s/soil_moisture/state", deviceName.c_str());
             char payload[16];
-            snprintf(payload, sizeof(payload), "%.2f", singlePercent);
+            snprintf(payload, sizeof(payload), "%.2f", percentJittered);
             publish(topic, payload);
         }
     }
