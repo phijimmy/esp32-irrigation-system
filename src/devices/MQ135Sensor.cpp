@@ -2,6 +2,8 @@
 
 #include "devices/MQ135Sensor.h"
 
+#include "system/MqttManager.h"
+
 void MQ135Sensor::forceIdle() {
     state = IDLE;
     warmingUp = false;
@@ -76,6 +78,9 @@ void MQ135Sensor::takeReading() {
     relay->deactivateRelay(3); // Power off sensor
     warmingUp = false;
     state = IDLE;
+    // Publish updated air quality to Home Assistant after every reading
+    extern MqttManager mqttManager;
+    mqttManager.publishMQ135AirQuality();
 }
 
 void MQ135Sensor::filterAndAverage(float* rawVals, float* voltVals, int count, float& avgRaw, float& avgVolt) {

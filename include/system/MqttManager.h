@@ -27,6 +27,9 @@ public:
     void publishBME280Pressure(float pressure);
     void publishBME280HeatIndex(float heatIndex);
     void publishBME280DewPoint(float dewPoint);
+    // MQ135 Air Quality Rating
+    void publishDiscoveryForMQ135AirQuality();
+    void publishMQ135AirQuality();
 private:
     std::string deviceName;
     std::vector<std::string> relayNames;

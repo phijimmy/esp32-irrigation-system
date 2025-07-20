@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include "system/MqttManager.h"
 #include "devices/RelayController.h"
+#include "devices/MQ135Sensor.h"
 #include "devices/BME280Device.h"
 #include "devices/SoilMoistureSensor.h"
 #include "system/SystemManager.h"
@@ -292,6 +293,33 @@ void MqttManager::publishDiscoveryForSoilMoisture() {
     publish(topic, root);
 }
 
+// Publish Home Assistant MQTT Discovery for MQ135 Air Quality Rating
+void MqttManager::publishDiscoveryForMQ135AirQuality() {
+    char state_topic[128], availability_topic[128], topic[128], unique_id[128];
+    snprintf(state_topic, sizeof(state_topic), "homeassistant/%s/mq135_air_quality/state", deviceName.c_str());
+    snprintf(availability_topic, sizeof(availability_topic), "homeassistant/esp32/%s/availability", deviceName.c_str());
+    snprintf(topic, sizeof(topic), "homeassistant/sensor/%s_mq135_air_quality/config", deviceName.c_str());
+    snprintf(unique_id, sizeof(unique_id), "%s_mq135_air_quality", deviceName.c_str());
+    char attributes_topic[128];
+    snprintf(attributes_topic, sizeof(attributes_topic), "homeassistant/%s/mq135_air_quality/attributes", deviceName.c_str());
+    cJSON* root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "name", "MQ135 Air Quality Rating");
+    cJSON_AddStringToObject(root, "state_topic", state_topic);
+    cJSON_AddStringToObject(root, "json_attributes_topic", attributes_topic);
+    cJSON_AddStringToObject(root, "availability_topic", availability_topic);
+    cJSON_AddStringToObject(root, "payload_available", "online");
+    cJSON_AddStringToObject(root, "payload_not_available", "offline");
+    cJSON_AddStringToObject(root, "unique_id", unique_id);
+    cJSON_AddStringToObject(root, "device_class", "aqi");
+    cJSON* device = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, "device", device);
+    cJSON_AddItemToArray(cJSON_AddArrayToObject(device, "identifiers"), cJSON_CreateString(deviceName.c_str()));
+    cJSON_AddStringToObject(device, "manufacturer", "Binghe");
+    cJSON_AddStringToObject(device, "model", "LC-Relay-ESP32-4R-A2");
+    cJSON_AddStringToObject(device, "name", deviceName.c_str());
+    publish(topic, root);
+}
+
 // Publish Soil Moisture value to MQTT (with config checks)
 void MqttManager::publishSoilMoisture(float percent) {
     cJSON* config = systemManager.getConfigManager().getRoot();
@@ -320,6 +348,43 @@ void MqttManager::publishSoilMoisture(float percent) {
             snprintf(payload, sizeof(payload), "%.2f", singlePercent);
             publish(topic, payload);
         }
+    }
+}
+
+// Publish MQ135 Air Quality Rating to MQTT (with config checks)
+void MqttManager::publishMQ135AirQuality() {
+    extern MQ135Sensor mq135Sensor;
+    cJSON* config = systemManager.getConfigManager().getRoot();
+    cJSON* wifiModeItem = cJSON_GetObjectItemCaseSensitive(config, "wifi_mode");
+    cJSON* mqttEnabledItem = cJSON_GetObjectItemCaseSensitive(config, "mqtt_enabled");
+    bool mqttEnabled = false;
+    if (mqttEnabledItem) {
+        if (cJSON_IsBool(mqttEnabledItem)) {
+            mqttEnabled = cJSON_IsTrue(mqttEnabledItem);
+        } else if (cJSON_IsNumber(mqttEnabledItem)) {
+            mqttEnabled = mqttEnabledItem->valueint != 0;
+        } else if (cJSON_IsString(mqttEnabledItem)) {
+            std::string val = mqttEnabledItem->valuestring;
+            mqttEnabled = (val == "true" || val == "1" || val == "yes" || val == "on");
+        }
+    }
+    std::string wifiMode = wifiModeItem && cJSON_IsString(wifiModeItem) ? wifiModeItem->valuestring : "client";
+    if (mqttEnabled && (wifiMode == "client" || wifiMode == "wifi")) {
+        float voltage = mq135Sensor.getLastReading().avgVoltage;
+        const char* rating = MQ135Sensor::getAirQualityLabel(voltage);
+        int aqi = MQ135Sensor::getAirQualityIndexFromLabel(rating);
+        char state_topic[128];
+        snprintf(state_topic, sizeof(state_topic), "homeassistant/%s/mq135_air_quality/state", deviceName.c_str());
+        char attributes_topic[128];
+        snprintf(attributes_topic, sizeof(attributes_topic), "homeassistant/%s/mq135_air_quality/attributes", deviceName.c_str());
+        // Publish numeric AQI value to state topic
+        char aqi_str[8];
+        snprintf(aqi_str, sizeof(aqi_str), "%d", aqi);
+        publish(state_topic, aqi_str);
+        // Publish label as attribute to attributes topic
+        cJSON* attr_payload = cJSON_CreateObject();
+        cJSON_AddStringToObject(attr_payload, "label", rating);
+        publish(attributes_topic, attr_payload);
     }
 }
 
@@ -409,6 +474,9 @@ void MqttManager::setInitialized(bool init) {
         // Publish Soil Moisture sensor discovery for Home Assistant
         publishDiscoveryForSoilMoisture();
 
+        // Publish MQ135 Air Quality Rating sensor discovery for Home Assistant
+        publishDiscoveryForMQ135AirQuality();
+
         // Wait 1 second to ensure Home Assistant processes config before state
         delay(1000);
 
@@ -434,6 +502,9 @@ void MqttManager::setInitialized(bool init) {
             publishSoilMoisture(percent);
             Serial.printf("[MqttManager] Initial soil moisture published to Home Assistant: %.2f%%\n", percent);
         }
+
+        // Publish initial MQ135 Air Quality Rating to Home Assistant
+        publishMQ135AirQuality();
 
         // Publish initial relay states so Home Assistant sees them as available
         extern RelayController relayController;

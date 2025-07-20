@@ -54,6 +54,16 @@ public:
         if (voltage < 0.60f) return "Poor";
         return "Very Poor";
     }
+
+    // Maps air quality label to numeric AQI value for Home Assistant
+    static int getAirQualityIndexFromLabel(const char* label) {
+        if (strcmp(label, "Excellent") == 0) return 1;
+        if (strcmp(label, "Good") == 0) return 2;
+        if (strcmp(label, "Moderate") == 0) return 3;
+        if (strcmp(label, "Poor") == 0) return 4;
+        if (strcmp(label, "Very Poor") == 0) return 5;
+        return 0; // unknown/error
+    }
 private:
     ADS1115Manager* ads = nullptr;
     ConfigManager* config = nullptr;
