@@ -10,6 +10,7 @@
  */
 
 #include "devices/IrrigationManager.h"
+#include "system/MqttManager.h"
 #include "devices/RelayController.h"
 #include "devices/Relay.h"
 #include "devices/MQ135Sensor.h"
@@ -206,6 +207,10 @@ void IrrigationManager::update() {
                     mq135Sensor->takeReading();
                     lastAirQualityVoltage = mq135Sensor->getLastReading().avgVoltage;
                     Serial.printf("[IrrigationManager][MQ135] Air quality voltage: %.4f V\n", lastAirQualityVoltage);
+                    extern MqttManager mqttManager;
+                    if (mqttManager.isInitialized()) {
+                        mqttManager.publishMQ135AirQuality();
+                    }
                     started = false;
                     startNextState(COMPLETE);
                 }

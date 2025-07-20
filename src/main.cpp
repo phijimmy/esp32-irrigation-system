@@ -461,6 +461,10 @@ void loop() {
                 Serial.printf("[MQ135Sensor] DEBUG: raw ADC=%d, expected for 0.4V=~2133 (GAIN_TWOTHIRDS)\n", r.raw);
                 Serial.printf("[MQ135Sensor] Reading: raw=%d, voltage=%.4f V | avgRaw=%.1f, avgVoltage=%.4f V, AQI=%s, timestamp=%s\n",
                     r.raw, r.voltage, r.avgRaw, r.avgVoltage, MQ135Sensor::getAirQualityLabel(r.avgVoltage), timeStr);
+                extern MqttManager mqttManager;
+                if (mqttManager.isInitialized()) {
+                    mqttManager.publishMQ135AirQuality();
+                }
                 mq135ReadingTaken = true;
                 sensorState = MQ135_DONE;
             }
