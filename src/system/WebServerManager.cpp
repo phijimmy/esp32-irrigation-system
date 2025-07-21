@@ -104,6 +104,12 @@ void WebServerManager::begin() {
             if (cfgMgr.getRoot() != current) {
                 cfgMgr.setRoot(current);
             }
+            // Update internal sundayWatering variable from merged config before saving
+            cJSON* sundayWateringItem = cJSON_GetObjectItem(current, "sunday_watering");
+            if (cJSON_IsBool(sundayWateringItem)) {
+                cfgMgr.setBool("sunday_watering", cJSON_IsTrue(sundayWateringItem));
+                cfgMgr.sundayWatering = cJSON_IsTrue(sundayWateringItem);
+            }
             // Always set force_build_time to false when saving config
             cfgMgr.setBool("force_build_time", false);
             bool ok = cfgMgr.save();

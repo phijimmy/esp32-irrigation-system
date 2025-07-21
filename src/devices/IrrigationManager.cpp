@@ -132,7 +132,7 @@ void IrrigationManager::update() {
                 }
             }
             break;
-        case SOIL_READING:
+        case SOIL_READING: {
             // Run watering logic here using available data
             lastAvgTemp = bmeAvg.avgTemperature;
             lastAvgHumidity = bmeAvg.avgHumidity;
@@ -164,7 +164,25 @@ void IrrigationManager::update() {
             Serial.printf("[IrrigationManager] Avg Soil Moisture Voltage: %.4f V\n", lastAvgSoilVoltage);
             Serial.printf("[IrrigationManager] Avg Soil Moisture: %.2f %%\n", lastAvgSoilPercent);
             Serial.printf("[IrrigationManager] Corrected Soil Moisture: %.2f %%\n", lastAvgSoilCorrected);
-            // Watering logic
+            // Watering logic with Sunday check
+            bool skipWatering = false;
+            if (configManager && timeManager) {
+                time_t now = timeManager->getLocalTime().unixtime();
+                struct tm* tm_info = localtime(&now);
+                if (tm_info->tm_wday == 0) { // Sunday is 0
+                    cJSON* root = configManager->getRoot();
+                    bool sundayWatering = false;
+                    if (root) {
+                        cJSON* swItem = cJSON_GetObjectItemCaseSensitive(root, "sunday_watering");
+                        if (cJSON_IsBool(swItem)) {
+                            sundayWatering = cJSON_IsTrue(swItem);
+                        } else if (cJSON_IsString(swItem) && swItem->valuestring) {
+                            sundayWatering = (strcmp(swItem->valuestring, "true") == 0 || strcmp(swItem->valuestring, "1") == 0);
+                        }
+                    }
+                    if (!sundayWatering) skipWatering = true;
+                }
+            }
             if (configManager) {
                 wateringThreshold = static_cast<float>(configManager->getInt("watering_threshold", 50));
                 wateringDuration = configManager->getInt("watering_duration_sec", 60);
@@ -172,7 +190,7 @@ void IrrigationManager::update() {
                 wateringThreshold = 50.0f;
                 wateringDuration = 60;
             }
-            if (lastAvgSoilCorrected <= wateringThreshold) {
+            if (!skipWatering && lastAvgSoilCorrected <= wateringThreshold) {
                 Serial.printf("[IrrigationManager] Soil moisture (%.2f%%) is below threshold (%.2f%%). Starting watering for %d seconds.\n", lastAvgSoilCorrected, wateringThreshold, wateringDuration);
                 if (relayController) relayController->setRelayMode(1, Relay::ON);
                 // Relay state will be published by RelayController
@@ -181,9 +199,13 @@ void IrrigationManager::update() {
                 // Go to watering state, then after watering is done, go to air quality
                 startNextState(COMPLETE);
             } else {
+                if (skipWatering) {
+                    Serial.println("[IrrigationManager] Sunday watering disabled, skipping watering.");
+                }
                 // No watering needed, go directly to air quality reading
                 startNextState(MQ135_READING);
             }
+        }
             break;
         case MQ135_READING: {
             // Show progress for MQ135 warmup and reading

@@ -58,8 +58,18 @@ bool ConfigManager::load() {
                 cJSON* sundayWateringItem = cJSON_GetObjectItemCaseSensitive(configRoot, "sunday_watering");
                 if (cJSON_IsBool(sundayWateringItem)) {
                     sundayWatering = cJSON_IsTrue(sundayWateringItem);
+                    if (diagnosticManager) {
+                        diagnosticManager->log(DiagnosticManager::LOG_INFO, "Config", "[ConfigManager] Loaded sundayWatering value: %s", sundayWatering ? "true" : "false");
+                    } else {
+                        printf("[ConfigManager] Loaded sundayWatering value: %s\n", sundayWatering ? "true" : "false");
+                    }
                 } else {
                     sundayWatering = false;
+                    if (diagnosticManager) {
+                        diagnosticManager->log(DiagnosticManager::LOG_INFO, "Config", "[ConfigManager] Loaded sundayWatering value: false (defaulted)");
+                    } else {
+                        printf("[ConfigManager] Loaded sundayWatering value: false (defaulted)\n");
+                    }
                 }
                 // Merge missing keys from defaults
                 mergeDefaults();
@@ -85,6 +95,12 @@ bool ConfigManager::save() {
     if (!content) {
         if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_ERROR, "Config", "Failed to serialize configRoot to JSON");
         return false;
+    }
+    // Print the actual JSON being saved for debugging
+    if (diagnosticManager) {
+        diagnosticManager->log(DiagnosticManager::LOG_INFO, "Config", "[ConfigManager] Saving config JSON: %s", content);
+    } else {
+        printf("[ConfigManager] Saving config JSON: %s\n", content);
     }
     bool result = fsManager->writeFile(configPath, content);
     cJSON_free(content);
