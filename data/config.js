@@ -345,6 +345,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (config.watering_duration_sec !== undefined) {
                 document.getElementById('watering-duration').value = config.watering_duration_sec;
             }
+            // Sunday watering checkbox
+            if (document.getElementById('sunday-watering')) {
+                document.getElementById('sunday-watering').checked = !!config.sunday_watering;
+            }
 
             // Populate scheduled hour and minute dropdowns
             const hourSelect = document.getElementById('irrigation-scheduled-hour');
@@ -483,6 +487,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     newConfig.watering_duration_sec = parseInt(document.getElementById('watering-duration').value);
                     newConfig.irrigation_scheduled_hour = parseInt(document.getElementById('irrigation-scheduled-hour').value);
                     newConfig.irrigation_scheduled_minute = parseInt(document.getElementById('irrigation-scheduled-minute').value);
+                    newConfig.sunday_watering = document.getElementById('sunday-watering').checked;
 
 
                     fetch('/api/config', {

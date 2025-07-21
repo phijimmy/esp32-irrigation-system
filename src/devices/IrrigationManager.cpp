@@ -293,8 +293,32 @@ void IrrigationManager::checkAndRunScheduled() {
     struct tm* tm_info = localtime(&now);
     static int lastRunDay = -1;
     if (tm_info->tm_hour == schedHour && tm_info->tm_min == schedMin && lastRunDay != tm_info->tm_yday) {
+        bool doWatering = true;
+        // Check for Sunday and sunday_watering config
+        if (tm_info->tm_wday == 0) { // Sunday is 0
+            // Get sunday_watering as bool, fallback to string if needed
+            bool sundayWatering = false;
+            cJSON* root = configManager->getRoot();
+            if (root) {
+                cJSON* swItem = cJSON_GetObjectItemCaseSensitive(root, "sunday_watering");
+                if (cJSON_IsBool(swItem)) {
+                    sundayWatering = cJSON_IsTrue(swItem);
+                } else if (cJSON_IsString(swItem) && swItem->valuestring) {
+                    sundayWatering = (strcmp(swItem->valuestring, "true") == 0 || strcmp(swItem->valuestring, "1") == 0);
+                }
+            }
+            doWatering = sundayWatering;
+        }
         Serial.println("[IrrigationManager] Scheduled time reached, triggering irrigation.");
-        trigger();
+        if (doWatering) {
+            trigger(); // Normal: take readings and do watering
+        } else {
+            // Only take readings and air quality, skip watering
+            Serial.println("[IrrigationManager] Sunday watering disabled, skipping watering but taking readings.");
+            state = START; // Start state machine, but skip watering in SOIL_READING
+            stateStart = millis();
+            completePrinted = false;
+        }
         lastRunDay = tm_info->tm_yday;
     }
 }

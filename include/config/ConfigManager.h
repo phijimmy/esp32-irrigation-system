@@ -10,6 +10,10 @@ class DiagnosticManager; // Forward declaration
 
 class ConfigManager {
 public:
+    // Sunday watering flag
+    bool sundayWatering = false;
+    bool getSundayWatering() const { return sundayWatering; }
+    void setSundayWatering(bool value) { sundayWatering = value; }
     void setRoot(cJSON* newRoot);
     // Setting: remove config file (default false)
     bool getRemoveConfigFile() const { return removeConfigFile; }

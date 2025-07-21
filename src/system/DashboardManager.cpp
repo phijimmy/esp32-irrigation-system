@@ -108,6 +108,10 @@ cJSON* DashboardManager::getStatusJson() {
     // Human-readable time
     String timeStr = timeManager->getCurrentTimeString();
     cJSON_AddStringToObject(root, "time_human", timeStr.c_str());
+    // Add sunday_watering config value
+    if (configManager) {
+        cJSON_AddBoolToObject(root, "sunday_watering", configManager->getSundayWatering());
+    }
     // Always add BME280 state
     cJSON* bmeJson = cJSON_CreateObject();
     if (bme280Device) {

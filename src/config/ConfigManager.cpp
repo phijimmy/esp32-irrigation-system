@@ -54,6 +54,13 @@ bool ConfigManager::load() {
                 // Add back as number
                 cJSON_AddNumberToObject(configRoot, "ap_timeout", apTimeoutVal);
                 cJSON_AddNumberToObject(configRoot, "brownout_threshold", brownoutVal);
+                // Load sunday_watering from configRoot
+                cJSON* sundayWateringItem = cJSON_GetObjectItemCaseSensitive(configRoot, "sunday_watering");
+                if (cJSON_IsBool(sundayWateringItem)) {
+                    sundayWatering = cJSON_IsTrue(sundayWateringItem);
+                } else {
+                    sundayWatering = false;
+                }
                 // Merge missing keys from defaults
                 mergeDefaults();
                 return true;
@@ -71,6 +78,9 @@ bool ConfigManager::load() {
 
 bool ConfigManager::save() {
     if (!configRoot) return false;
+    // Save sunday_watering to configRoot
+    cJSON_DeleteItemFromObjectCaseSensitive(configRoot, "sunday_watering");
+    cJSON_AddBoolToObject(configRoot, "sunday_watering", sundayWatering);
     char* content = cJSON_PrintUnformatted(configRoot);
     if (!content) {
         if (diagnosticManager) diagnosticManager->log(DiagnosticManager::LOG_ERROR, "Config", "Failed to serialize configRoot to JSON");
@@ -98,6 +108,9 @@ void ConfigManager::loadDefaults() {
     configRoot = cJSON_CreateObject();
     
     // Basic device settings
+    // Default for sunday_watering
+    cJSON_AddBoolToObject(configRoot, "sunday_watering", false);
+    sundayWatering = false;
     cJSON_AddNumberToObject(configRoot, "led_gpio", 23);
     cJSON_AddNumberToObject(configRoot, "led_blink_rate", 500);
     cJSON_AddNumberToObject(configRoot, "touch_gpio", 4);
