@@ -1,5 +1,6 @@
 #include "devices/RelayController.h"
 #include <Arduino.h>
+#include "system/MqttManager.h"
 
 RelayController::RelayController() : Device(DeviceType::RELAY_CONTROLLER) {
     // Only print essential info
@@ -93,6 +94,10 @@ void RelayController::setRelayMode(int index, Relay::Mode mode) {
     relays[index].setMode(mode);
     if (diagnosticManager) {
         diagnosticManager->log(DiagnosticManager::LOG_INFO, "RelayController", "Relay %d set to %s", index, mode == Relay::Mode::ON ? "ON" : (mode == Relay::Mode::OFF ? "OFF" : "TOGGLE"));
+    }
+    // Publish relay state to MQTT/Home Assistant only if mqttManager is set and initialized
+    if (mqttManager && mqttManager->isInitialized()) {
+        mqttManager->publishRelayState(index, mode == Relay::Mode::ON);
     }
 }
 

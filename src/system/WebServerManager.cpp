@@ -265,18 +265,13 @@ void WebServerManager::begin() {
                 result = -2;
             } else if (command == "on") {
                 relayControllerPtr->setRelayMode(relay, Relay::ON);
-                extern MqttManager mqttManager;
-                mqttManager.publishRelayState(relay, true);
+                // Relay state will be published by RelayController
             } else if (command == "off") {
                 relayControllerPtr->setRelayMode(relay, Relay::OFF);
-                extern MqttManager mqttManager;
-                mqttManager.publishRelayState(relay, false);
+                // Relay state will be published by RelayController
             } else if (command == "toggle") {
                 relayControllerPtr->toggleRelay(relay);
-                extern MqttManager mqttManager;
-                // After toggling, publish the new state
-                bool newState = relayControllerPtr->getRelayState(relay);
-                mqttManager.publishRelayState(relay, newState);
+                // Relay state will be published by RelayController
             } else {
                 result = -1;
             }

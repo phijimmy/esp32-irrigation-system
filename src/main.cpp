@@ -110,6 +110,7 @@ void setup() {
 
     relayController.setConfigManager(&systemManager.getConfigManager());
     relayController.setDiagnosticManager(&systemManager.getDiagnosticManager());
+    relayController.setMqttManager(&mqttManager);
     systemManager.getDeviceManager().addDevice(&relayController);
     relayController.begin(); // Explicitly call begin() since DeviceManager.begin() was called before adding this device
     

@@ -5,6 +5,7 @@
 #include "devices/Relay.h"
 #include "config/ConfigManager.h"
 #include "diagnostics/DiagnosticManager.h"
+#include "system/MqttManager.h"
 
 class RelayController : public Device {
 public:
@@ -21,6 +22,7 @@ public:
     uint8_t getRelayGpio(int index) const;
     void setConfigManager(ConfigManager* config) { configManager = config; }
     void setDiagnosticManager(DiagnosticManager* diag) { diagnosticManager = diag; }
+    void setMqttManager(MqttManager* mqtt) { mqttManager = mqtt; }
     void handleRelay2ControlInterrupt(); // New: handle GPIO 18 interrupt
     void setupRelay2ControlGpio(); // New: setup GPIO 18 as input with pullup
 private:
@@ -29,6 +31,7 @@ private:
     uint8_t relayGpios[RELAY_COUNT] = {32, 33, 25, 26};
     ConfigManager* configManager = nullptr;
     DiagnosticManager* diagnosticManager = nullptr;
+    MqttManager* mqttManager = nullptr;
     void loadConfig();
     int relay2ControlGpio = 18; // Default, will be loaded from config
 };
