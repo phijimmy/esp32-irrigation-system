@@ -29,6 +29,28 @@ void IrrigationManager::setMQ135Sensor(MQ135Sensor* sensor) {
 void IrrigationManager::stopNow() {
     Serial.println("[IrrigationManager] STOP: Immediately stopping all irrigation activity and deactivating relay 1.");
     if (relayController) relayController->setRelayMode(1, Relay::OFF); // Relay 1 OFF
+    // Publish relay state to Home Assistant if MQTT is enabled and wifi mode is client/wifi
+    extern MqttManager mqttManager;
+    if (configManager) {
+        cJSON* config = configManager->getRoot();
+        cJSON* wifiModeItem = cJSON_GetObjectItemCaseSensitive(config, "wifi_mode");
+        cJSON* mqttEnabledItem = cJSON_GetObjectItemCaseSensitive(config, "mqtt_enabled");
+        bool mqttEnabled = false;
+        if (mqttEnabledItem) {
+            if (cJSON_IsBool(mqttEnabledItem)) {
+                mqttEnabled = cJSON_IsTrue(mqttEnabledItem);
+            } else if (cJSON_IsNumber(mqttEnabledItem)) {
+                mqttEnabled = mqttEnabledItem->valueint != 0;
+            } else if (cJSON_IsString(mqttEnabledItem)) {
+                std::string val = mqttEnabledItem->valuestring;
+                mqttEnabled = (val == "true" || val == "1" || val == "yes" || val == "on");
+            }
+        }
+        std::string wifiMode = wifiModeItem && cJSON_IsString(wifiModeItem) ? wifiModeItem->valuestring : "client";
+        if (mqttEnabled && (wifiMode == "client" || wifiMode == "wifi")) {
+            mqttManager.publishRelayState(1, false);
+        }
+    }
     wateringActive = false;
     // Reset/cancel any sensor activity here
     if (soilSensor) soilSensor->forceIdle();
@@ -174,6 +196,28 @@ void IrrigationManager::update() {
             if (lastAvgSoilCorrected <= wateringThreshold) {
                 Serial.printf("[IrrigationManager] Soil moisture (%.2f%%) is below threshold (%.2f%%). Starting watering for %d seconds.\n", lastAvgSoilCorrected, wateringThreshold, wateringDuration);
                 if (relayController) relayController->setRelayMode(1, Relay::ON);
+                // Publish relay state to Home Assistant if MQTT is enabled and wifi mode is client/wifi
+                extern MqttManager mqttManager;
+                if (configManager) {
+                    cJSON* config = configManager->getRoot();
+                    cJSON* wifiModeItem = cJSON_GetObjectItemCaseSensitive(config, "wifi_mode");
+                    cJSON* mqttEnabledItem = cJSON_GetObjectItemCaseSensitive(config, "mqtt_enabled");
+                    bool mqttEnabled = false;
+                    if (mqttEnabledItem) {
+                        if (cJSON_IsBool(mqttEnabledItem)) {
+                            mqttEnabled = cJSON_IsTrue(mqttEnabledItem);
+                        } else if (cJSON_IsNumber(mqttEnabledItem)) {
+                            mqttEnabled = mqttEnabledItem->valueint != 0;
+                        } else if (cJSON_IsString(mqttEnabledItem)) {
+                            std::string val = mqttEnabledItem->valuestring;
+                            mqttEnabled = (val == "true" || val == "1" || val == "yes" || val == "on");
+                        }
+                    }
+                    std::string wifiMode = wifiModeItem && cJSON_IsString(wifiModeItem) ? wifiModeItem->valuestring : "client";
+                    if (mqttEnabled && (wifiMode == "client" || wifiMode == "wifi")) {
+                        mqttManager.publishRelayState(1, true);
+                    }
+                }
                 wateringActive = true;
                 wateringStart = millis();
                 // Go to watering state, then after watering is done, go to air quality
@@ -187,6 +231,30 @@ void IrrigationManager::update() {
             // Show progress for MQ135 warmup and reading
             static bool started = false;
             static unsigned long lastMQ135ProgressPrint = 0;
+            // Ensure relay state is published to Home Assistant when watering finishes and air quality reading starts
+            if (!wateringActive) {
+                extern MqttManager mqttManager;
+                if (configManager) {
+                    cJSON* config = configManager->getRoot();
+                    cJSON* wifiModeItem = cJSON_GetObjectItemCaseSensitive(config, "wifi_mode");
+                    cJSON* mqttEnabledItem = cJSON_GetObjectItemCaseSensitive(config, "mqtt_enabled");
+                    bool mqttEnabled = false;
+                    if (mqttEnabledItem) {
+                        if (cJSON_IsBool(mqttEnabledItem)) {
+                            mqttEnabled = cJSON_IsTrue(mqttEnabledItem);
+                        } else if (cJSON_IsNumber(mqttEnabledItem)) {
+                            mqttEnabled = mqttEnabledItem->valueint != 0;
+                        } else if (cJSON_IsString(mqttEnabledItem)) {
+                            std::string val = mqttEnabledItem->valuestring;
+                            mqttEnabled = (val == "true" || val == "1" || val == "yes" || val == "on");
+                        }
+                    }
+                    std::string wifiMode = wifiModeItem && cJSON_IsString(wifiModeItem) ? wifiModeItem->valuestring : "client";
+                    if (mqttEnabled && (wifiMode == "client" || wifiMode == "wifi")) {
+                        mqttManager.publishRelayState(1, false);
+                    }
+                }
+            }
             if (mq135Sensor) {
                 if (!started) {
                     Serial.println("[IrrigationManager] Starting MQ135 air quality sensor warmup...");
@@ -232,6 +300,28 @@ void IrrigationManager::update() {
                 }
                 if (elapsed >= wateringDuration) {
                     if (relayController) relayController->setRelayMode(1, Relay::OFF); // Relay 1 OFF
+                    // Publish relay state to Home Assistant if MQTT is enabled and wifi mode is client/wifi
+                    extern MqttManager mqttManager;
+                    if (configManager) {
+                        cJSON* config = configManager->getRoot();
+                        cJSON* wifiModeItem = cJSON_GetObjectItemCaseSensitive(config, "wifi_mode");
+                        cJSON* mqttEnabledItem = cJSON_GetObjectItemCaseSensitive(config, "mqtt_enabled");
+                        bool mqttEnabled = false;
+                        if (mqttEnabledItem) {
+                            if (cJSON_IsBool(mqttEnabledItem)) {
+                                mqttEnabled = cJSON_IsTrue(mqttEnabledItem);
+                            } else if (cJSON_IsNumber(mqttEnabledItem)) {
+                                mqttEnabled = mqttEnabledItem->valueint != 0;
+                            } else if (cJSON_IsString(mqttEnabledItem)) {
+                                std::string val = mqttEnabledItem->valuestring;
+                                mqttEnabled = (val == "true" || val == "1" || val == "yes" || val == "on");
+                            }
+                        }
+                        std::string wifiMode = wifiModeItem && cJSON_IsString(wifiModeItem) ? wifiModeItem->valuestring : "client";
+                        if (mqttEnabled && (wifiMode == "client" || wifiMode == "wifi")) {
+                            mqttManager.publishRelayState(1, false);
+                        }
+                    }
                     Serial.println("[IrrigationManager] Watering complete. Relay 1 OFF.");
                     wateringActive = false;
                     // After watering is done, go to air quality reading
@@ -258,6 +348,28 @@ void IrrigationManager::update() {
                 }
                 if (elapsed >= wateringDuration) {
                     if (relayController) relayController->setRelayMode(1, Relay::OFF); // Relay 1 OFF
+                    // Publish relay state to Home Assistant if MQTT is enabled and wifi mode is client/wifi
+                    extern MqttManager mqttManager;
+                    if (configManager) {
+                        cJSON* config = configManager->getRoot();
+                        cJSON* wifiModeItem = cJSON_GetObjectItemCaseSensitive(config, "wifi_mode");
+                        cJSON* mqttEnabledItem = cJSON_GetObjectItemCaseSensitive(config, "mqtt_enabled");
+                        bool mqttEnabled = false;
+                        if (mqttEnabledItem) {
+                            if (cJSON_IsBool(mqttEnabledItem)) {
+                                mqttEnabled = cJSON_IsTrue(mqttEnabledItem);
+                            } else if (cJSON_IsNumber(mqttEnabledItem)) {
+                                mqttEnabled = mqttEnabledItem->valueint != 0;
+                            } else if (cJSON_IsString(mqttEnabledItem)) {
+                                std::string val = mqttEnabledItem->valuestring;
+                                mqttEnabled = (val == "true" || val == "1" || val == "yes" || val == "on");
+                            }
+                        }
+                        std::string wifiMode = wifiModeItem && cJSON_IsString(wifiModeItem) ? wifiModeItem->valuestring : "client";
+                        if (mqttEnabled && (wifiMode == "client" || wifiMode == "wifi")) {
+                            mqttManager.publishRelayState(1, false);
+                        }
+                    }
                     Serial.println("[IrrigationManager] Water Now complete. Relay 1 OFF.");
                     wateringActive = false;
                     // After manual watering, finish without air quality reading

@@ -1,8 +1,13 @@
+// ...existing code...
 #include "system/TimeManager.h"
 #include "devices/RelayController.h"
 #include <WiFi.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
+#include "system/MqttManager.h"
+
+// Use the global instance from main.cpp
+extern MqttManager mqttManager;
 
 TimeManager::TimeManager() {}
 
@@ -154,17 +159,60 @@ void TimeManager::updateRelayFromIntSqw() {
     // Control relay 0 (GPIO 32) based on INT/SQW state (INVERTED LOGIC)
     // INT/SQW is LOW during alarm1 (relay ON), HIGH during alarm2 (relay OFF)
     if (currentState != lastRelayControlState) {
+        extern MqttManager mqttManager;
         if (currentState) {
             // INT/SQW is HIGH (alarm2 period) - deactivate relay
             relayController->deactivateRelay(0);
             if (diagnosticManager) {
                 diagnosticManager->log(DiagnosticManager::LOG_INFO, "Time", "INT/SQW HIGH - deactivated relay 0");
             }
+            // Publish relay state to Home Assistant if MQTT is enabled and wifi mode is client/wifi
+            if (configManager) {
+                cJSON* config = configManager->getRoot();
+                cJSON* wifiModeItem = cJSON_GetObjectItemCaseSensitive(config, "wifi_mode");
+                cJSON* mqttEnabledItem = cJSON_GetObjectItemCaseSensitive(config, "mqtt_enabled");
+                bool mqttEnabled = false;
+                if (mqttEnabledItem) {
+                    if (cJSON_IsBool(mqttEnabledItem)) {
+                        mqttEnabled = cJSON_IsTrue(mqttEnabledItem);
+                    } else if (cJSON_IsNumber(mqttEnabledItem)) {
+                        mqttEnabled = mqttEnabledItem->valueint != 0;
+                    } else if (cJSON_IsString(mqttEnabledItem)) {
+                        std::string val = mqttEnabledItem->valuestring;
+                        mqttEnabled = (val == "true" || val == "1" || val == "yes" || val == "on");
+                    }
+                }
+                std::string wifiMode = wifiModeItem && cJSON_IsString(wifiModeItem) ? wifiModeItem->valuestring : "client";
+                if (mqttEnabled && (wifiMode == "client" || wifiMode == "wifi")) {
+                    mqttManager.publishRelayState(0, false);
+                }
+            }
         } else {
             // INT/SQW is LOW (alarm1 period) - activate relay
             relayController->activateRelay(0);
             if (diagnosticManager) {
                 diagnosticManager->log(DiagnosticManager::LOG_INFO, "Time", "INT/SQW LOW - activated relay 0");
+            }
+            // Publish relay state to Home Assistant if MQTT is enabled and wifi mode is client/wifi
+            if (configManager) {
+                cJSON* config = configManager->getRoot();
+                cJSON* wifiModeItem = cJSON_GetObjectItemCaseSensitive(config, "wifi_mode");
+                cJSON* mqttEnabledItem = cJSON_GetObjectItemCaseSensitive(config, "mqtt_enabled");
+                bool mqttEnabled = false;
+                if (mqttEnabledItem) {
+                    if (cJSON_IsBool(mqttEnabledItem)) {
+                        mqttEnabled = cJSON_IsTrue(mqttEnabledItem);
+                    } else if (cJSON_IsNumber(mqttEnabledItem)) {
+                        mqttEnabled = mqttEnabledItem->valueint != 0;
+                    } else if (cJSON_IsString(mqttEnabledItem)) {
+                        std::string val = mqttEnabledItem->valuestring;
+                        mqttEnabled = (val == "true" || val == "1" || val == "yes" || val == "on");
+                    }
+                }
+                std::string wifiMode = wifiModeItem && cJSON_IsString(wifiModeItem) ? wifiModeItem->valuestring : "client";
+                if (mqttEnabled && (wifiMode == "client" || wifiMode == "wifi")) {
+                    mqttManager.publishRelayState(0, true);
+                }
             }
         }
         lastRelayControlState = currentState;
