@@ -57,6 +57,13 @@ BME280Reading BME280Device::readData() {
     state = UPDATING;
     const int N = 10;
     BME280Reading readings[N];
+    // Non-blocking wait for BME280 stabilization after wake (250ms)
+    {
+        unsigned long start = millis();
+        while (millis() - start < 250) {
+            vTaskDelay(1); // Yield to RTOS, non-blocking
+        }
+    }
     for (int i = 0; i < N; ++i) {
         if (!initialized) {
             if (!begin()) {
@@ -69,7 +76,10 @@ BME280Reading BME280Device::readData() {
         }
         if (i2cManager && i2cManager->getI2CMutex()) xSemaphoreTake(i2cManager->getI2CMutex(), portMAX_DELAY);
         bme.setSampling(Adafruit_BME280::MODE_FORCED, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::SAMPLING_X16, Adafruit_BME280::FILTER_X16, Adafruit_BME280::STANDBY_MS_0_5);
-        delay(100);
+        unsigned long start = millis();
+        while (millis() - start < 250) {
+            vTaskDelay(1); // Yield to RTOS, non-blocking
+        }
         readings[i].temperature = bme.readTemperature();
         readings[i].humidity = bme.readHumidity();
         readings[i].pressure = bme.readPressure() / 100.0F;

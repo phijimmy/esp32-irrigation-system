@@ -502,7 +502,12 @@ void MqttManager::setInitialized(bool init) {
         publishDiscoveryForMQ135AirQuality();
 
         // Wait 1 second to ensure Home Assistant processes config before state
-        delay(1000);
+        {
+            unsigned long start = millis();
+            while (millis() - start < 1000) {
+                vTaskDelay(1); // Yield to RTOS, non-blocking
+            }
+        }
 
         // Publish last BME280 temperature reading to Home Assistant
         BME280Device* bme = systemManager.getDeviceManager().getBME280Device();

@@ -103,7 +103,10 @@ void SoilMoistureSensor::takeReading() {
         rawVals[i] = (float)readRaw();
         voltVals[i] = readVoltage();
         percentVals[i] = readPercent();
-        delay(10); // Small delay between readings
+        unsigned long start = millis();
+        while (millis() - start < 250) {
+            vTaskDelay(1); // Yield to RTOS, non-blocking
+        }
     }
     // Store the first reading as the 'single' value
     lastReading.raw = (int16_t)rawVals[0];

@@ -167,13 +167,13 @@ void ConfigManager::loadDefaults() {
     cJSON_AddBoolToObject(configRoot, "mqtt_enabled", false); // MQTT disabled by default
     cJSON_AddStringToObject(configRoot, "mqtt_server", "192.168.1.100"); // Default MQTT broker IP
     cJSON_AddNumberToObject(configRoot, "mqtt_port", 1883); // Default MQTT port
-    cJSON_AddStringToObject(configRoot, "mqtt_username", ""); // Default username empty
-    cJSON_AddStringToObject(configRoot, "mqtt_password", ""); // Default password empty
+    cJSON_AddStringToObject(configRoot, "mqtt_username", "username"); // Default username empty
+    cJSON_AddStringToObject(configRoot, "mqtt_password", "password"); // Default password empty
     
     // Legacy string-based configs for backward compatibility
     cJSON_AddStringToObject(configRoot, "wifi_mode", "ap"); // "ap" for Access Point, "client" for WiFi Client
-    cJSON_AddStringToObject(configRoot, "wifi_ssid", "M1M-LS-MR-82");
-    cJSON_AddStringToObject(configRoot, "wifi_pass", "BqY3#sTgKu$Ve5D2cMhAw[FnXrPz(8J7");
+    cJSON_AddStringToObject(configRoot, "wifi_ssid", "wifi-network");
+    cJSON_AddStringToObject(configRoot, "wifi_pass", "password");
     cJSON_AddStringToObject(configRoot, "wifi_reconnect_interval", "60"); // seconds between reconnection attempts
     cJSON_AddStringToObject(configRoot, "wifi_max_reconnect_attempts", "5"); // max attempts before fallback to AP
     cJSON_AddStringToObject(configRoot, "device_name", "esp32_device");
@@ -396,16 +396,16 @@ void ConfigManager::mergeDefaults() {
         cJSON_AddNumberToObject(configRoot, "mqtt_port", 1883);
     }
     if (!cJSON_HasObjectItem(configRoot, "mqtt_username")) {
-        cJSON_AddStringToObject(configRoot, "mqtt_username", "");
+        cJSON_AddStringToObject(configRoot, "mqtt_username", "username");
     }
     if (!cJSON_HasObjectItem(configRoot, "mqtt_password")) {
-        cJSON_AddStringToObject(configRoot, "mqtt_password", "");
+        cJSON_AddStringToObject(configRoot, "mqtt_password", "password");
     }
     if (!cJSON_HasObjectItem(configRoot, "wifi_ssid")) {
-        cJSON_AddStringToObject(configRoot, "wifi_ssid", "M1M-LS-MR-82");
+        cJSON_AddStringToObject(configRoot, "wifi_ssid", "wifi-network");
     }
     if (!cJSON_HasObjectItem(configRoot, "wifi_pass")) {
-        cJSON_AddStringToObject(configRoot, "wifi_pass", "BqY3#sTgKu$Ve5D2cMhAw[FnXrPz(8J7");
+        cJSON_AddStringToObject(configRoot, "wifi_pass", "password");
     }
     if (!cJSON_HasObjectItem(configRoot, "wifi_reconnect_interval")) {
         cJSON_AddStringToObject(configRoot, "wifi_reconnect_interval", "60");

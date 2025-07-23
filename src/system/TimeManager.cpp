@@ -467,7 +467,10 @@ bool TimeManager::performNTPSync(const String& server, int timeoutMs) {
             udp.stop();
             return true;
         }
-        delay(10);
+        unsigned long start = millis();
+        while (millis() - start < 10) {
+            vTaskDelay(1); // Yield to RTOS, non-blocking
+        }
     }
     
     udp.stop();

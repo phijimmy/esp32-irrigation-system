@@ -54,7 +54,10 @@ void MQ135Sensor::takeReading() {
     for (int i = 0; i < N; ++i) {
         rawVals[i] = (float)ads->readRaw(channel, gain, 100);
         voltVals[i] = ads->readVoltage(channel, gain, 100);
-        delay(10); // Small delay between readings
+        unsigned long start = millis();
+        while (millis() - start < 250) {
+            vTaskDelay(1); // Yield to RTOS, non-blocking
+        }
     }
     // Store the first reading as the 'single' value
     lastReading.raw = (int16_t)rawVals[0];
