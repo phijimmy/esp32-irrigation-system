@@ -51,7 +51,7 @@ DashboardManager* dashboard = nullptr;
 
 
 void setup() {
-    // ...existing code...
+
     // ...existing initialization code...
     systemManager.begin();
     // Set soil power GPIO LOW at boot (redundant safety)
@@ -405,7 +405,7 @@ void loop() {
                 mq135LastProgressPrint = millis();
                 sensorState = MQ135_WARMUP;
             }
-            // ...existing code...
+
             break;
         case SOIL_STABILISING: {
             unsigned long now = millis();

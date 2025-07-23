@@ -642,7 +642,7 @@ void MqttManager::handleRelayCommand(int relayIndex, const std::string& payload)
 
 void MqttManager::publish(const std::string& topic, cJSON* payload) {
     // Publish to MQTT broker
-// ...existing code...
+
 // Overload publish for raw string payloads (for relay state)
 
     if (!mqttClient.connected()) {

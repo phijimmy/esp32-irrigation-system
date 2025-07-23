@@ -27,7 +27,7 @@ BME280Device* DeviceManager::getBME280Device() {
 }
 
 SoilMoistureSensor* DeviceManager::getSoilMoistureSensor() {
-    // Replace with actual instance if available
+
     extern SoilMoistureSensor soilMoistureSensor;
     return &soilMoistureSensor;
 }

@@ -1,4 +1,4 @@
-    // ...existing code...
+
 #ifndef BME280_DEVICE_H
 #define BME280_DEVICE_H
 

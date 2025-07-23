@@ -38,7 +38,7 @@ void IrrigationManager::stopNow() {
     state = IDLE;
     completePrinted = false;
 }
-// ...existing code...
+
 
 void IrrigationManager::begin(BME280Device* bme, SoilMoistureSensor* soil, TimeManager* timeMgr) {
     bme280 = bme;

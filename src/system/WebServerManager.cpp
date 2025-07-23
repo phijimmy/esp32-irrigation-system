@@ -15,7 +15,7 @@ WebServerManager::WebServerManager(DashboardManager* dashMgr, DiagnosticManager*
 void WebServerManager::begin() {
     // Create server before registering any routes
     server = new AsyncWebServer(80);
-    // ...existing code...
+
     // Clear Config API
     server->on("/api/clearconfig", HTTP_POST, [](AsyncWebServerRequest* request) {
         bool ok = systemManager.getFileSystemManager().deleteConfigJson();
@@ -211,7 +211,7 @@ void WebServerManager::begin() {
     server->on("/api/irrigation/trigger", HTTP_POST, [](AsyncWebServerRequest* request){}, NULL,
         [](AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
             int result = 0;
-            // irrigationManager.setSkipAirQualityThisRun(true); // Removed: no longer needed
+            
             irrigationManager.trigger();
             cJSON* resp = cJSON_CreateObject();
             cJSON_AddStringToObject(resp, "result", "ok");
@@ -290,7 +290,7 @@ void WebServerManager::begin() {
             cJSON_free(respStr);
             cJSON_Delete(resp);
         });
-    // ...existing code...
+
     if (!dashboardManager) {
         if (diagnosticManager) {
             diagnosticManager->log(DiagnosticManager::LOG_ERROR, "WebServer", "DashboardManager not set");

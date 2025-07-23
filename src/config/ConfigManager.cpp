@@ -12,7 +12,7 @@ bool ConfigManager::begin(FileSystemManager& fsMgr, DiagnosticManager* diag) {
     // Load defaults, then try to load config file if it exists
     loadDefaults();
     load();
-    // ...removed automatic config.json deletion...
+
     return true;
 }
 

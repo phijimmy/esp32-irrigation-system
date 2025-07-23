@@ -12,7 +12,7 @@
 
 class IrrigationManager {
 public:
-    // ...existing code...
+
     IrrigationManager();
     void begin(BME280Device* bme, SoilMoistureSensor* soil, TimeManager* timeMgr);
     void trigger(); // Start the irrigation reading sequence
