@@ -1,0 +1,351 @@
+/* Soil moisture and air quality state status colors for sensors.html */
+.soil-status-ok {
+  background: #10b981;
+  color: #fff;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.soil-status-dry {
+  background: #ef4444;
+  color: #fff;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.soil-status-wet {
+  background: #3b82f6;
+  color: #fff;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.soil-status-unknown {
+  background: #b0b0b0;
+  color: #333;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.air-status-good {
+  background: #10b981;
+  color: #fff;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.air-status-moderate {
+  background: #f59e42;
+  color: #fff;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.air-status-poor {
+  background: #ef4444;
+  color: #fff;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.air-status-unknown {
+  background: #b0b0b0;
+  color: #333;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+/* Soil moisture state status colors (same as irrigation for consistency) */
+.soil-status-ok {
+  background: #10b981;
+  color: #fff;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.soil-status-dry {
+  background: #ef4444;
+  color: #fff;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.soil-status-wet {
+  background: #3b82f6;
+  color: #fff;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.soil-status-unknown {
+  background: #b0b0b0;
+  color: #333;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+/* Irrigation state status colors */
+.status-idle {
+  background: #b0b0b0;
+  color: #333;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.status-watering {
+  background: #10b981;
+  color: #fff;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.status-reading {
+  background: #3b82f6;
+  color: #fff;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+.status-error {
+  background: #ef4444;
+  color: #fff;
+  padding: 0.2em 0.8em;
+  border-radius: 0.5em;
+  display: inline-block;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
+}
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.header {
+    text-align: center;
+    color: white;
+    margin-bottom: 30px;
+}
+
+.header h1 {
+    font-size: 2.5em;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.header p {
+    font-size: 1.2em;
+    opacity: 0.9;
+}
+
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    font-size: 1.5em;
+}
+
+.card-title {
+    font-size: 1.3em;
+    font-weight: 600;
+    color: #333;
+}
+
+.card-content {
+    color: #666;
+    line-height: 1.6;
+}
+
+.status-online {
+    background: #10b981;
+    color: white;
+}
+
+.status-offline {
+    background: #ef4444;
+    color: white;
+}
+
+.info-icon {
+    background: #3b82f6;
+    color: white;
+}
+
+.time-icon {
+    background: #8b5cf6;
+    color: white;
+}
+
+.loading {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+}
+
+.error {
+    color: #ef4444;
+    background: #fef2f2;
+    padding: 10px;
+    border-radius: 5px;
+    border-left: 4px solid #ef4444;
+}
+
+.refresh-btn {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background 0.3s ease;
+    margin: 20px auto;
+    display: block;
+}
+
+.refresh-btn:hover {
+    background: #059669;
+}
+
+.value {
+    font-weight: 600;
+    color: #333;
+}
+
+/* LED indicator styles */
+.led-indicator {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  margin: 0 auto 1rem auto;
+  background: #b0b0b0;
+  box-shadow: 0 0 8px #888;
+  transition: background 0.2s, box-shadow 0.2s;
+  display: block;
+}
+.led-indicator.led-blink {
+  animation: led-blink 1s infinite;
+}
+@keyframes led-blink {
+  0%, 100% { background: #ffd700; box-shadow: 0 0 16px #ffd700; }
+  50% { background: #b0b0b0; box-shadow: 0 0 8px #888; }
+}
+
+/* Relay indicator styles */
+.relay-indicator {
+  display: inline-block;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+  background: #b0b0b0;
+  box-shadow: 0 0 6px #888;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+/* Touch indicator styles */
+.touch-indicator {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  margin: 0 auto 1rem auto;
+  background: #b0b0b0;
+  box-shadow: 0 0 8px #888;
+  transition: background 0.2s, box-shadow 0.2s;
+  display: block;
+}
+
+/* LED controls custom styles (from led.html) */
+.led-controls button {
+    font-size: 1.18em;
+    padding: 0.7em 2.2em;
+    border-radius: 0.5em;
+    margin: 0 0.5em 0.5em 0;
+    background: #2980b9;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.led-controls button:active {
+    background: #145a86;
+}
+@media (max-width: 600px) {
+    .led-controls button {
+        font-size: 1.08em;
+        padding: 0.7em 1.2em;
+    }
+}

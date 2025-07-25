@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Systeminfo</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+    /* Responsive button menu styles */
+    .nav-menu {
+        display: flex;
+        gap: 0.5em;
+        justify-content: center;
+        margin: 1em 0 0.5em 0;
+        flex-wrap: wrap;
+        width: 100vw;
+        max-width: 100vw;
+        left: 50%;
+        right: 50%;
+        transform: translateX(-50%);
+        position: relative;
+    }
+    .nav-btn {
+        background: #2980b9;
+        color: #fff;
+        border: none;
+        border-radius: 0.4em;
+        padding: 0.6em 1.4em;
+        font-size: 1em;
+        cursor: pointer;
+        transition: background 0.2s;
+        text-decoration: none;
+        outline: none;
+    }
+    .nav-btn.active, .nav-btn:active {
+        background: #145a86;
+    }
+    @media (max-width: 600px) {
+        .nav-menu {
+            gap: 0.1em;
+            width: 100vw;
+            max-width: 100vw;
+            left: 50%;
+            right: 50%;
+            transform: translateX(-50%);
+            position: relative;
+        }
+        .nav-btn {
+            font-size: 0.96em;
+            padding: 0.35em 0.3em;
+            min-width: 18vw;
+            flex: 1 1 18vw;
+            margin: 0;
+        }
+    }
+    </style>
+    <script src="info.js" defer></script>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Info</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="info.js" defer></script>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Informationen</h1>
+            <nav>
+                <div class="nav-menu">
+                    <a href="index.html" class="nav-btn">Startseite</a>
+                    <a href="irrigation.html" class="nav-btn">Bewässerung</a>
+                    <a href="relay.html" class="nav-btn">Relais</a>
+                    <a href="info.html" class="nav-btn active">Info</a>
+                    <a href="config.html" class="nav-btn">Konfiguration</a>
+                </div>
+            </nav>
+            <p>Systeminformationen</p>
+        </div>
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon time-icon">🕐</div>
+                    <div class="card-title">Systemzeit</div>
+                </div>
+                <div class="card-content">
+                    <div id="system-time" class="loading">Systemzeit wird geladen...</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">🌐</div>
+                    <div class="card-title">Netzwerkinformationen</div>
+                </div>
+                <div class="card-content">
+                    <div id="network-info" class="loading">Netzwerkinformationen werden geladen...</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">ℹ️</div>
+                    <div class="card-title">Geräteinformationen</div>
+                </div>
+                <div class="card-content">
+                    <div id="device-info" class="loading">Geräteinformationen werden geladen...</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">💾</div>
+                    <div class="card-title">Dateisystem</div>
+                </div>
+                <div class="card-content">
+                    <div id="filesystem-info" class="loading">Dateisysteminformationen werden geladen...</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">🔌</div>
+                    <div class="card-title">I2C-Geräte</div>
+                </div>
+                <div class="card-content">
+                    <div id="i2c-info" class="loading">I2C-Informationen werden geladen...</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">❤️</div>
+                    <div class="card-title">Systemzustand</div>
+                </div>
+                <div class="card-content">
+                    <div id="health-info" class="loading">Systemzustand wird geladen...</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon"><span style="font-size:1.8em;">💡</span></div>
+                    <div class="card-title">Aktueller LED-Status</div>
+                </div>
+                <div class="card-content">
+                    <div id="led-indicator" class="led-indicator"></div>
+                    <div class="led-controls" style="margin-top:1.5rem;">
+                        <button id="led-on" type="button">An</button>
+                        <button id="led-off" type="button">Aus</button>
+                        <button id="led-blink" type="button">Blinken</button>
+                    </div>
+                    <div id="led-blink-rate" class="led-blink-rate" style="margin-top:1rem; font-size:1.1em; color:#555;"></div>
+                </div>
+            </div>
+            <!-- Touch Sensor Card (migrated from touch.html) -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Aktueller Status</div>
+                </div>
+                <div class="card-content">
+                    <div id="touch-indicator" class="touch-indicator"></div>
+                    <div id="touch-state" class="sensor-value">Wird geladen...</div>
+                    <div id="touch-long-press" class="sensor-value"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+        <footer style="margin-top:2em; text-align:center; font-size:0.85em; color:#888;">
+        <div style="color:#333; margin-top:2em;">
+            &copy; Copyright J. Phillips 2025<br>
+            Software-Version 2.0.0<br>
+            Hardware-Version 2.0.0
+        </div>
+
+    </footer>
+</body>
+</html>

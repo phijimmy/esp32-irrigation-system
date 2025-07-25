@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konfiguration</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+    /* Responsive button menu styles */
+    .nav-menu {
+        display: flex;
+        gap: 0.5em;
+        justify-content: center;
+        margin: 1em 0 0.5em 0;
+        flex-wrap: wrap;
+        width: 100vw;
+        max-width: 100vw;
+        left: 50%;
+        right: 50%;
+        transform: translateX(-50%);
+        position: relative;
+    }
+    .nav-btn {
+        background: #2980b9;
+        color: #fff;
+        border: none;
+        border-radius: 0.4em;
+        padding: 0.6em 1.4em;
+        font-size: 1em;
+        cursor: pointer;
+        transition: background 0.2s;
+        text-decoration: none;
+        outline: none;
+    }
+    .nav-btn.active, .nav-btn:active {
+        background: #145a86;
+    }
+    @media (max-width: 600px) {
+        .nav-menu {
+            gap: 0.1em;
+            width: 100vw;
+            max-width: 100vw;
+            left: 50%;
+            right: 50%;
+            transform: translateX(-50%);
+            position: relative;
+        }
+        .nav-btn {
+            font-size: 0.96em;
+            padding: 0.35em 0.3em;
+            min-width: 18vw;
+            flex: 1 1 18vw;
+            margin: 0;
+        }
+    }
+    #save-config-btn, #clear-config-btn, #restart-btn {
+        font-size: 1.18em;
+        padding: 0.7em 2.2em;
+        border-radius: 0.5em;
+        margin: 0 0.5em 0.5em 0;
+        background: #2980b9;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    #clear-config-btn {
+        background: #e67e22;
+    }
+    #restart-btn {
+        background: #c0392b;
+    }
+    #save-config-btn:active, #clear-config-btn:active, #restart-btn:active {
+        background: #145a86;
+    }
+    @media (max-width: 600px) {
+        #save-config-btn, #clear-config-btn, #restart-btn {
+            font-size: 1.08em;
+            padding: 0.7em 1.2em;
+        }
+    }
+    </style>
+    <style>
+    /* Schedule card and table tweaks for better mobile alignment */
+    #schedule-card {
+        padding: 6px 4px 8px 4px !important;
+    }
+    #schedule-table th, #schedule-table td {
+        padding: 0.5em 1px 0.5em 1px;
+        font-size: 0.95em;
+    }
+    #schedule-table th.day-col, #schedule-table td.day-col {
+        width: 18%;
+        min-width: 60px;
+        max-width: 80px;
+        white-space: nowrap;
+    }
+    #schedule-table th.active-col, #schedule-table td.active-col {
+        width: 12%;
+        min-width: 40px;
+        max-width: 60px;
+        text-align: center;
+    }
+    #schedule-table th.start-col, #schedule-table th.stop-col,
+    #schedule-table td.start-col, #schedule-table td.stop-col {
+        width: 35%;
+        min-width: 80px;
+        max-width: 120px;
+    }
+    #schedule-table select {
+        min-width: 2.5em; 
+        font-size: 1em;
+        margin: 0 1px;
+    }
+    @media (max-width: 600px) {
+        #schedule-card {
+            padding: 2px 1px 4px 1px !important;
+        }
+        #schedule-table th, #schedule-table td {
+            padding: 0.3em 0.5px 0.3em 0.5px;
+            font-size: 0.92em;
+        }
+        #schedule-table th.day-col, #schedule-table td.day-col {
+            width: 16%;
+            min-width: 48px;
+            max-width: 60px;
+        }
+        #schedule-table th.active-col, #schedule-table td.active-col {
+            width: 10%;
+            min-width: 32px;
+            max-width: 40px;
+        }
+        #schedule-table th.start-col, #schedule-table th.stop-col,
+        #schedule-table td.start-col, #schedule-table td.stop-col {
+            width: 37%;
+            min-width: 60px;
+            max-width: 90px;
+        }
+        #schedule-table select {
+            min-width: 2em;
+            font-size: 0.98em;
+        }
+    }
+    </style>
+    <script defer src="config.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Konfiguration</h1>
+            <nav>
+                <div class="nav-menu">
+                    <a href="index.html" class="nav-btn">Startseite</a>
+                    <a href="irrigation.html" class="nav-btn">Bewässerung</a>
+                    <a href="relay.html" class="nav-btn">Relais</a>
+                    <a href="info.html" class="nav-btn">Info</a>
+                    <a href="config.html" class="nav-btn active">Konfiguration</a>
+                </div>
+                <!-- Schedule link removed -->
+            </nav>
+            <p>Systemkonfiguration</p>
+        </div>
+        <form id="config-form">
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">🌐</div>
+                    <div class="card-title">Netzwerk</div>
+                </div>
+                <div class="card-content">
+                    <label for="network-mode">WiFi-Modus:</label>
+                    <select id="network-mode">
+                        <option value="ap">Access Point</option>
+                        <option value="client">Client</option>
+                    </select>
+                    <div id="wifi-client-fields" style="display:none; margin-top:1em;">
+                        <label for="wifi-ssid">WiFi-SSID:</label>
+                        <input type="text" id="wifi-ssid" name="wifi-ssid" autocomplete="off"><br>
+                        <label for="wifi-pass">WiFi-Passwort:</label>
+                        <input type="password" id="wifi-pass" name="wifi-pass" autocomplete="off"><br>
+                    </div>
+                    <div id="wifi-ap-fields" style="display:none; margin-top:1em;">
+                        <label for="ap-ssid">AP-SSID:</label>
+                        <input type="text" id="ap-ssid" name="ap-ssid" autocomplete="off"><br>
+                        <label for="ap-password">AP-Passwort:</label>
+                        <input type="password" id="ap-password" name="ap-password" autocomplete="off"><br>
+                        <label for="ap-timeout">AP-Timeout (Sekunden):</label>
+                        <input type="number" id="ap-timeout" name="ap-timeout" min="0"><br>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">🔗</div>
+                    <div class="card-title">MQTT</div>
+                </div>
+                <div class="card-content">
+                    <label for="mqtt-enabled">MQTT aktivieren:</label>
+                    <input type="checkbox" id="mqtt-enabled" name="mqtt-enabled"><br>
+                    <label for="mqtt-server">Server IP/Host:</label>
+                    <input type="text" id="mqtt-server" name="mqtt-server" autocomplete="off"><br>
+                    <label for="mqtt-port">Port:</label>
+                    <input type="number" id="mqtt-port" name="mqtt-port" min="1" max="65535"><br>
+                    <label for="mqtt-username">Benutzername:</label>
+                    <input type="text" id="mqtt-username" name="mqtt-username" autocomplete="off"><br>
+                    <label for="mqtt-password">Passwort:</label>
+                    <input type="password" id="mqtt-password" name="mqtt-password" autocomplete="off"><br>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">🌫️</div>
+                    <div class="card-title">Luftqualität (MQ135)</div>
+                </div>
+                <div class="card-content">
+                    <label for="mq135-warmup-time">Aufwärmzeit (Sek.):</label>
+                    <input type="number" id="mq135-warmup-time" name="mq135-warmup-time" min="10" max="600" step="1"><br>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">💡</div>
+                    <div class="card-title">LED</div>
+                </div>
+                <div class="card-content">
+                    <label for="led-gpio">LED-GPIO:</label>
+                    <input type="number" id="led-gpio" name="led-gpio" min="0" max="39"><br>
+                    <label for="led-blink-rate">Blinkrate (ms):</label>
+                    <input type="number" id="led-blink-rate" name="led-blink-rate" min="10" max="10000"><br>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">🖲️</div>
+                    <div class="card-title">Touch</div>
+                </div>
+                <div class="card-content">
+                    <label for="touch-gpio">Touch-GPIO:</label>
+                    <input type="number" id="touch-gpio" name="touch-gpio" min="0" max="39"><br>
+                    <label for="touch-long-press">Langer Druck (ms):</label>
+                    <input type="number" id="touch-long-press" name="touch-long-press" min="100" max="20000"><br>
+                    <label for="touch-threshold">Touch-Schwelle:</label>
+                    <input type="number" id="touch-threshold" name="touch-threshold" min="0" max="100"><br>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">💧</div>
+                    <div class="card-title">Bodenfeuchte</div>
+                </div>
+                <div class="card-content">
+                    <label for="soil-moisture-wet">Nasswert:</label>
+                    <input type="number" id="soil-moisture-wet" name="soil-moisture-wet"><br>
+                    <label for="soil-moisture-dry">Trockenwert:</label>
+                    <input type="number" id="soil-moisture-dry" name="soil-moisture-dry"><br>
+                    <label for="soil-power-gpio">Power-GPIO:</label>
+                    <input type="number" id="soil-power-gpio" name="soil-power-gpio" min="0" max="39"><br>
+                    <label for="soil-stabilisation-time">Stabilisierungszeit (Sek.):</label>
+                    <input type="number" id="soil-stabilisation-time" name="soil-stabilisation-time" min="1" max="120" step="1"><br>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">🚿</div>
+                    <div class="card-title">Bewässerung</div>
+                </div>
+                <div class="card-content">
+                    <label for="watering-threshold">Bewässerungsschwelle (%):</label>
+                    <input type="number" id="watering-threshold" name="watering-threshold" min="0" max="100"><br>
+                    <label for="watering-duration">Bewässerungsdauer (Sek.):</label>
+                    <input type="number" id="watering-duration" name="watering-duration" min="1" max="3600"><br>
+                    <label for="irrigation-scheduled-hour">Geplante Zeit:</label>
+                    <select id="irrigation-scheduled-hour" name="irrigation-scheduled-hour"></select>
+                    :
+                    <select id="irrigation-scheduled-minute" name="irrigation-scheduled-minute"></select><br>
+                    <label for="sunday-watering">Sonntagsbewässerung aktivieren:</label>
+                    <input type="checkbox" id="sunday-watering" name="sunday-watering"><br>
+                </div>
+            </div>
+
+
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">⚙️</div>
+                    <div class="card-title">System</div>
+                </div>
+                <div class="card-content">
+                    <label for="device-name">Gerätename:</label>
+                    <input type="text" id="device-name" name="device-name"><br>
+                    <label for="cpu-speed">CPU-Geschwindigkeit (MHz):</label>
+                    <input type="number" id="cpu-speed" name="cpu-speed" min="80" max="240"><br>
+                    <label for="brownout-threshold">Brownout-Schwelle (V):</label>
+                    <input type="number" id="brownout-threshold" name="brownout-threshold" min="1.5" max="3.5" step="0.1"><br>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">⏰</div>
+                    <div class="card-title">Zeit / NTP</div>
+                </div>
+                <div class="card-content">
+                    <label for="ntp-server-1">NTP-Server 1:</label>
+                    <input type="text" id="ntp-server-1" name="ntp-server-1"><br>
+                    <label for="ntp-server-2">NTP-Server 2:</label>
+                    <input type="text" id="ntp-server-2" name="ntp-server-2"><br>
+                    <label for="ntp-enabled">NTP aktiviert:</label>
+                    <input type="checkbox" id="ntp-enabled" name="ntp-enabled"><br>
+                    <label for="ntp-sync-interval">NTP-Sync-Intervall (s):</label>
+                    <input type="number" id="ntp-sync-interval" name="ntp-sync-interval" min="60" max="86400"><br>
+                    <label for="ntp-timeout">NTP-Timeout (ms):</label>
+                    <input type="number" id="ntp-timeout" name="ntp-timeout" min="100" max="60000"><br>
+
+                    <hr style="margin:1em 0;">
+                    <div id="device-time-section">
+                        <div style="margin-bottom:0.5em; font-weight:bold;">Gerätezeit einstellen:</div>
+                        <div style="margin-bottom:0.5em; white-space:nowrap;">
+                            <select id="manual-year" style="width:5em; font-size:1em;"></select>
+                            -
+                            <select id="manual-month" style="width:3.5em; font-size:1em;"></select>
+                            -
+                            <select id="manual-day" style="width:3.5em; font-size:1em;"></select>
+                        </div>
+                        <div style="margin-bottom:0.5em; white-space:nowrap;">
+                            <select id="manual-hour" style="width:3.5em; font-size:1em;"></select>
+                            :
+                            <select id="manual-minute" style="width:3.5em; font-size:1em;"></select>
+                            :
+                            <select id="manual-second" style="width:3.5em; font-size:1em;"></select>
+                        </div>
+                        <button type="button" id="sync-browser-time-btn">Mit Browser synchronisieren</button>
+                        <button type="button" id="set-device-time-btn" style="margin-left:1em;">Zeit setzen</button>
+                        <div id="set-time-status" style="margin-top:0.5em; color:#2980b9;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon info-icon">🔌</div>
+                    <div class="card-title">Relais</div>
+                </div>
+                <div class="card-content" id="relays-config-fields">
+                    <!-- Relais-Konfigurationsfelder und INT/SQW-GPIO-Infos werden hier von JS angezeigt -->
+                </div>
+            </div>
+            <div class="card" id="schedule-card">
+                <div class="card-header">
+                    <div class="card-icon time-icon">⏲️</div>
+                    <div class="card-title">Zeitplan</div>
+                </div>
+                <div class="card-content" id="schedule-content">
+                    <div id="schedule-loading" class="loading">Zeitplan wird geladen...</div>
+                    <table id="schedule-table" style="width:100%;margin-top:1em;text-align:center;">
+                        <thead>
+                            <tr>
+                                <th class="day-col">Tag</th>
+                                <th class="active-col">Aktiv</th>
+                                <th class="start-col">Start</th>
+                                <th class="stop-col">Stopp</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="day-col">So</td>
+                                <td class="active-col"><input type="checkbox" class="sched-enabled" data-day="sunday"></td>
+                                <td class="start-col">
+                                    <select class="sched-hour" data-day="sunday" data-alarm="1"></select>:<select class="sched-minute" data-day="sunday" data-alarm="1"></select>
+                                </td>
+                                <td class="stop-col">
+                                    <select class="sched-hour" data-day="sunday" data-alarm="2"></select>:<select class="sched-minute" data-day="sunday" data-alarm="2"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="day-col">Mo</td>
+                                <td class="active-col"><input type="checkbox" class="sched-enabled" data-day="monday"></td>
+                                <td class="start-col">
+                                    <select class="sched-hour" data-day="monday" data-alarm="1"></select>:<select class="sched-minute" data-day="monday" data-alarm="1"></select>
+                                </td>
+                                <td class="stop-col">
+                                    <select class="sched-hour" data-day="monday" data-alarm="2"></select>:<select class="sched-minute" data-day="monday" data-alarm="2"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="day-col">Di</td>
+                                <td class="active-col"><input type="checkbox" class="sched-enabled" data-day="tuesday"></td>
+                                <td class="start-col">
+                                    <select class="sched-hour" data-day="tuesday" data-alarm="1"></select>:<select class="sched-minute" data-day="tuesday" data-alarm="1"></select>
+                                </td>
+                                <td class="stop-col">
+                                    <select class="sched-hour" data-day="tuesday" data-alarm="2"></select>:<select class="sched-minute" data-day="tuesday" data-alarm="2"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="day-col">Mi</td>
+                                <td class="active-col"><input type="checkbox" class="sched-enabled" data-day="wednesday"></td>
+                                <td class="start-col">
+                                    <select class="sched-hour" data-day="wednesday" data-alarm="1"></select>:<select class="sched-minute" data-day="wednesday" data-alarm="1"></select>
+                                </td>
+                                <td class="stop-col">
+                                    <select class="sched-hour" data-day="wednesday" data-alarm="2"></select>:<select class="sched-minute" data-day="wednesday" data-alarm="2"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="day-col">Do</td>
+                                <td class="active-col"><input type="checkbox" class="sched-enabled" data-day="thursday"></td>
+                                <td class="start-col">
+                                    <select class="sched-hour" data-day="thursday" data-alarm="1"></select>:<select class="sched-minute" data-day="thursday" data-alarm="1"></select>
+                                </td>
+                                <td class="stop-col">
+                                    <select class="sched-hour" data-day="thursday" data-alarm="2"></select>:<select class="sched-minute" data-day="thursday" data-alarm="2"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="day-col">Fr</td>
+                                <td class="active-col"><input type="checkbox" class="sched-enabled" data-day="friday"></td>
+                                <td class="start-col">
+                                    <select class="sched-hour" data-day="friday" data-alarm="1"></select>:<select class="sched-minute" data-day="friday" data-alarm="1"></select>
+                                </td>
+                                <td class="stop-col">
+                                    <select class="sched-hour" data-day="friday" data-alarm="2"></select>:<select class="sched-minute" data-day="friday" data-alarm="2"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="day-col">Sa</td>
+                                <td class="active-col"><input type="checkbox" class="sched-enabled" data-day="saturday"></td>
+                                <td class="start-col">
+                                    <select class="sched-hour" data-day="saturday" data-alarm="1"></select>:<select class="sched-minute" data-day="saturday" data-alarm="1"></select>
+                                </td>
+                                <td class="stop-col">
+                                    <select class="sched-hour" data-day="saturday" data-alarm="2"></select>:<select class="sched-minute" data-day="saturday" data-alarm="2"></select>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div style="margin-top:2em; text-align:center;">
+            <button type="submit" id="save-config-btn">Speichern</button>
+            <button type="button" id="clear-config-btn" style="background:#e67e22;color:#fff;margin-left:1em;">Konfiguration löschen</button>
+            <button type="button" id="restart-btn" style="background:#c0392b;color:#fff;margin-left:1em;">Neustart</button>
+            <div id="clear-config-status" style="margin-top:0.5em;color:#e67e22;"></div>
+        </div>
+        </form>
+    </div>
+        <footer style="margin-top:2em; text-align:center; font-size:0.85em; color:#888;">
+        <div style="color:#333; margin-top:2em;">
+            &copy; Copyright J. Phillips 2025<br>
+            Software-Version 2.0.0<br>
+            Hardware-Version 2.0.0
+        </div>
+        
+    </footer>
+</body>
+</html>
